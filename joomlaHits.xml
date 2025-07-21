@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="component" method="upgrade">
+    <name>COM_JOOMLAHITS</name>
+    <author>Hugo Dantas</author>
+    <version>0.1.0</version>
+    <description>COM_JOOMLAHITS_COMPONENT_DESC</description>
+    <namespace path="src">Joomla\Component\JoomlaHits</namespace>
+    <administration>
+        <files folder="admin">
+            <folder>services</folder>
+            <folder>src</folder>
+            <folder>tmpl</folder>
+        </files>
+        <menu link="option=com_joomlaHits" img="class:default">COM_JOOMLAHITS_MENU_BACKEND</menu>
+    </administration>
+</extension>
