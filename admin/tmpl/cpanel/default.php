@@ -3,7 +3,6 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\HTML\HTMLHelper;
-use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 ?>
 
@@ -11,7 +10,7 @@ use Joomla\CMS\Router\Route;
 
 <div class="row">
     <div class="col-md-12">
-        <h1><?php echo Text::_('Joomla Hits - Statistiques des Articles'); ?></h1>
+        <h1><?php echo Text::_('Joomla Hits - Article Statistics'); ?></h1>
     </div>
 </div>
 
@@ -58,19 +57,19 @@ use Joomla\CMS\Router\Route;
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <label for="filter_search" class="form-label"><?php echo Text::_('Recherche'); ?></label>
+                        <label for="filter_search" class="form-label"><?php echo Text::_('Search'); ?></label>
                         <input type="text" 
                                name="filter_search" 
                                id="filter_search" 
                                class="form-control" 
                                value="<?php echo $this->escape($this->state->get('filter.search')); ?>" 
-                               placeholder="<?php echo Text::_('Rechercher par titre ou catégorie...'); ?>"
+                               placeholder="<?php echo Text::_('Search by title or category...'); ?>"
                                onchange="this.form.submit();">
                     </div>
                     <div class="col-md-3">
                         <label for="filter_category_id" class="form-label"><?php echo Text::_('Catégorie'); ?></label>
                         <select name="filter_category_id" id="filter_category_id" class="form-select" onchange="this.form.submit();">
-                            <option value=""><?php echo Text::_('- Toutes les catégories -'); ?></option>
+                            <option value=""><?php echo Text::_('- All categories -'); ?></option>
                             <?php foreach ($this->categories as $category): ?>
                                 <option value="<?php echo $category->value; ?>" 
                                         <?php echo $this->state->get('filter.category_id') == $category->value ? 'selected' : ''; ?>>
@@ -82,19 +81,19 @@ use Joomla\CMS\Router\Route;
                     <div class="col-md-2">
                         <label for="filter_published" class="form-label"><?php echo Text::_('État'); ?></label>
                         <select name="filter_published" id="filter_published" class="form-select" onchange="this.form.submit();">
-                            <option value=""><?php echo Text::_('- Tous les états -'); ?></option>
+                            <option value=""><?php echo Text::_('- All states -'); ?></option>
                             <option value="1" <?php echo $this->state->get('filter.published') === '1' ? 'selected' : ''; ?>>
-                                <?php echo Text::_('Publié'); ?>
+                                <?php echo Text::_('Published'); ?>
                             </option>
                             <option value="0" <?php echo $this->state->get('filter.published') === '0' ? 'selected' : ''; ?>>
-                                <?php echo Text::_('Non publié'); ?>
+                                <?php echo Text::_('Unpublished'); ?>
                             </option>
                         </select>
                     </div>
                     <div class="col-md-3">
                         <label for="filter_language" class="form-label"><?php echo Text::_('Langue'); ?></label>
                         <select name="filter_language" id="filter_language" class="form-select" onchange="this.form.submit();">
-                            <option value=""><?php echo Text::_('- Toutes les langues -'); ?></option>
+                            <option value=""><?php echo Text::_('- All languages -'); ?></option>
                             <?php foreach ($this->languages as $language): ?>
                                 <option value="<?php echo $language->value; ?>" 
                                         <?php echo $this->state->get('filter.language') == $language->value ? 'selected' : ''; ?>>
@@ -107,7 +106,7 @@ use Joomla\CMS\Router\Route;
                         <label class="form-label">&nbsp;</label>
                         <div class="d-grid">
                             <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('filter_search').value='';document.getElementById('filter_category_id').value='';document.getElementById('filter_published').value='';document.getElementById('filter_language').value='';this.form.submit();">
-                                <?php echo Text::_('Effacer'); ?>
+                                <?php echo Text::_('Clear'); ?>
                             </button>
                         </div>
                     </div>
@@ -119,7 +118,7 @@ use Joomla\CMS\Router\Route;
 
 <div class="row">
     <div class="col-md-12">
-        <h2><?php echo Text::_('Articles avec Hits'); ?> 
+        <h2><?php echo Text::_('Articles with Hits'); ?> 
             <?php if ($this->pagination->total): ?>
                 <span class="badge bg-info"><?php echo $this->pagination->total; ?> results</span>
             <?php endif; ?>
@@ -152,7 +151,7 @@ use Joomla\CMS\Router\Route;
                             <br>
                             <small class="text-muted"><?php echo htmlspecialchars($article->alias); ?></small>
                         </td>
-                        <td><?php echo htmlspecialchars($article->category_title ?: 'Non catégorisé'); ?></td>
+                        <td><?php echo htmlspecialchars($article->category_title ?: 'Uncategorized'); ?></td>
                         <td>
                             <?php 
                             $langClass = '';
@@ -168,7 +167,7 @@ use Joomla\CMS\Router\Route;
                                     break;
                                 case '*':
                                     $langClass = 'bg-secondary';
-                                    $langText = 'Toutes';
+                                    $langText = 'All';
                                     break;
                                 default:
                                     $langClass = 'bg-warning';
@@ -181,12 +180,12 @@ use Joomla\CMS\Router\Route;
                         </td>
                         <td>
                             <span class="badge bg-success fs-6">
-                                <?php echo number_format($article->hits); ?> vues
+                                <?php echo number_format($article->hits); ?> views
                             </span>
                         </td>
                         <td>
                             <span class="badge bg-<?php echo $article->state == 1 ? 'success' : 'danger'; ?>">
-                                <?php echo $article->state == 1 ? 'Publié' : 'Non publié'; ?>
+                                <?php echo $article->state == 1 ? 'Published' : 'Unpublished'; ?>
                             </span>
                         </td>
                         <td>
@@ -202,7 +201,7 @@ use Joomla\CMS\Router\Route;
         
         <?php else: ?>
         <div class="alert alert-info">
-            <p><?php echo Text::_('Aucun article trouvé.'); ?></p>
+            <p><?php echo Text::_('No items found.'); ?></p>
         </div>
         <?php endif; ?>
     </div>

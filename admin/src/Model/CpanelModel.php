@@ -4,9 +4,20 @@ namespace Piedpiper\Component\JoomlaHits\Administrator\Model;
 
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\CMS\Factory;
+use Joomla\Database\DatabaseInterface;
 
 class CpanelModel extends ListModel
 {
+    /**
+     * Method to auto-populate the model state.
+     * Sets up filter states for search, category, publication status and language.
+     * Default ordering is by hits count in descending order.
+     *
+     * @param   string  $ordering   The field to order on
+     * @param   string  $direction  The direction to order the results
+     *
+     * @return  void
+     */
     protected function populateState($ordering = 'a.hits', $direction = 'DESC')
     {
         $search = $this->getUserStateFromRequest($this->context . '.filter.search', 'filter_search', '', 'string');
@@ -24,6 +35,14 @@ class CpanelModel extends ListModel
         parent::populateState($ordering, $direction);
     }
 
+    /**
+     * Method to get a store id based on the model configuration state.
+     * This is necessary because the model is used by the component and different modules that might need different sets of data.
+     *
+     * @param   string  $id    An identifier string to generate the store id
+     *
+     * @return  string  A store id
+     */
     protected function getStoreId($id = '')
     {
         $id .= ':' . $this->getState('filter.search');
@@ -34,9 +53,16 @@ class CpanelModel extends ListModel
         return parent::getStoreId($id);
     }
 
+    /**
+     * Build an SQL query to load articles data with hits information.
+     * Includes support for search, category, publication status and language filtering.
+     * Joins with categories table to get category names.
+     *
+     * @return  \JDatabaseQuery  A JDatabaseQuery object to retrieve the data set
+     */
     protected function getListQuery()
     {
-        $db = Factory::getDbo();
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true);
 
         $query->select([
@@ -87,9 +113,15 @@ class CpanelModel extends ListModel
         return $query;
     }
 
+    /**
+     * Get all content categories that contain published articles.
+     * Returns categories with their article count for filter dropdown.
+     *
+     * @return  array  Array of category objects with id, title and article count
+     */
     public function getCategories()
     {
-        $db = Factory::getDbo();
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true);
 
         $query->select([
@@ -109,9 +141,16 @@ class CpanelModel extends ListModel
         return $db->loadObjectList();
     }
 
+    /**
+     * Get all languages used by published articles.
+     * Returns languages with localized names and article count for filter dropdown.
+     * Languages are ordered: French, English, All languages, then others.
+     *
+     * @return  array  Array of language objects with language code, localized name and article count
+     */
     public function getLanguages()
     {
-        $db = Factory::getDbo();
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true);
 
         $query->select([
@@ -139,76 +178,16 @@ class CpanelModel extends ListModel
         return $db->loadObjectList();
     }
 
-    public function getForm($data = [], $loadData = true)
-    {
-        return false;
-    }
-
-    public function getArticlesHits()
-    {
-        $db = Factory::getDbo();
-        $query = $db->getQuery(true);
-
-        $query->select([
-            $db->quoteName('a.id'),
-            $db->quoteName('a.title'),
-            $db->quoteName('a.alias'),
-            $db->quoteName('a.hits'),
-            $db->quoteName('a.state'),
-            $db->quoteName('a.created'),
-            $db->quoteName('a.featured'),
-            $db->quoteName('a.language'),
-            $db->quoteName('c.title', 'category_title')
-        ])
-        ->from($db->quoteName('#__content', 'a'))
-        ->join('LEFT', $db->quoteName('#__categories', 'c') . ' ON ' . $db->quoteName('a.catid') . ' = ' . $db->quoteName('c.id'))
-        ->where($db->quoteName('a.state') . ' = 1')
-        ->order($db->quoteName('a.hits') . ' DESC');
-
-        $db->setQuery($query);
-        return $db->loadObjectList();
-    }
-
-    public function getTopHitsArticles($limit = 10)
-    {
-        $db = Factory::getDbo();
-        $query = $db->getQuery(true);
-
-        $query->select([
-            $db->quoteName('a.id'),
-            $db->quoteName('a.title'),
-            $db->quoteName('a.alias'),
-            $db->quoteName('a.hits'),
-            $db->quoteName('a.created'),
-            $db->quoteName('c.title', 'category_title')
-        ])
-        ->from($db->quoteName('#__content', 'a'))
-        ->join('LEFT', $db->quoteName('#__categories', 'c') . ' ON ' . $db->quoteName('a.catid') . ' = ' . $db->quoteName('c.id'))
-        ->where($db->quoteName('a.state') . ' = 1')
-        ->where($db->quoteName('a.hits') . ' > 0')
-        ->order($db->quoteName('a.hits') . ' DESC')
-        ->setLimit($limit);
-
-        $db->setQuery($query);
-        return $db->loadObjectList();
-    }
-
-    public function getTotalHits()
-    {
-        $db = Factory::getDbo();
-        $query = $db->getQuery(true);
-
-        $query->select('SUM(' . $db->quoteName('hits') . ')')
-        ->from($db->quoteName('#__content'))
-        ->where($db->quoteName('state') . ' = 1');
-
-        $db->setQuery($query);
-        return (int) $db->loadResult();
-    }
-
+    /**
+     * Get statistical information about article hits.
+     * Calculates total articles, total hits, average hits per article,
+     * maximum hits for a single article, and articles with at least one hit.
+     *
+     * @return  \stdClass  Object containing statistical data about article hits
+     */
     public function getHitsStatistics()
     {
-        $db = Factory::getDbo();
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true);
 
         $query->select([

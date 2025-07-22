@@ -7,15 +7,51 @@ use Piedpiper\Component\JoomlaHits\Administrator\Model\CpanelModel;
 
 class HtmlView extends BaseHtmlView
 {
+    /**
+     * The items to display
+     * @var array
+     */
     protected $items;
+
+    /**
+     * The pagination object
+     * @var \Joomla\CMS\Pagination\Pagination
+     */
     protected $pagination;
+
+    /**
+     * The model state
+     * @var \Joomla\Registry\Registry
+     */
     protected $state;
-    protected $filterForm;
-    protected $activeFilters;
+
+    /**
+     * Statistical data about article hits
+     * @var \stdClass
+     */
     protected $statistics;
+
+    /**
+     * Available categories for filtering
+     * @var array
+     */
     protected $categories;
+
+    /**
+     * Available languages for filtering
+     * @var array
+     */
     protected $languages;
 
+    /**
+     * Execute and display a template script.
+     * Loads data from the model and displays the cpanel view with article hit statistics,
+     * filtering options, and paginated results.
+     *
+     * @param   string  $tpl  The name of the template file to parse
+     *
+     * @return  void
+     */
     public function display($tpl = null) : void
     {
         /** @var CpanelModel $model */
@@ -32,6 +68,12 @@ class HtmlView extends BaseHtmlView
         parent::display($tpl);
     }
 
+    /**
+     * Add the page title and toolbar.
+     * Sets up the administration interface toolbar with the page title.
+     *
+     * @return  void
+     */
     protected function addToolbar()
     {
         ToolbarHelper::title('Joomla Hits - Articles statistics');
