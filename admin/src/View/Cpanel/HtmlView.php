@@ -1,5 +1,5 @@
 <?php
-namespace Joomla\Component\JoomlaHits\Administrator\View\Hits;
+namespace Piedpiper\Component\JoomlaHits\Administrator\View\Cpanel;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 
 class HtmlView extends BaseHtmlView

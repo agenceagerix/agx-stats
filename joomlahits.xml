@@ -2,15 +2,19 @@
 <extension type="component" method="upgrade">
     <name>COM_JOOMLAHITS</name>
     <author>Hugo Dantas</author>
+    <authorEmail>hugodantas33@gmail.com</authorEmail>
+    <creationDate>2025-07-21</creationDate>
     <version>0.1.0</version>
-    <description>COM_JOOMLAHITS_COMPONENT_DESC</description>
-    <namespace path="src">Joomla\Component\JoomlaHits</namespace>
+    <description>COM_JOOMLA_DESC</description>
+    <namespace path="src">Piedpiper\Component\JoomlaHits</namespace>
+    <files folder="site">
+    </files>
     <administration>
         <files folder="admin">
             <folder>services</folder>
             <folder>src</folder>
             <folder>tmpl</folder>
         </files>
-        <menu link="option=com_joomlaHits" img="class:default">COM_JOOMLAHITS_MENU_BACKEND</menu>
+        <menu line="option=com_joomlahits" img="class:default">Joomla Click</menu>
     </administration>
 </extension>
