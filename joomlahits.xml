@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="component" method="upgrade">
     <name>COM_JOOMLAHITS</name>
-    <author>Hugo Dantas - Agence Agerix <https://www.agerix.fr></author>
+    <author>Hugo Dantas - Agence Agerix https://www.agerix.fr</author>
     <authorEmail>hugodantas33@gmail.com</authorEmail>
     <creationDate>2025-07-21</creationDate>
     <copyright>Copyright (C) 2025. All Rights Reserved</copyright>
