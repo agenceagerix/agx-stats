@@ -15,6 +15,8 @@
 /------------------------------------------------------------------------------------------------------*/
 namespace Piedpiper\Component\JoomlaHits\Administrator\View\Cpanel;
 
+use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Piedpiper\Component\JoomlaHits\Administrator\Model\CpanelModel;
@@ -53,6 +55,12 @@ class HtmlView extends BaseHtmlView
     protected $languages;
 
     /**
+     * Component parameters
+     * @var \Joomla\Registry\Registry
+     */
+    protected $params;
+
+    /**
      * Execute and display a template script.
      * Loads data from the model and displays the cpanel view with article list,
      * filtering options, and paginated results.
@@ -65,6 +73,9 @@ class HtmlView extends BaseHtmlView
     {
         /** @var CpanelModel $model */
         $model = $this->getModel();
+        
+        // Get component parameters
+        $this->params = ComponentHelper::getParams('com_joomlahits');
         
         $this->items = $model->getItems();
         $this->pagination = $model->getPagination();
@@ -85,5 +96,9 @@ class HtmlView extends BaseHtmlView
     protected function addToolbar()
     {
         ToolbarHelper::title('Joomla Hits - Articles Statistics');
+        
+        if (Factory::getApplication()->getIdentity()->authorise('core.admin', 'com_joomlahits')) {
+            ToolbarHelper::preferences('com_joomlahits');
+        }
     }
 }

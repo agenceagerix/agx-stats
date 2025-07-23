@@ -15,6 +15,8 @@
 /------------------------------------------------------------------------------------------------------*/
 namespace Piedpiper\Component\JoomlaHits\Administrator\View\Dashboard;
 
+use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Piedpiper\Component\JoomlaHits\Administrator\Model\DashboardModel;
@@ -77,6 +79,12 @@ class HtmlView extends BaseHtmlView
     protected $periodComparison;
 
     /**
+     * Component parameters
+     * @var \Joomla\Registry\Registry
+     */
+    protected $params;
+
+    /**
      * Execute and display a template script.
      * Loads dashboard data from the model and displays comprehensive statistics.
      *
@@ -89,32 +97,41 @@ class HtmlView extends BaseHtmlView
         /** @var DashboardModel $model */
         $model = $this->getModel();
         
+        // Get component parameters
+        $this->params = ComponentHelper::getParams('com_joomlahits');
+        
         // Basic stats
         $this->dashboardStats = $model->getDashboardStats();
-        $this->languageStats = $model->getLanguageStats();
         $this->recentActivity = $model->getRecentActivity(30);
         
-        // Advanced general stats - Dynamic language detection
-        $this->availableLanguages = $model->getAvailableLanguages();
-        $this->topArticlesByLanguage = [];
-        
-        // Get top articles for each available language (max 2 languages)
-        $languageCount = 0;
-        foreach ($this->availableLanguages as $language) {
-            if ($languageCount >= 2) break; // Limit to 2 languages for display
-            $this->topArticlesByLanguage[$language->language] = $model->getTopArticlesByLanguage($language->language, 10);
-            $languageCount++;
+        // Language stats - only if enabled in configuration
+        if ($this->params->get('show_language_stats', 1)) {
+            $this->languageStats = $model->getLanguageStats();
+            
+            // Advanced general stats - Dynamic language detection
+            $this->availableLanguages = $model->getAvailableLanguages();
+            $this->topArticlesByLanguage = [];
+            
+            // Get top articles for each available language (max 2 languages)
+            $languageCount = 0;
+            foreach ($this->availableLanguages as $language) {
+                if ($languageCount >= 2) break; // Limit to 2 languages for display
+                $this->topArticlesByLanguage[$language->language] = $model->getTopArticlesByLanguage($language->language, 10);
+                $languageCount++;
+            }
         }
         
         $this->articlesWithoutClicks = $model->getArticlesWithoutClicksRate();
         
-        // Enhanced category stats
-        $this->enhancedCategoryStats = $model->getEnhancedCategoryStats();
-        
-        // Get top articles for each category
-        $this->topArticlesByCategory = [];
-        foreach ($this->enhancedCategoryStats as $category) {
-            $this->topArticlesByCategory[$category->category_id] = $model->getTopArticlesByCategory($category->category_id, 3);
+        // Category stats - only if enabled in configuration
+        if ($this->params->get('show_category_stats', 1)) {
+            $this->enhancedCategoryStats = $model->getEnhancedCategoryStats();
+            
+            // Get top articles for each category
+            $this->topArticlesByCategory = [];
+            foreach ($this->enhancedCategoryStats as $category) {
+                $this->topArticlesByCategory[$category->category_id] = $model->getTopArticlesByCategory($category->category_id, 3);
+            }
         }
         
         // Temporal stats
@@ -133,5 +150,9 @@ class HtmlView extends BaseHtmlView
     protected function addToolbar()
     {
         ToolbarHelper::title('Joomla Hits - Dashboard');
+        
+        if (Factory::getApplication()->getIdentity()->authorise('core.admin', 'com_joomlahits')) {
+            ToolbarHelper::preferences('com_joomlahits');
+        }
     }
 }

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <help key="JoomlaHits:_Options"/>
+    <inlinehelp button="show"/>
+    
+    <fieldset 
+        name="general" 
+        label="COM_JOOMLAHITS_CONFIG_GENERAL_LABEL" 
+        description="COM_JOOMLAHITS_CONFIG_GENERAL_DESC">
+        
+        <field
+            name="show_hits_frontend"
+            type="radio"
+            layout="joomla.form.field.radio.switcher"
+            label="COM_JOOMLAHITS_CONFIG_SHOW_HITS_FRONTEND_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_SHOW_HITS_FRONTEND_DESC"
+            default="1">
+            <option value="0">JHIDE</option>
+            <option value="1">JSHOW</option>
+        </field>
+
+        <field
+            name="hits_display_format"
+            type="list"
+            label="COM_JOOMLAHITS_CONFIG_HITS_DISPLAY_FORMAT_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_HITS_DISPLAY_FORMAT_DESC"
+            default="number"
+            class="form-select">
+            <option value="number">COM_JOOMLAHITS_CONFIG_FORMAT_NUMBER</option>
+            <option value="formatted">COM_JOOMLAHITS_CONFIG_FORMAT_FORMATTED</option>
+            <option value="text">COM_JOOMLAHITS_CONFIG_FORMAT_TEXT</option>
+        </field>
+
+        <field
+            name="cache_enabled"
+            type="radio"
+            layout="joomla.form.field.radio.switcher"
+            label="COM_JOOMLAHITS_CONFIG_CACHE_ENABLED_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_CACHE_ENABLED_DESC"
+            default="1">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+            name="cache_time"
+            type="number"
+            label="COM_JOOMLAHITS_CONFIG_CACHE_TIME_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_CACHE_TIME_DESC"
+            default="3600"
+            min="300"
+            max="86400"
+            step="60"
+            filter="integer"
+            showon="cache_enabled:1"/>
+
+    </fieldset>
+
+    <fieldset 
+        name="dashboard" 
+        label="COM_JOOMLAHITS_CONFIG_DASHBOARD_LABEL" 
+        description="COM_JOOMLAHITS_CONFIG_DASHBOARD_DESC">
+        
+        <field
+            name="dashboard_items_per_page"
+            type="number"
+            label="COM_JOOMLAHITS_CONFIG_DASHBOARD_ITEMS_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_DASHBOARD_ITEMS_DESC"
+            default="10"
+            min="5"
+            max="50"
+            step="5"
+            filter="integer"/>
+
+        <field
+            name="show_language_stats"
+            type="radio"
+            layout="joomla.form.field.radio.switcher"
+            label="COM_JOOMLAHITS_CONFIG_SHOW_LANGUAGE_STATS_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_SHOW_LANGUAGE_STATS_DESC"
+            default="1">
+            <option value="0">JHIDE</option>
+            <option value="1">JSHOW</option>
+        </field>
+
+        <field
+            name="show_category_stats"
+            type="radio"
+            layout="joomla.form.field.radio.switcher"
+            label="COM_JOOMLAHITS_CONFIG_SHOW_CATEGORY_STATS_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_SHOW_CATEGORY_STATS_DESC"
+            default="1">
+            <option value="0">JHIDE</option>
+            <option value="1">JSHOW</option>
+        </field>
+
+    </fieldset>
+
+    <fieldset 
+        name="permissions" 
+        label="JCONFIG_PERMISSIONS_LABEL" 
+        description="JCONFIG_PERMISSIONS_DESC">
+        
+        <field
+            name="rules"
+            type="rules"
+            label="JCONFIG_PERMISSIONS_LABEL"
+            filter="rules"
+            validate="rules"
+            component="com_joomlahits"
+            section="component"/>
+        
+    </fieldset>
+
+</config>

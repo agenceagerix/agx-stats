@@ -157,7 +157,7 @@ $wa->useScript('bootstrap.collapse');
                     <?php endif; ?>
 
                     <!-- Dynamic Top Articles by Language -->
-                    <?php if (!empty($this->availableLanguages) && !empty($this->topArticlesByLanguage)): ?>
+                    <?php if ($this->params->get('show_language_stats', 1) && !empty($this->availableLanguages) && !empty($this->topArticlesByLanguage)): ?>
                     <div class="row mb-4">
                         <?php 
                         $displayedLanguages = 0;
@@ -228,7 +228,7 @@ $wa->useScript('bootstrap.collapse');
                         endforeach; 
                         ?>
                     </div>
-                    <?php else: ?>
+                    <?php elseif ($this->params->get('show_language_stats', 1)): ?>
                     <div class="row mb-4">
                         <div class="col-md-12">
                             <div class="alert alert-info">
@@ -240,6 +240,7 @@ $wa->useScript('bootstrap.collapse');
                     <?php endif; ?>
 
                     <!-- Enhanced Category Statistics -->
+                    <?php if ($this->params->get('show_category_stats', 1)): ?>
                     <div class="col mb-6">
                         <div class="col-md-8">
                             <div class="card stats-card">
@@ -334,6 +335,7 @@ $wa->useScript('bootstrap.collapse');
                         </div>
                     </div>
                     <?php endif; ?>
+                    <?php endif; ?>
 
                     <div class="row">
                         <!-- Recent Activity -->
@@ -378,6 +380,7 @@ $wa->useScript('bootstrap.collapse');
                         </div>
 
                         <!-- Language Statistics -->
+                        <?php if ($this->params->get('show_language_stats', 1)): ?>
                         <div class="col-md-6">
                             <div class="card stats-card">
                                 <div class="card-header">
@@ -415,6 +418,7 @@ $wa->useScript('bootstrap.collapse');
                                 </div>
                             </div>
                         </div>
+                        <?php endif; ?>
                     </div>
 
                 </div>
