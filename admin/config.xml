@@ -9,29 +9,6 @@
         description="COM_JOOMLAHITS_CONFIG_GENERAL_DESC">
         
         <field
-            name="show_hits_frontend"
-            type="radio"
-            layout="joomla.form.field.radio.switcher"
-            label="COM_JOOMLAHITS_CONFIG_SHOW_HITS_FRONTEND_LABEL"
-            description="COM_JOOMLAHITS_CONFIG_SHOW_HITS_FRONTEND_DESC"
-            default="1">
-            <option value="0">JHIDE</option>
-            <option value="1">JSHOW</option>
-        </field>
-
-        <field
-            name="hits_display_format"
-            type="list"
-            label="COM_JOOMLAHITS_CONFIG_HITS_DISPLAY_FORMAT_LABEL"
-            description="COM_JOOMLAHITS_CONFIG_HITS_DISPLAY_FORMAT_DESC"
-            default="number"
-            class="form-select">
-            <option value="number">COM_JOOMLAHITS_CONFIG_FORMAT_NUMBER</option>
-            <option value="formatted">COM_JOOMLAHITS_CONFIG_FORMAT_FORMATTED</option>
-            <option value="text">COM_JOOMLAHITS_CONFIG_FORMAT_TEXT</option>
-        </field>
-
-        <field
             name="cache_enabled"
             type="radio"
             layout="joomla.form.field.radio.switcher"

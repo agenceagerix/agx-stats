@@ -13,10 +13,18 @@
     </files>
     <administration>
         <files folder="admin">
+            <filename>access.xml</filename>
+            <filename>config.xml</filename>
             <folder>services</folder>
             <folder>src</folder>
             <folder>tmpl</folder>
         </files>
+        <languages folder="admin">
+            <language tag="fr-FR">language/fr-FR/fr-FR.com_joomlahits.ini</language>
+            <language tag="fr-FR">language/fr-FR/fr-FR.com_joomlahits.sys.ini</language>
+            <language tag="en-GB">language/en-GB/en-GB.com_joomlahits.ini</language>
+            <language tag="en-GB">language/en-GB/en-GB.com_joomlahits.sys.ini</language>
+        </languages>
         <menu line="option=com_joomlahits" img="class:default">Joomla Click</menu>
     </administration>
 </extension>
