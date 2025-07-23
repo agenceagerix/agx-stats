@@ -230,6 +230,4 @@ class CpanelModel extends ListModel
         $db->setQuery($query);
         return $db->loadObjectList();
     }
-
-
 }

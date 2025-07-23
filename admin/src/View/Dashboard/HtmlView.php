@@ -27,17 +27,6 @@ class HtmlView extends BaseHtmlView
      */
     protected $dashboardStats;
 
-    /**
-     * Top performing articles
-     * @var array
-     */
-    protected $topArticles;
-
-    /**
-     * Statistics by category
-     * @var array
-     */
-    protected $categoryStats;
 
     /**
      * Statistics by language
@@ -52,6 +41,42 @@ class HtmlView extends BaseHtmlView
     protected $recentActivity;
 
     /**
+     * Top articles by available languages
+     * @var array
+     */
+    protected $topArticlesByLanguage;
+
+    /**
+     * Available languages
+     * @var array
+     */
+    protected $availableLanguages;
+
+    /**
+     * Articles without clicks statistics
+     * @var \stdClass
+     */
+    protected $articlesWithoutClicks;
+
+    /**
+     * Enhanced category statistics
+     * @var array
+     */
+    protected $enhancedCategoryStats;
+
+    /**
+     * Top articles by category
+     * @var array
+     */
+    protected $topArticlesByCategory;
+
+    /**
+     * Period comparison
+     * @var \stdClass
+     */
+    protected $periodComparison;
+
+    /**
      * Execute and display a template script.
      * Loads dashboard data from the model and displays comprehensive statistics.
      *
@@ -64,11 +89,36 @@ class HtmlView extends BaseHtmlView
         /** @var DashboardModel $model */
         $model = $this->getModel();
         
+        // Basic stats
         $this->dashboardStats = $model->getDashboardStats();
-        $this->topArticles = $model->getTopArticles(10);
-        $this->categoryStats = $model->getCategoryStats();
         $this->languageStats = $model->getLanguageStats();
         $this->recentActivity = $model->getRecentActivity(30);
+        
+        // Advanced general stats - Dynamic language detection
+        $this->availableLanguages = $model->getAvailableLanguages();
+        $this->topArticlesByLanguage = [];
+        
+        // Get top articles for each available language (max 2 languages)
+        $languageCount = 0;
+        foreach ($this->availableLanguages as $language) {
+            if ($languageCount >= 2) break; // Limit to 2 languages for display
+            $this->topArticlesByLanguage[$language->language] = $model->getTopArticlesByLanguage($language->language, 10);
+            $languageCount++;
+        }
+        
+        $this->articlesWithoutClicks = $model->getArticlesWithoutClicksRate();
+        
+        // Enhanced category stats
+        $this->enhancedCategoryStats = $model->getEnhancedCategoryStats();
+        
+        // Get top articles for each category
+        $this->topArticlesByCategory = [];
+        foreach ($this->enhancedCategoryStats as $category) {
+            $this->topArticlesByCategory[$category->category_id] = $model->getTopArticlesByCategory($category->category_id, 3);
+        }
+        
+        // Temporal stats
+        $this->periodComparison = $model->getPeriodComparison('month');
         
         $this->addToolbar();
         parent::display($tpl);
