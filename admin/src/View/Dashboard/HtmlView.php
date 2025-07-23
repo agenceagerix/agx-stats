@@ -13,49 +13,47 @@
 	/    \( (_ \ ) _) /    /( (__  ) _)   /    \( (_ \ ) _)  )   / )(  )  (
 	\_/\_/ \___/(____)\_)__) \___)(____)  \_/\_/ \___/(____)(__\_)(__)(_/\_)
 /------------------------------------------------------------------------------------------------------*/
-namespace Piedpiper\Component\JoomlaHits\Administrator\View\Cpanel;
+namespace Piedpiper\Component\JoomlaHits\Administrator\View\Dashboard;
 
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use Piedpiper\Component\JoomlaHits\Administrator\Model\CpanelModel;
+use Piedpiper\Component\JoomlaHits\Administrator\Model\DashboardModel;
 
 class HtmlView extends BaseHtmlView
 {
     /**
-     * The items to display
+     * Dashboard statistics
+     * @var \stdClass
+     */
+    protected $dashboardStats;
+
+    /**
+     * Top performing articles
      * @var array
      */
-    protected $items;
+    protected $topArticles;
 
     /**
-     * The pagination object
-     * @var \Joomla\CMS\Pagination\Pagination
-     */
-    protected $pagination;
-
-    /**
-     * The model state
-     * @var \Joomla\Registry\Registry
-     */
-    protected $state;
-
-
-    /**
-     * Available categories for filtering
+     * Statistics by category
      * @var array
      */
-    protected $categories;
+    protected $categoryStats;
 
     /**
-     * Available languages for filtering
+     * Statistics by language
      * @var array
      */
-    protected $languages;
+    protected $languageStats;
+
+    /**
+     * Recent articles activity
+     * @var array
+     */
+    protected $recentActivity;
 
     /**
      * Execute and display a template script.
-     * Loads data from the model and displays the cpanel view with article list,
-     * filtering options, and paginated results.
+     * Loads dashboard data from the model and displays comprehensive statistics.
      *
      * @param   string  $tpl  The name of the template file to parse
      *
@@ -63,14 +61,14 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null) : void
     {
-        /** @var CpanelModel $model */
+        /** @var DashboardModel $model */
         $model = $this->getModel();
         
-        $this->items = $model->getItems();
-        $this->pagination = $model->getPagination();
-        $this->state = $model->getState();
-        $this->categories = $model->getCategories();
-        $this->languages = $model->getLanguages();
+        $this->dashboardStats = $model->getDashboardStats();
+        $this->topArticles = $model->getTopArticles(10);
+        $this->categoryStats = $model->getCategoryStats();
+        $this->languageStats = $model->getLanguageStats();
+        $this->recentActivity = $model->getRecentActivity(30);
         
         $this->addToolbar();
         parent::display($tpl);
@@ -84,6 +82,6 @@ class HtmlView extends BaseHtmlView
      */
     protected function addToolbar()
     {
-        ToolbarHelper::title('Joomla Hits - Articles Statistics');
+        ToolbarHelper::title('Joomla Hits - Dashboard');
     }
 }

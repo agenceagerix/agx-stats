@@ -22,6 +22,29 @@ use Joomla\Database\DatabaseInterface;
 class CpanelModel extends ListModel
 {
     /**
+     * Constructor
+     * Initializes the model with filter fields for sorting and filtering
+     */
+    public function __construct($config = array())
+    {
+        if (empty($config['filter_fields'])) {
+            $config['filter_fields'] = array(
+                'id', 'a.id',
+                'title', 'a.title',
+                'alias', 'a.alias',
+                'hits', 'a.hits',
+                'state', 'a.state',
+                'created', 'a.created',
+                'featured', 'a.featured',
+                'language', 'a.language',
+                'category_title', 'c.title',
+                'catid', 'a.catid'
+            );
+        }
+
+        parent::__construct($config);
+    }
+    /**
      * Method to auto-populate the model state.
      * Sets up filter states for search, category, publication status and language.
      * Default ordering is by hits count in descending order.
@@ -44,6 +67,21 @@ class CpanelModel extends ListModel
 
         $language = $this->getUserStateFromRequest($this->context . '.filter.language', 'filter_language', '', 'string');
         $this->setState('filter.language', $language);
+
+        // Get ordering parameters
+        $orderCol = $this->getUserStateFromRequest($this->context . '.list.ordering', 'filter_order', $ordering);
+        $this->setState('list.ordering', $orderCol);
+
+        $orderDirn = $this->getUserStateFromRequest($this->context . '.list.direction', 'filter_order_Dir', $direction);
+        $this->setState('list.direction', $orderDirn);
+
+        // Set pagination limit
+        $limit = $this->getUserStateFromRequest($this->context . '.list.limit', 'limit', 20, 'uint');
+        $this->setState('list.limit', $limit);
+
+        // Set pagination start
+        $start = $this->getUserStateFromRequest($this->context . '.limitstart', 'limitstart', 0, 'uint');
+        $this->setState('list.start', $start);
 
         parent::populateState($ordering, $direction);
     }
@@ -82,17 +120,20 @@ class CpanelModel extends ListModel
             $db->quoteName('a.id'),
             $db->quoteName('a.title'),
             $db->quoteName('a.alias'),
+            $db->quoteName('a.introtext'),
             $db->quoteName('a.hits'),
             $db->quoteName('a.state'),
             $db->quoteName('a.created'),
             $db->quoteName('a.featured'),
             $db->quoteName('a.language'),
-            $db->quoteName('c.title', 'category_title')
+            $db->quoteName('c.title', 'category_title'),
+            $db->quoteName('a.catid')
         ])
         ->from($db->quoteName('#__content', 'a'))
         ->join('LEFT', $db->quoteName('#__categories', 'c') . ' ON ' . $db->quoteName('a.catid') . ' = ' . $db->quoteName('c.id'));
 
-        // Filters
+        // Apply filters
+
         $search = $this->getState('filter.search');
         if (!empty($search)) {
             if (stripos($search, 'id:') === 0) {
@@ -118,7 +159,6 @@ class CpanelModel extends ListModel
             $query->where($db->quoteName('a.language') . ' = ' . $db->quote($language));
         }
 
-        // filtering
         $orderCol = $this->state->get('list.ordering', 'a.hits');
         $orderDirn = $this->state->get('list.direction', 'DESC');
         $query->order($db->escape($orderCol . ' ' . $orderDirn));
@@ -169,9 +209,9 @@ class CpanelModel extends ListModel
         $query->select([
             $db->quoteName('a.language', 'value'),
             'CASE 
-                WHEN ' . $db->quoteName('a.language') . ' = ' . $db->quote('fr-FR') . ' THEN ' . $db->quote('Français') . '
+                WHEN ' . $db->quoteName('a.language') . ' = ' . $db->quote('fr-FR') . ' THEN ' . $db->quote('French') . '
                 WHEN ' . $db->quoteName('a.language') . ' = ' . $db->quote('en-GB') . ' THEN ' . $db->quote('English') . '
-                WHEN ' . $db->quoteName('a.language') . ' = ' . $db->quote('*') . ' THEN ' . $db->quote('Toutes les langues') . '
+                WHEN ' . $db->quoteName('a.language') . ' = ' . $db->quote('*') . ' THEN ' . $db->quote('All Languages') . '
                 ELSE ' . $db->quoteName('a.language') . '
             END as text',
             'COUNT(' . $db->quoteName('a.id') . ') as article_count'
@@ -191,29 +231,5 @@ class CpanelModel extends ListModel
         return $db->loadObjectList();
     }
 
-    /**
-     * Get statistical information about article hits.
-     * Calculates total articles, total hits, average hits per article,
-     * maximum hits for a single article, and articles with at least one hit.
-     *
-     * @return  \stdClass  Object containing statistical data about article hits
-     */
-    public function getHitsStatistics()
-    {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
 
-        $query->select([
-            'COUNT(*) as total_articles',
-            'SUM(' . $db->quoteName('hits') . ') as total_hits',
-            'AVG(' . $db->quoteName('hits') . ') as average_hits',
-            'MAX(' . $db->quoteName('hits') . ') as max_hits',
-            'COUNT(CASE WHEN ' . $db->quoteName('hits') . ' > 0 THEN 1 END) as articles_with_hits'
-        ])
-        ->from($db->quoteName('#__content'))
-        ->where($db->quoteName('state') . ' = 1');
-
-        $db->setQuery($query);
-        return $db->loadObject();
-    }
 }

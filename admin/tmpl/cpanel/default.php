@@ -15,213 +15,256 @@
 /------------------------------------------------------------------------------------------------------*/
 defined('_JEXEC') or die;
 
-use Joomla\CMS\Language\Text;
+use Joomla\CMS\Button\PublishedButton;
+use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+
+$wa = $this->getDocument()->getWebAssetManager();
+$wa->useScript('table.columns')
+    ->useScript('multiselect');
+
+$app       = Factory::getApplication();
+$user      = $this->getCurrentUser();
+$userId    = $user->id;
+$listOrder = $this->escape($this->state->get('list.ordering'));
+$listDirn  = $this->escape($this->state->get('list.direction'));
 ?>
 
 <form action="<?php echo Route::_('index.php?option=com_joomlahits&view=cpanel'); ?>" method="post" name="adminForm" id="adminForm">
+    <div class="row">
+        <div class="col-md-12">
+            <div id="j-main-container" class="j-main-container">
 
-<div class="row">
-    <div class="col-md-12">
-        <h1><?php echo Text::_('Joomla Hits - Article Statistics'); ?></h1>
-    </div>
-</div>
+                <!-- Navigation Tabs -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <nav>
+                            <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                                <button class="nav-link" id="nav-dashboard-tab" data-bs-toggle="tab" data-bs-target="#nav-dashboard" type="button" role="tab" aria-controls="nav-dashboard" aria-selected="false" onclick="window.location.href='<?php echo Route::_('index.php?option=com_joomlahits&view=dashboard'); ?>'">
+                                    <i class="icon-dashboard"></i> Dashboard
+                                </button>
+                                <button class="nav-link active" id="nav-articles-tab" data-bs-toggle="tab" data-bs-target="#nav-articles" type="button" role="tab" aria-controls="nav-articles" aria-selected="true">
+                                    <i class="icon-list"></i> Articles List
+                                </button>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
 
-<?php if ($this->statistics): ?>
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5 class="card-title">Total Articles</h5>
-                <p class="card-text display-4 text-primary"><?php echo $this->statistics->total_articles; ?></p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5 class="card-title">Total Hits</h5>
-                <p class="card-text display-4 text-success"><?php echo number_format($this->statistics->total_hits); ?></p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5 class="card-title">Average Hits</h5>
-                <p class="card-text display-4 text-info"><?php echo number_format($this->statistics->average_hits, 1); ?></p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5 class="card-title">Max Hits</h5>
-                <p class="card-text display-4 text-warning"><?php echo number_format($this->statistics->max_hits); ?></p>
-            </div>
-        </div>
-    </div>
-</div>
-<?php endif; ?>
 
-<div class="row mb-3">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label for="filter_search" class="form-label"><?php echo Text::_('Search'); ?></label>
-                        <input type="text" 
-                               name="filter_search" 
-                               id="filter_search" 
-                               class="form-control" 
-                               value="<?php echo $this->escape($this->state->get('filter.search')); ?>" 
-                               placeholder="<?php echo Text::_('Search by title or category...'); ?>"
-                               onchange="this.form.submit();">
-                    </div>
-                    <div class="col-md-3">
-                        <label for="filter_category_id" class="form-label"><?php echo Text::_('Catégorie'); ?></label>
-                        <select name="filter_category_id" id="filter_category_id" class="form-select" onchange="this.form.submit();">
-                            <option value=""><?php echo Text::_('- All categories -'); ?></option>
-                            <?php foreach ($this->categories as $category): ?>
-                                <option value="<?php echo $category->value; ?>" 
-                                        <?php echo $this->state->get('filter.category_id') == $category->value ? 'selected' : ''; ?>>
-                                    <?php echo $this->escape($category->text); ?> (<?php echo $category->article_count; ?>)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="filter_published" class="form-label"><?php echo Text::_('État'); ?></label>
-                        <select name="filter_published" id="filter_published" class="form-select" onchange="this.form.submit();">
-                            <option value=""><?php echo Text::_('- All states -'); ?></option>
-                            <option value="1" <?php echo $this->state->get('filter.published') === '1' ? 'selected' : ''; ?>>
-                                <?php echo Text::_('Published'); ?>
-                            </option>
-                            <option value="0" <?php echo $this->state->get('filter.published') === '0' ? 'selected' : ''; ?>>
-                                <?php echo Text::_('Unpublished'); ?>
-                            </option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label for="filter_language" class="form-label"><?php echo Text::_('Langue'); ?></label>
-                        <select name="filter_language" id="filter_language" class="form-select" onchange="this.form.submit();">
-                            <option value=""><?php echo Text::_('- All languages -'); ?></option>
-                            <?php foreach ($this->languages as $language): ?>
-                                <option value="<?php echo $language->value; ?>" 
-                                        <?php echo $this->state->get('filter.language') == $language->value ? 'selected' : ''; ?>>
-                                    <?php echo $this->escape($language->text); ?> (<?php echo $language->article_count; ?>)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">&nbsp;</label>
-                        <div class="d-grid">
-                            <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('filter_search').value='';document.getElementById('filter_category_id').value='';document.getElementById('filter_published').value='';document.getElementById('filter_language').value='';this.form.submit();">
-                                <?php echo Text::_('Clear'); ?>
-                            </button>
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="filter_search" class="form-label"><?php echo Text::_('Search'); ?></label>
+                                        <input type="text" 
+                                               name="filter_search" 
+                                               id="filter_search" 
+                                               class="form-control" 
+                                               value="<?php echo $this->escape($this->state->get('filter.search')); ?>" 
+                                               placeholder="<?php echo Text::_('Search by title or category...'); ?>"
+                                               onchange="this.form.submit();">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="filter_category_id" class="form-label">Category</label>
+                                        <select name="filter_category_id" id="filter_category_id" class="form-select" onchange="this.form.submit();">
+                                            <option value=""><?php echo Text::_('- All categories -'); ?></option>
+                                            <?php if ($this->categories): foreach ($this->categories as $category): ?>
+                                                <option value="<?php echo $category->value; ?>" 
+                                                        <?php echo $this->state->get('filter.category_id') == $category->value ? 'selected' : ''; ?>>
+                                                    <?php echo $this->escape($category->text); ?> (<?php echo $category->article_count; ?>)
+                                                </option>
+                                            <?php endforeach; endif; ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="filter_published" class="form-label">Status</label>
+                                        <select name="filter_published" id="filter_published" class="form-select" onchange="this.form.submit();">
+                                            <option value=""><?php echo Text::_('- All states -'); ?></option>
+                                            <option value="1" <?php echo $this->state->get('filter.published') === '1' ? 'selected' : ''; ?>>
+                                                <?php echo Text::_('Published'); ?>
+                                            </option>
+                                            <option value="0" <?php echo $this->state->get('filter.published') === '0' ? 'selected' : ''; ?>>
+                                                <?php echo Text::_('Unpublished'); ?>
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="filter_language" class="form-label">Language</label>
+                                        <select name="filter_language" id="filter_language" class="form-select" onchange="this.form.submit();">
+                                            <option value=""><?php echo Text::_('- All languages -'); ?></option>
+                                            <?php if ($this->languages): foreach ($this->languages as $language): ?>
+                                                <option value="<?php echo $language->value; ?>" 
+                                                        <?php echo $this->state->get('filter.language') == $language->value ? 'selected' : ''; ?>>
+                                                    <?php echo $this->escape($language->text); ?> (<?php echo $language->article_count; ?>)
+                                                </option>
+                                            <?php endforeach; endif; ?>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <?php if (empty($this->items)) : ?>
+                    <div class="alert alert-info">
+                        <span class="icon-info-circle" aria-hidden="true"></span><span class="visually-hidden"><?php echo Text::_('INFO'); ?></span>
+                        <?php echo Text::_('JGLOBAL_NO_MATCHING_RESULTS'); ?>
+                    </div>
+                <?php else : ?>
+                    <table class="table" id="articleList">
+                        <caption class="visually-hidden">
+                            Articles avec statistiques de vues
+                        </caption>
+                        <thead>
+                            <tr>
+                                <td class="w-1 text-center">
+                                    <?php echo HTMLHelper::_('grid.checkall'); ?>
+                                </td>
+                                <th scope="col" class="w-1 text-center d-none d-md-table-cell">
+                                    <a href="#" onclick="Joomla.tableOrdering('a.state','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>')">
+                                        Status <?php if ($listOrder == 'a.state') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
+                                    </a>
+                                </th>
+                                <th scope="col">
+                                    <a href="#" onclick="Joomla.tableOrdering('a.title','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>','')">
+                                        Title <?php if ($listOrder == 'a.title') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
+                                    </a>
+                                </th>
+                                <th scope="col" class="w-20 d-none d-md-table-cell">
+                                    Description
+                                </th>
+                                <th scope="col" class="w-15 d-none d-md-table-cell">
+                                    <a href="#" onclick="Joomla.tableOrdering('category_title','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>','')">
+                                        Category <?php if ($listOrder == 'category_title') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
+                                    </a>
+                                </th>
+                                <th scope="col" class="w-10 d-none d-md-table-cell text-center">
+                                    <a href="#" onclick="Joomla.tableOrdering('a.language','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>','')">
+                                        Language <?php if ($listOrder == 'a.language') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
+                                    </a>
+                                </th>
+                                <th scope="col" class="w-10 d-none d-md-table-cell text-center">
+                                    <a href="#" onclick="Joomla.tableOrdering('a.hits','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>','')">
+                                        Views <?php if ($listOrder == 'a.hits') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
+                                    </a>
+                                </th>
+                                <th scope="col" class="w-10 d-none d-lg-table-cell">
+                                    <a href="#" onclick="Joomla.tableOrdering('a.created','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>','')">
+                                        Created Date <?php if ($listOrder == 'a.created') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
+                                    </a>
+                                </th>
+                                <th scope="col" class="w-5 d-none d-lg-table-cell">
+                                    <a href="#" onclick="Joomla.tableOrdering('a.id','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>','')">
+                                        ID <?php if ($listOrder == 'a.id') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
+                                    </a>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($this->items as $i => $item) :
+                                $canEdit   = $user->authorise('core.edit', 'com_content.article.' . $item->id);
+                                $canChange = $user->authorise('core.edit.state', 'com_content.article.' . $item->id);
+                            ?>
+                                <tr class="row<?php echo $i % 2; ?>" data-draggable-group="1">
+                                    <td class="text-center">
+                                        <?php echo HTMLHelper::_('grid.id', $i, $item->id, false, 'cid', 'cb', $item->title); ?>
+                                    </td>
+                                    <td class="text-center d-none d-md-table-cell">
+                                        <?php
+                                        $options = [
+                                            'task_prefix' => 'articles.',
+                                            'disabled' => !$canChange,
+                                            'id' => 'state-' . $item->id
+                                        ];
+
+                                        echo (new PublishedButton)->render((int) $item->state, $i, $options);
+                                        ?>
+                                    </td>
+                                    <th scope="row" class="has-context">
+                                        <div>
+                                            <?php if ($canEdit) : ?>
+                                                <a class="hasTooltip" href="<?php echo Route::_('index.php?option=com_content&task=article.edit&id=' . $item->id); ?>" title="<?php echo Text::_('JACTION_EDIT'); ?>">
+                                                    <?php echo $this->escape($item->title); ?>
+                                                </a>
+                                            <?php else : ?>
+                                                <span title="<?php echo Text::sprintf('JFIELD_ALIAS_LABEL', $this->escape($item->alias)); ?>">
+                                                    <?php echo $this->escape($item->title); ?>
+                                                </span>
+                                            <?php endif; ?>
+                                            <span class="small break-word">
+                                                <?php echo Text::sprintf('JGLOBAL_LIST_ALIAS', $this->escape($item->alias)); ?>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <td class="d-none d-md-table-cell">
+                                        <?php 
+                                        $description = strip_tags($item->introtext);
+                                        echo $this->escape(strlen($description) > 100 ? substr($description, 0, 100) . '...' : $description); 
+                                        ?>
+                                    </td>
+                                    <td class="d-none d-md-table-cell">
+                                        <?php echo $this->escape($item->category_title); ?>
+                                    </td>
+                                    <td class="d-none d-md-table-cell text-center">
+                                        <?php 
+                                        $languageDisplay = '';
+                                        switch($item->language) {
+                                            case 'fr-FR':
+                                                $languageDisplay = 'French';
+                                                break;
+                                            case 'en-GB':
+                                                $languageDisplay = 'English';
+                                                break;
+                                            case '*':
+                                                $languageDisplay = 'All';
+                                                break;
+                                            default:
+                                                $languageDisplay = $item->language;
+                                        }
+                                        ?>
+                                        <span class="badge bg-secondary">
+                                            <?php echo $this->escape($languageDisplay); ?>
+                                        </span>
+                                    </td>
+                                    <td class="d-none d-md-table-cell text-center">
+                                        <span class="badge bg-info">
+                                            <?php echo (int) $item->hits; ?>
+                                        </span>
+                                    </td>
+                                    <td class="d-none d-lg-table-cell">
+                                        <?php echo HTMLHelper::_('date', $item->created, Text::_('DATE_FORMAT_LC4')); ?>
+                                    </td>
+                                    <td class="d-none d-lg-table-cell">
+                                        <?php echo (int) $item->id; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+
+                    <?php echo $this->pagination->getListFooter(); ?>
+                <?php endif; ?>
+
+                <input type="hidden" name="task" value="">
+                <input type="hidden" name="boxchecked" value="0">
+                <input type="hidden" name="filter_order" value="<?php echo $listOrder; ?>">
+                <input type="hidden" name="filter_order_Dir" value="<?php echo $listDirn; ?>">
+                <?php echo HTMLHelper::_('form.token'); ?>
+                
+                <script>
+                Joomla.tableOrdering = function(order, dir) {
+                    document.adminForm.filter_order.value = order;
+                    document.adminForm.filter_order_Dir.value = dir;
+                    document.adminForm.submit();
+                };
+                </script>
             </div>
         </div>
     </div>
-</div>
-
-<div class="row">
-    <div class="col-md-12">
-        <h2><?php echo Text::_('Articles with Hits'); ?> 
-            <?php if ($this->pagination->total): ?>
-                <span class="badge bg-info"><?php echo $this->pagination->total; ?> results</span>
-            <?php endif; ?>
-        </h2>
-        
-        <?php if (!empty($this->items)): ?>
-        <div class="table-responsive">
-            <table class="table table-striped table-hover" id="articlesTable">
-                <thead class="table-dark">
-                    <tr>
-                        <th>ID</th>
-                        <th>Title</th>
-                        <th>Category</th>
-                        <th>Language</th>
-                        <th>Hits</th>
-                        <th>State</th>
-                        <th>Created Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($this->items as $article): ?>
-                    <tr>
-                        <td>
-                            <span class="badge bg-primary">
-                                <?php echo $article->id; ?>
-                            </span>
-                        </td>
-                        <td>
-                            <strong><?php echo htmlspecialchars($article->title); ?></strong>
-                            <br>
-                            <small class="text-muted"><?php echo htmlspecialchars($article->alias); ?></small>
-                        </td>
-                        <td><?php echo htmlspecialchars($article->category_title ?: 'Uncategorized'); ?></td>
-                        <td>
-                            <?php 
-                            $langClass = '';
-                            $langText = '';
-                            switch ($article->language) {
-                                case 'fr-FR':
-                                    $langClass = 'bg-primary';
-                                    $langText = 'FR';
-                                    break;
-                                case 'en-GB':
-                                    $langClass = 'bg-success';
-                                    $langText = 'EN';
-                                    break;
-                                case '*':
-                                    $langClass = 'bg-secondary';
-                                    $langText = 'All';
-                                    break;
-                                default:
-                                    $langClass = 'bg-warning';
-                                    $langText = strtoupper(substr($article->language, 0, 2));
-                            }
-                            ?>
-                            <span class="badge <?php echo $langClass; ?>">
-                                <?php echo $langText; ?>
-                            </span>
-                        </td>
-                        <td>
-                            <span class="badge bg-success fs-6">
-                                <?php echo number_format($article->hits); ?> views
-                            </span>
-                        </td>
-                        <td>
-                            <span class="badge bg-<?php echo $article->state == 1 ? 'success' : 'danger'; ?>">
-                                <?php echo $article->state == 1 ? 'Published' : 'Unpublished'; ?>
-                            </span>
-                        </td>
-                        <td>
-                            <?php echo date('d/m/Y H:i', strtotime($article->created)); ?>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-        
-        <?php echo $this->pagination->getListFooter(); ?>
-        
-        <?php else: ?>
-        <div class="alert alert-info">
-            <p><?php echo Text::_('No items found.'); ?></p>
-        </div>
-        <?php endif; ?>
-    </div>
-</div>
-
-<input type="hidden" name="task" value="">
-<input type="hidden" name="boxchecked" value="0">
-<?php echo HTMLHelper::_('form.token'); ?>
 </form>
