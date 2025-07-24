@@ -24,12 +24,12 @@ $wa->useScript('bootstrap.collapse');
 ?>
 
 <div class="row">
-    <div class="col-md-12">
+    <div class="col-12">
         <div id="j-main-container" class="j-main-container">
 
             <!-- Page Header -->
             <div class="row mb-4">
-                <div class="col-md-12">
+                <div class="col-12">
                     <div class="card">
                         <div class="card-header">
                             <h2 class="card-title">
@@ -53,48 +53,48 @@ $wa->useScript('bootstrap.collapse');
                     <!-- Overview Statistics -->
                     <?php if ($this->dashboardStats): ?>
                     <div class="row mb-4">
-                        <div class="col-md-2">
-                            <div class="card text-center stats-card">
+                        <div class="col-6 col-sm-6 col-md-4 col-xxl-2">
+                            <div class="card text-center stats-card h-100">
                                 <div class="card-body">
                                     <h5 class="card-title"><?php echo Text::_('COM_JOOMLAHITS_TOTAL_ARTICLES'); ?></h5>
                                     <p class="card-text display-4 text-primary"><?php echo $this->dashboardStats->total_articles; ?></p>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="card text-center stats-card">
+                        <div class="col-6 col-sm-6 col-md-4 col-xxl-2">
+                            <div class="card text-center stats-card h-100">
                                 <div class="card-body">
                                     <h5 class="card-title"><?php echo Text::_('COM_JOOMLAHITS_PUBLISHED'); ?></h5>
                                     <p class="card-text display-4 text-success"><?php echo $this->dashboardStats->published_articles; ?></p>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="card text-center stats-card">
+                        <div class="col-6 col-sm-6 col-md-4 col-xxl-2">
+                            <div class="card text-center stats-card h-100">
                                 <div class="card-body">
                                     <h5 class="card-title"><?php echo Text::_('COM_JOOMLAHITS_TOTAL_VIEWS'); ?></h5>
                                     <p class="card-text display-4 text-info"><?php echo number_format($this->dashboardStats->total_hits); ?></p>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="card text-center stats-card">
+                        <div class="col-6 col-sm-6 col-md-4 col-xxl-2">
+                            <div class="card text-center stats-card h-100">
                                 <div class="card-body">
                                     <h5 class="card-title"><?php echo Text::_('COM_JOOMLAHITS_AVERAGE_VIEWS'); ?></h5>
                                     <p class="card-text display-4 text-warning"><?php echo number_format($this->dashboardStats->average_hits, 1); ?></p>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="card text-center stats-card">
+                        <div class="col-6 col-sm-6 col-md-4 col-xxl-2">
+                            <div class="card text-center stats-card h-100">
                                 <div class="card-body">
                                     <h5 class="card-title"><?php echo Text::_('COM_JOOMLAHITS_MAX_VIEWS'); ?></h5>
                                     <p class="card-text display-4 text-danger"><?php echo number_format($this->dashboardStats->max_hits); ?></p>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="card text-center stats-card">
+                        <div class="col-6 col-sm-6 col-md-4 col-xxl-2">
+                            <div class="card text-center stats-card h-100">
                                 <div class="card-body">
                                     <h5 class="card-title"><?php echo Text::_('COM_JOOMLAHITS_WITH_VIEWS'); ?></h5>
                                     <p class="card-text display-4 text-secondary"><?php echo $this->dashboardStats->articles_with_hits; ?></p>
@@ -107,8 +107,8 @@ $wa->useScript('bootstrap.collapse');
                     <!-- Articles without clicks rate -->
                     <?php if ($this->articlesWithoutClicks): ?>
                     <div class="row mb-4">
-                        <div class="col-md-4">
-                            <div class="card stats-card">
+                        <div class="col-12 col-lg-4 mb-3 mb-lg-0">
+                            <div class="card stats-card h-100">
                                 <div class="card-header">
                                     <h5>📊 <?php echo Text::_('COM_JOOMLAHITS_ARTICLES_WITHOUT_CLICKS_TITLE'); ?></h5>
                                 </div>
@@ -121,16 +121,16 @@ $wa->useScript('bootstrap.collapse');
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-8">
+                        <div class="col-12 col-lg-8">
                             <!-- Period comparison -->
                             <?php if ($this->periodComparison): ?>
-                            <div class="card stats-card">
+                            <div class="card stats-card h-100">
                                 <div class="card-header">
                                     <h5>📈 <?php echo Text::_('COM_JOOMLAHITS_MONTHLY_COMPARISON_TITLE'); ?></h5>
                                 </div>
                                 <div class="card-body">
                                     <div class="row">
-                                        <div class="col-md-4">
+                                        <div class="col-12 col-md-4 mb-3 mb-md-0">
                                             <h6><?php echo Text::_('COM_JOOMLAHITS_ARTICLES_CREATED'); ?></h6>
                                             <h4><?php echo $this->periodComparison->current_period->articles_created; ?></h4>
                                             <small class="<?php echo $this->periodComparison->articles_change >= 0 ? 'text-success' : 'text-danger'; ?>">
@@ -138,7 +138,7 @@ $wa->useScript('bootstrap.collapse');
                                                 (<?php echo $this->periodComparison->articles_change_percent; ?>%)
                                             </small>
                                         </div>
-                                        <div class="col-md-4">
+                                        <div class="col-12 col-md-4 mb-3 mb-md-0">
                                             <h6><?php echo Text::_('COM_JOOMLAHITS_TOTAL_VIEWS'); ?></h6>
                                             <h4><?php echo number_format($this->periodComparison->current_period->total_hits); ?></h4>
                                             <small class="<?php echo $this->periodComparison->hits_change >= 0 ? 'text-success' : 'text-danger'; ?>">
@@ -146,7 +146,7 @@ $wa->useScript('bootstrap.collapse');
                                                 (<?php echo $this->periodComparison->hits_change_percent; ?>%)
                                             </small>
                                         </div>
-                                        <div class="col-md-4">
+                                        <div class="col-12 col-md-4">
                                             <h6><?php echo Text::_('COM_JOOMLAHITS_PREVIOUS_MONTH'); ?></h6>
                                             <p><?php echo Text::_('COM_JOOMLAHITS_ARTICLES_CREATED'); ?>: <?php echo $this->periodComparison->previous_period->articles_created; ?></p>
                                             <p><?php echo Text::_('COM_JOOMLAHITS_VIEWS'); ?>: <?php echo number_format($this->periodComparison->previous_period->total_hits); ?></p>
@@ -190,8 +190,8 @@ $wa->useScript('bootstrap.collapse');
                                         $languageIcon = '🌍';
                                 }
                         ?>
-                        <div class="col-md-6">
-                            <div class="card stats-card">
+                        <div class="col-12 col-lg-6 mb-4 mb-lg-0">
+                            <div class="card stats-card h-100">
                                 <div class="card-header">
                                     <h5><?php echo $languageIcon; ?> Top 10 <?php echo $this->escape($languageTitle); ?> Articles</h5>
                                 </div>
@@ -233,7 +233,7 @@ $wa->useScript('bootstrap.collapse');
                     </div>
                     <?php elseif ($this->params->get('show_language_stats', 1)): ?>
                     <div class="row mb-4">
-                        <div class="col-md-12">
+                        <div class="col-12">
                             <div class="alert alert-info">
                                 <span class="icon-info-circle" aria-hidden="true"></span>
                                 <span><?php echo Text::_('COM_JOOMLAHITS_NO_LANGUAGE_ARTICLES'); ?></span>
@@ -244,9 +244,9 @@ $wa->useScript('bootstrap.collapse');
 
                     <!-- Enhanced Category Statistics -->
                     <?php if ($this->params->get('show_category_stats', 1)): ?>
-                    <div class="col mb-6">
-                        <div class="col-md-8">
-                            <div class="card stats-card">
+                    <div class="row mb-4 justify-content-center">
+                        <div class="col-12 col-xl-8">
+                            <div class="card stats-card h-100">
                                 <div class="card-header">
                                     <h5>📊 <?php echo Text::_('COM_JOOMLAHITS_CATEGORY_RANKING_TITLE'); ?></h5>
                                 </div>
@@ -300,10 +300,13 @@ $wa->useScript('bootstrap.collapse');
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    <?php endif; ?>
+
                     <!-- Top Articles by Category -->
                     <?php if (!empty($this->topArticlesByCategory)): ?>
                     <div class="row mb-4">
-                        <div class="col-md-12">
+                        <div class="col-12">
                             <div class="card stats-card">
                                 <div class="card-header">
                                     <h5>🏆 <?php echo Text::_('COM_JOOMLAHITS_TOP_ARTICLES_BY_CATEGORY'); ?></h5>
@@ -316,16 +319,43 @@ $wa->useScript('bootstrap.collapse');
                                             if ($categoryCount >= 4) break; // Limit to 4 categories for display
                                             if (!empty($this->topArticlesByCategory[$category->category_id])):
                                         ?>
-                                            <div class="col-md-3">
-                                                <h6 class="border-bottom pb-2"><?php echo $this->escape($category->category_name); ?></h6>
-                                                <?php foreach ($this->topArticlesByCategory[$category->category_id] as $article): ?>
-                                                    <div class="mb-2">
-                                                        <a href="<?php echo Route::_('index.php?option=com_content&task=article.edit&id=' . $article->id); ?>" class="text-decoration-none" title="Edit Article">
-                                                            <small><?php echo $this->escape(strlen($article->title) > 30 ? substr($article->title, 0, 30) . '...' : $article->title); ?></small>
-                                                        </a>
-                                                        <br><span class="badge bg-secondary"><?php echo number_format($article->hits); ?> <?php echo Text::_('COM_JOOMLAHITS_VIEWS_SUFFIX'); ?></span>
+                                            <div class="col-12 col-md-6 col-xl-3 mb-4">
+                                                <div class="h-100">
+                                                    <div class="border-bottom pb-2 mb-3">
+                                                        <h6 class="mb-0 text-primary fw-bold">
+                                                            <i class="icon-folder"></i> <?php echo $this->escape($category->category_name); ?>
+                                                        </h6>
                                                     </div>
-                                                <?php endforeach; ?>
+                                                    <div class="list-group list-group-flush">
+                                                        <?php 
+                                                        $articleRank = 1;
+                                                        foreach ($this->topArticlesByCategory[$category->category_id] as $article): 
+                                                        ?>
+                                                            <div class="list-group-item px-0 py-2 border-0 bg-transparent">
+                                                                <div class="d-flex align-items-start">
+                                                                    <span class="badge bg-<?php echo $articleRank <= 3 ? 'warning' : 'secondary'; ?> me-2 mt-1" style="min-width: 24px;">
+                                                                        <?php echo $articleRank; ?>
+                                                                    </span>
+                                                                    <div class="flex-grow-1">
+                                                                        <a href="<?php echo Route::_('index.php?option=com_content&task=article.edit&id=' . $article->id); ?>" 
+                                                                           class="text-decoration-none text-white fw-medium" 
+                                                                           title="<?php echo $this->escape($article->title); ?>">
+                                                                            <?php echo $this->escape(strlen($article->title) > 35 ? substr($article->title, 0, 35) . '...' : $article->title); ?>
+                                                                        </a>
+                                                                        <div class="mt-1">
+                                                                            <span class="badge bg-info">
+                                                                                <i class="icon-eye"></i> <?php echo number_format($article->hits); ?>
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        <?php 
+                                                        $articleRank++;
+                                                        endforeach; 
+                                                        ?>
+                                                    </div>
+                                                </div>
                                             </div>
                                         <?php 
                                             endif;
@@ -338,21 +368,19 @@ $wa->useScript('bootstrap.collapse');
                         </div>
                     </div>
                     <?php endif; ?>
-                    <?php endif; ?>
-
                     <!-- Monthly Statistics by Year -->
                     <?php if ($this->params->get('show_monthly_stats', 1) && !empty($this->availableYears)): ?>
                     <div class="row mb-4">
-                        <div class="col-md-12">
+                        <div class="col-12">
                             <div class="card stats-card">
                                 <div class="card-header">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h5>📅 <?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_TITLE'); ?></h5>
-                                        <div class="year-selector">
-                                            <form method="get" class="d-inline">
+                                    <div class="d-flex align-items-center">
+                                        <h5 class="mb-0">📅 <?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_TITLE'); ?></h5>
+                                        <div class="ms-auto">
+                                            <form method="get" class="d-inline" id="yearSelectorForm">
                                                 <input type="hidden" name="option" value="com_joomlahits">
                                                 <input type="hidden" name="view" value="dashboard">
-                                                <select name="year" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
+                                                <select name="year" class="form-select form-select-sm" id="yearSelector" style="width: auto;">
                                                     <?php foreach ($this->availableYears as $year): ?>
                                                         <option value="<?php echo $year->year; ?>" <?php echo ($year->year == $this->selectedYear) ? 'selected' : ''; ?>>
                                                             <?php echo $year->year; ?> (<?php echo $year->article_count; ?> articles)
@@ -365,30 +393,37 @@ $wa->useScript('bootstrap.collapse');
                                 </div>
                                 <div class="card-body">
                                     <?php if (!empty($this->monthlyStats)): ?>
-                                        <div class="row">
-                                            <!-- Summary Stats -->
-                                            <div class="col-md-3 mb-3">
-                                                <?php 
-                                                $totalArticles = array_sum(array_column($this->monthlyStats, 'articles_created'));
-                                                $totalViews = array_sum(array_column($this->monthlyStats, 'total_views'));
-                                                $avgViews = $totalArticles > 0 ? round($totalViews / $totalArticles, 1) : 0;
-                                                ?>
-                                                <div class="text-center">
-                                                    <h4 class="text-primary"><?php echo $totalArticles; ?></h4>
-                                                    <small><?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_ARTICLES_CREATED'); ?> <?php echo $this->selectedYear; ?></small>
-                                                </div>
-                                                <div class="text-center mt-2">
-                                                    <h4 class="text-success"><?php echo number_format($totalViews); ?></h4>
-                                                    <small><?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_TOTAL_VIEWS'); ?></small>
-                                                </div>
-                                                <div class="text-center mt-2">
-                                                    <h4 class="text-info"><?php echo number_format($avgViews, 1); ?></h4>
-                                                    <small><?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_AVERAGE_VIEWS'); ?></small>
+                                        <?php 
+                                        $totalArticles = array_sum(array_column($this->monthlyStats, 'articles_created'));
+                                        $totalViews = array_sum(array_column($this->monthlyStats, 'total_views'));
+                                        $avgViews = $totalArticles > 0 ? round($totalViews / $totalArticles, 1) : 0;
+                                        ?>
+                                        
+                                        <!-- Summary Stats - Horizontal Layout -->
+                                        <div class="row mb-4">
+                                            <div class="col-12 col-sm-6 col-lg-4 mb-2 mb-lg-0">
+                                                <div class="d-flex align-items-center justify-content-center justify-content-sm-start">
+                                                    <span class="text-nowrap"><?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_ARTICLES_CREATED'); ?> <?php echo $this->selectedYear; ?> : </span>
+                                                    <strong class="text-primary ms-2"><?php echo $totalArticles; ?></strong>
                                                 </div>
                                             </div>
-                                            
-                                            <!-- Monthly Breakdown -->
-                                            <div class="col-md-9">
+                                            <div class="col-12 col-sm-6 col-lg-4 mb-2 mb-lg-0">
+                                                <div class="d-flex align-items-center justify-content-center justify-content-sm-start">
+                                                    <span class="text-nowrap"><?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_TOTAL_VIEWS'); ?> : </span>
+                                                    <strong class="text-success ms-2"><?php echo number_format($totalViews); ?></strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-12 col-sm-12 col-lg-4">
+                                                <div class="d-flex align-items-center justify-content-center justify-content-lg-start">
+                                                    <span class="text-nowrap"><?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_AVERAGE_VIEWS'); ?> : </span>
+                                                    <strong class="text-info ms-2"><?php echo number_format($avgViews, 1); ?></strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Monthly Breakdown -->
+                                        <div class="row">
+                                            <div class="col-12">
                                                 <div class="table-responsive">
                                                     <table class="table table-striped table-sm">
                                                         <thead>
@@ -458,8 +493,8 @@ $wa->useScript('bootstrap.collapse');
 
                     <div class="row">
                         <!-- Recent Activity -->
-                        <div class="col-md-6">
-                            <div class="card stats-card">
+                        <div class="col-12 col-xl-6 mb-4 mb-xl-0">
+                            <div class="card stats-card h-100">
                                 <div class="card-header">
                                     <h5>🕒 <?php echo Text::_('COM_JOOMLAHITS_RECENT_ACTIVITY_TITLE'); ?></h5>
                                 </div>
@@ -500,8 +535,8 @@ $wa->useScript('bootstrap.collapse');
 
                         <!-- Language Statistics -->
                         <?php if ($this->params->get('show_language_stats', 1)): ?>
-                        <div class="col-md-6">
-                            <div class="card stats-card">
+                        <div class="col-12 col-xl-6">
+                            <div class="card stats-card h-100">
                                 <div class="card-header">
                                     <h5>🌍 <?php echo Text::_('COM_JOOMLAHITS_LANGUAGE_STATS_TITLE'); ?></h5>
                                 </div>
@@ -546,3 +581,21 @@ $wa->useScript('bootstrap.collapse');
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const yearSelector = document.getElementById('yearSelector');
+    const yearForm = document.getElementById('yearSelectorForm');
+    
+    if (yearSelector && yearForm) {
+        yearSelector.addEventListener('change', function(event) {
+            event.preventDefault();
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('year', this.value);
+            const newUrl = window.location.pathname + '?' + urlParams.toString();
+            window.history.pushState({}, '', newUrl);          
+            window.location.reload();
+        });
+    }
+});
+</script>

@@ -47,10 +47,10 @@ use Joomla\CMS\Language\Text;
                             <div class="mb-3">
                                 <i class="icon-list" style="font-size: 48px; color: #007cba;"></i>
                             </div>
-                            <h4 class="card-title">Articles List</h4>
-                            <p class="card-text">View and manage all articles with their statistics, filters, and detailed information.</p>
+                            <h4 class="card-title"><?php echo Text::_('COM_JOOMLAHITS_ARTICLES_LIST_TITLE'); ?></h4>
+                            <p class="card-text"><?php echo Text::_('COM_JOOMLAHITS_ARTICLES_LIST_DESC'); ?></p>
                             <a href="<?php echo Route::_('index.php?option=com_joomlahits&view=articles'); ?>" class="btn btn-primary btn-lg">
-                                <i class="icon-list"></i> Go to Articles List
+                                <i class="icon-list"></i> <?php echo Text::_('COM_JOOMLAHITS_GO_TO_ARTICLES_LIST'); ?>
                             </a>
                         </div>
                     </div>
@@ -62,10 +62,10 @@ use Joomla\CMS\Language\Text;
                             <div class="mb-3">
                                 <i class="icon-dashboard" style="font-size: 48px; color: #28a745;"></i>
                             </div>
-                            <h4 class="card-title">Dashboard</h4>
-                            <p class="card-text">View comprehensive statistics, charts and analytics about your articles performance.</p>
+                            <h4 class="card-title"><?php echo Text::_('COM_JOOMLAHITS_DASHBOARD_TITLE'); ?></h4>
+                            <p class="card-text"><?php echo Text::_('COM_JOOMLAHITS_DASHBOARD_DESC'); ?></p>
                             <a href="<?php echo Route::_('index.php?option=com_joomlahits&view=dashboard'); ?>" class="btn btn-success btn-lg">
-                                <i class="icon-dashboard"></i> Go to Dashboard
+                                <i class="icon-dashboard"></i> <?php echo Text::_('COM_JOOMLAHITS_GO_TO_DASHBOARD'); ?>
                             </a>
                         </div>
                     </div>
