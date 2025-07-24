@@ -43,13 +43,13 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                         <div class="card">
                             <div class="card-header">
                                 <h2 class="card-title">
-                                    <i class="icon-list"></i> Articles List
+                                    <i class="icon-list"></i> <?php echo Text::_('COM_JOOMLAHITS_ARTICLES_LIST_TITLE'); ?>
                                 </h2>
                             </div>
                             <div class="card-body">
-                                <p class="card-text">Manage and view statistics for all your articles.</p>
+                                <p class="card-text"><?php echo Text::_('COM_JOOMLAHITS_ARTICLES_LIST_SUBTITLE'); ?></p>
                                 <a href="<?php echo Route::_('index.php?option=com_joomlahits&view=controlpanel'); ?>" class="btn btn-secondary">
-                                    <i class="icon-arrow-left"></i> Back to Control Panel
+                                    <i class="icon-arrow-left"></i> <?php echo Text::_('COM_JOOMLAHITS_BACK_TO_CONTROL_PANEL'); ?>
                                 </a>
                             </div>
                         </div>
@@ -69,13 +69,13 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                                id="filter_search" 
                                                class="form-control" 
                                                value="<?php echo $this->escape($this->state->get('filter.search')); ?>" 
-                                               placeholder="<?php echo Text::_('Search by title or category...'); ?>"
+                                               placeholder="<?php echo Text::_('COM_JOOMLAHITS_SEARCH_PLACEHOLDER'); ?>"
                                                onchange="this.form.submit();">
                                     </div>
                                     <div class="col-md-3">
-                                        <label for="filter_category_id" class="form-label">Category</label>
+                                        <label for="filter_category_id" class="form-label"><?php echo Text::_('COM_JOOMLAHITS_FILTER_CATEGORY'); ?></label>
                                         <select name="filter_category_id" id="filter_category_id" class="form-select" onchange="this.form.submit();">
-                                            <option value=""><?php echo Text::_('- All categories -'); ?></option>
+                                            <option value=""><?php echo Text::_('COM_JOOMLAHITS_ALL_CATEGORIES'); ?></option>
                                             <?php if ($this->categories): foreach ($this->categories as $category): ?>
                                                 <option value="<?php echo $category->value; ?>" 
                                                         <?php echo $this->state->get('filter.category_id') == $category->value ? 'selected' : ''; ?>>
@@ -85,9 +85,9 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                         </select>
                                     </div>
                                     <div class="col-md-2">
-                                        <label for="filter_published" class="form-label">Status</label>
+                                        <label for="filter_published" class="form-label"><?php echo Text::_('COM_JOOMLAHITS_FILTER_STATUS'); ?></label>
                                         <select name="filter_published" id="filter_published" class="form-select" onchange="this.form.submit();">
-                                            <option value=""><?php echo Text::_('- All states -'); ?></option>
+                                            <option value=""><?php echo Text::_('COM_JOOMLAHITS_ALL_STATES'); ?></option>
                                             <option value="1" <?php echo $this->state->get('filter.published') === '1' ? 'selected' : ''; ?>>
                                                 <?php echo Text::_('Published'); ?>
                                             </option>
@@ -97,9 +97,9 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                         </select>
                                     </div>
                                     <div class="col-md-3">
-                                        <label for="filter_language" class="form-label">Language</label>
+                                        <label for="filter_language" class="form-label"><?php echo Text::_('COM_JOOMLAHITS_FILTER_LANGUAGE'); ?></label>
                                         <select name="filter_language" id="filter_language" class="form-select" onchange="this.form.submit();">
-                                            <option value=""><?php echo Text::_('- All languages -'); ?></option>
+                                            <option value=""><?php echo Text::_('COM_JOOMLAHITS_ALL_LANGUAGES'); ?></option>
                                             <?php if ($this->languages): foreach ($this->languages as $language): ?>
                                                 <option value="<?php echo $language->value; ?>" 
                                                         <?php echo $this->state->get('filter.language') == $language->value ? 'selected' : ''; ?>>
@@ -122,7 +122,7 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                 <?php else : ?>
                     <table class="table" id="articleList">
                         <caption class="visually-hidden">
-                            Articles avec statistiques de vues
+                            <?php echo Text::_('COM_JOOMLAHITS_ARTICLES_CAPTION'); ?>
                         </caption>
                         <thead>
                             <tr>
@@ -131,35 +131,35 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                 </td>
                                 <th scope="col" class="w-1 text-center d-none d-md-table-cell">
                                     <a href="#" onclick="Joomla.tableOrdering('a.state','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>')">
-                                        Status <?php if ($listOrder == 'a.state') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
+                                        <?php echo Text::_('COM_JOOMLAHITS_STATUS'); ?> <?php if ($listOrder == 'a.state') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
                                     </a>
                                 </th>
                                 <th scope="col">
                                     <a href="#" onclick="Joomla.tableOrdering('a.title','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>','')">
-                                        Title <?php if ($listOrder == 'a.title') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
+                                        <?php echo Text::_('COM_JOOMLAHITS_TITLE'); ?> <?php if ($listOrder == 'a.title') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
                                     </a>
                                 </th>
                                 <th scope="col" class="w-20 d-none d-md-table-cell">
-                                    Description
+                                    <?php echo Text::_('COM_JOOMLAHITS_DESCRIPTION'); ?>
                                 </th>
                                 <th scope="col" class="w-15 d-none d-md-table-cell">
                                     <a href="#" onclick="Joomla.tableOrdering('category_title','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>','')">
-                                        Category <?php if ($listOrder == 'category_title') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
+                                        <?php echo Text::_('COM_JOOMLAHITS_CATEGORY'); ?> <?php if ($listOrder == 'category_title') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
                                     </a>
                                 </th>
                                 <th scope="col" class="w-10 d-none d-md-table-cell text-center">
                                     <a href="#" onclick="Joomla.tableOrdering('a.language','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>','')">
-                                        Language <?php if ($listOrder == 'a.language') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
+                                        <?php echo Text::_('COM_JOOMLAHITS_LANGUAGE'); ?> <?php if ($listOrder == 'a.language') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
                                     </a>
                                 </th>
                                 <th scope="col" class="w-10 d-none d-md-table-cell text-center">
                                     <a href="#" onclick="Joomla.tableOrdering('a.hits','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>','')">
-                                        Views <?php if ($listOrder == 'a.hits') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
+                                        <?php echo Text::_('COM_JOOMLAHITS_VIEWS'); ?> <?php if ($listOrder == 'a.hits') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
                                     </a>
                                 </th>
                                 <th scope="col" class="w-10 d-none d-lg-table-cell">
                                     <a href="#" onclick="Joomla.tableOrdering('a.created','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>','')">
-                                        Created Date <?php if ($listOrder == 'a.created') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
+                                        <?php echo Text::_('COM_JOOMLAHITS_CREATED_DATE'); ?> <?php if ($listOrder == 'a.created') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
                                     </a>
                                 </th>
                                 <th scope="col" class="w-5 d-none d-lg-table-cell">
@@ -219,13 +219,13 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                                         $languageDisplay = '';
                                         switch($item->language) {
                                             case 'fr-FR':
-                                                $languageDisplay = 'French';
+                                                $languageDisplay = Text::_('COM_JOOMLAHITS_LANGUAGE_FRENCH');
                                                 break;
                                             case 'en-GB':
-                                                $languageDisplay = 'English';
+                                                $languageDisplay = Text::_('COM_JOOMLAHITS_LANGUAGE_ENGLISH');
                                                 break;
                                             case '*':
-                                                $languageDisplay = 'All';
+                                                $languageDisplay = Text::_('COM_JOOMLAHITS_LANGUAGE_ALL');
                                                 break;
                                             default:
                                                 $languageDisplay = $item->language;
