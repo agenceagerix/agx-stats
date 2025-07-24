@@ -327,4 +327,85 @@ class DashboardModel extends BaseDatabaseModel
 
         return $result;
     }
+
+    /**
+     * Get available years with articles
+     * 
+     * @return array Array of years with article counts
+     */
+    public function getAvailableYears()
+    {
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true);
+
+        $query->select([
+            'YEAR(' . $db->quoteName('created') . ') as year',
+            'COUNT(' . $db->quoteName('id') . ') as article_count'
+        ])
+        ->from($db->quoteName('#__content'))
+        ->where($db->quoteName('state') . ' = 1')
+        ->group('YEAR(' . $db->quoteName('created') . ')')
+        ->order('year DESC');
+
+        $db->setQuery($query);
+        return $db->loadObjectList();
+    }
+
+    /**
+     * Get monthly statistics for a specific year
+     * 
+     * @param int $year The year to get statistics for
+     * @return array Array of monthly statistics
+     */
+    public function getMonthlyStats($year)
+    {
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true);
+
+        // Create a query for each month (1-12)
+        $monthlyStats = [];
+        
+        for ($month = 1; $month <= 12; $month++) {
+            $query->clear();
+            $query->select([
+                'COUNT(' . $db->quoteName('id') . ') as articles_created',
+                'SUM(' . $db->quoteName('hits') . ') as total_views',
+                'AVG(' . $db->quoteName('hits') . ') as average_views'
+            ])
+            ->from($db->quoteName('#__content'))
+            ->where($db->quoteName('state') . ' = 1')
+            ->where('YEAR(' . $db->quoteName('created') . ') = ' . (int) $year)
+            ->where('MONTH(' . $db->quoteName('created') . ') = ' . $month);
+
+            $db->setQuery($query);
+            $result = $db->loadObject();
+            
+            $monthlyStats[] = (object) [
+                'month' => $month,
+                'month_name' => $this->getMonthName($month),
+                'articles_created' => (int) $result->articles_created,
+                'total_views' => (int) ($result->total_views ?: 0),
+                'average_views' => round($result->average_views ?: 0, 1)
+            ];
+        }
+
+        return $monthlyStats;
+    }
+
+    /**
+     * Get month name in French
+     * 
+     * @param int $month Month number (1-12)
+     * @return string Month name in French
+     */
+    private function getMonthName($month)
+    {
+        $months = [
+            1 => 'Janvier', 2 => 'Février', 3 => 'Mars', 4 => 'Avril',
+            5 => 'Mai', 6 => 'Juin', 7 => 'Juillet', 8 => 'Août',
+            9 => 'Septembre', 10 => 'Octobre', 11 => 'Novembre', 12 => 'Décembre'
+        ];
+        
+        return $months[$month] ?? '';
+    }
 }

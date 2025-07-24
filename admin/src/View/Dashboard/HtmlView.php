@@ -79,6 +79,24 @@ class HtmlView extends BaseHtmlView
     protected $periodComparison;
 
     /**
+     * Available years with articles
+     * @var array
+     */
+    protected $availableYears;
+
+    /**
+     * Monthly statistics for selected year
+     * @var array
+     */
+    protected $monthlyStats;
+
+    /**
+     * Selected year for monthly statistics
+     * @var int
+     */
+    protected $selectedYear;
+
+    /**
      * Component parameters
      * @var \Joomla\Registry\Registry
      */
@@ -135,6 +153,19 @@ class HtmlView extends BaseHtmlView
         
         // Temporal stats
         $this->periodComparison = $model->getPeriodComparison('month');
+        
+        // Monthly stats - only if enabled in configuration
+        if ($this->params->get('show_monthly_stats', 1)) {
+            // Get available years and monthly statistics
+            $this->availableYears = $model->getAvailableYears();
+            
+            // Get selected year from request, default to current year
+            $input = Factory::getApplication()->input;
+            $this->selectedYear = $input->getInt('year', date('Y'));
+            
+            // Get monthly statistics for selected year
+            $this->monthlyStats = $model->getMonthlyStats($this->selectedYear);
+        }
         
         $this->addToolbar();
         parent::display($tpl);

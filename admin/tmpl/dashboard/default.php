@@ -17,6 +17,7 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Router\Route;
+use Joomla\CMS\Language\Text;
 
 $wa = $this->getDocument()->getWebAssetManager();
 $wa->useScript('bootstrap.collapse');
@@ -337,6 +338,122 @@ $wa->useScript('bootstrap.collapse');
                         </div>
                     </div>
                     <?php endif; ?>
+                    <?php endif; ?>
+
+                    <!-- Monthly Statistics by Year -->
+                    <?php if ($this->params->get('show_monthly_stats', 1) && !empty($this->availableYears)): ?>
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card stats-card">
+                                <div class="card-header">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5>📅 <?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_TITLE'); ?></h5>
+                                        <div class="year-selector">
+                                            <form method="get" class="d-inline">
+                                                <input type="hidden" name="option" value="com_joomlahits">
+                                                <input type="hidden" name="view" value="dashboard">
+                                                <select name="year" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
+                                                    <?php foreach ($this->availableYears as $year): ?>
+                                                        <option value="<?php echo $year->year; ?>" <?php echo ($year->year == $this->selectedYear) ? 'selected' : ''; ?>>
+                                                            <?php echo $year->year; ?> (<?php echo $year->article_count; ?> articles)
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <?php if (!empty($this->monthlyStats)): ?>
+                                        <div class="row">
+                                            <!-- Summary Stats -->
+                                            <div class="col-md-3 mb-3">
+                                                <?php 
+                                                $totalArticles = array_sum(array_column($this->monthlyStats, 'articles_created'));
+                                                $totalViews = array_sum(array_column($this->monthlyStats, 'total_views'));
+                                                $avgViews = $totalArticles > 0 ? round($totalViews / $totalArticles, 1) : 0;
+                                                ?>
+                                                <div class="text-center">
+                                                    <h4 class="text-primary"><?php echo $totalArticles; ?></h4>
+                                                    <small><?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_ARTICLES_CREATED'); ?> <?php echo $this->selectedYear; ?></small>
+                                                </div>
+                                                <div class="text-center mt-2">
+                                                    <h4 class="text-success"><?php echo number_format($totalViews); ?></h4>
+                                                    <small><?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_TOTAL_VIEWS'); ?></small>
+                                                </div>
+                                                <div class="text-center mt-2">
+                                                    <h4 class="text-info"><?php echo number_format($avgViews, 1); ?></h4>
+                                                    <small><?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_AVERAGE_VIEWS'); ?></small>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Monthly Breakdown -->
+                                            <div class="col-md-9">
+                                                <div class="table-responsive">
+                                                    <table class="table table-striped table-sm">
+                                                        <thead>
+                                                            <tr>
+                                                                <th><?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_MONTH'); ?></th>
+                                                                <th class="text-center"><?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_ARTICLES_CREATED_COL'); ?></th>
+                                                                <th class="text-center"><?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_TOTAL_VIEWS_COL'); ?></th>
+                                                                <th class="text-center"><?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_AVERAGE_VIEWS_COL'); ?></th>
+                                                                <th class="text-center"><?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_PERFORMANCE'); ?></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <?php foreach ($this->monthlyStats as $monthStat): ?>
+                                                                <tr>
+                                                                    <td>
+                                                                        <strong><?php echo $monthStat->month_name; ?></strong>
+                                                                    </td>
+                                                                    <td class="text-center">
+                                                                        <?php if ($monthStat->articles_created > 0): ?>
+                                                                            <span class="badge bg-primary"><?php echo $monthStat->articles_created; ?></span>
+                                                                        <?php else: ?>
+                                                                            <span class="text-muted">-</span>
+                                                                        <?php endif; ?>
+                                                                    </td>
+                                                                    <td class="text-center">
+                                                                        <?php if ($monthStat->total_views > 0): ?>
+                                                                            <span class="badge bg-info"><?php echo number_format($monthStat->total_views); ?></span>
+                                                                        <?php else: ?>
+                                                                            <span class="text-muted">-</span>
+                                                                        <?php endif; ?>
+                                                                    </td>
+                                                                    <td class="text-center">
+                                                                        <?php if ($monthStat->average_views > 0): ?>
+                                                                            <?php echo number_format($monthStat->average_views, 1); ?>
+                                                                        <?php else: ?>
+                                                                            <span class="text-muted">-</span>
+                                                                        <?php endif; ?>
+                                                                    </td>
+                                                                    <td class="text-center">
+                                                                        <?php if ($monthStat->articles_created > 0): ?>
+                                                                            <?php 
+                                                                            $maxArticles = max(array_column($this->monthlyStats, 'articles_created'));
+                                                                            $performance = $maxArticles > 0 ? ($monthStat->articles_created / $maxArticles) * 100 : 0;
+                                                                            ?>
+                                                                            <div class="progress" style="height: 8px; width: 60px; margin: 0 auto;">
+                                                                                <div class="progress-bar bg-success" role="progressbar" style="width: <?php echo $performance; ?>%"></div>
+                                                                            </div>
+                                                                        <?php else: ?>
+                                                                            <span class="text-muted">-</span>
+                                                                        <?php endif; ?>
+                                                                    </td>
+                                                                </tr>
+                                                            <?php endforeach; ?>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php else: ?>
+                                        <p class="text-muted text-center"><?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_NO_DATA'); ?> <?php echo $this->selectedYear; ?>.</p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <?php endif; ?>
 
                     <div class="row">
