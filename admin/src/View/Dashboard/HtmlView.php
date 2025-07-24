@@ -13,13 +13,13 @@
 	/    \( (_ \ ) _) /    /( (__  ) _)   /    \( (_ \ ) _)  )   / )(  )  (
 	\_/\_/ \___/(____)\_)__) \___)(____)  \_/\_/ \___/(____)(__\_)(__)(_/\_)
 /------------------------------------------------------------------------------------------------------*/
-namespace Piedpiper\Component\JoomlaHits\Administrator\View\Dashboard;
+namespace Joomla\Component\JoomlaHits\Administrator\View\Dashboard;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use Piedpiper\Component\JoomlaHits\Administrator\Model\DashboardModel;
+use Joomla\Component\JoomlaHits\Administrator\Model\DashboardModel;
 
 class HtmlView extends BaseHtmlView
 {
@@ -96,7 +96,6 @@ class HtmlView extends BaseHtmlView
     {
         /** @var DashboardModel $model */
         $model = $this->getModel();
-        
         // Get component parameters
         $this->params = ComponentHelper::getParams('com_joomlahits');
         

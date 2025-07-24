@@ -4,7 +4,7 @@
 	@build			22nd July, 2025
 	@created		21st July, 2025
 	@package		JoomlaHits
-	@subpackage		CpanelModel.php
+	@subpackage		ArticlesModel.php
 	@author			Hugo Dantas - Agence Agerix <https://www.agerix.fr>
 	@copyright		Copyright (C) 2025. All Rights Reserved
 	@license		GNU/GPL Version 2 or later - http://www.gnu.org/licenses/gpl-2.0.html
@@ -13,13 +13,15 @@
 	/    \( (_ \ ) _) /    /( (__  ) _)   /    \( (_ \ ) _)  )   / )(  )  (
 	\_/\_/ \___/(____)\_)__) \___)(____)  \_/\_/ \___/(____)(__\_)(__)(_/\_)
 /------------------------------------------------------------------------------------------------------*/
-namespace Piedpiper\Component\JoomlaHits\Administrator\Model;
+namespace Joomla\Component\JoomlaHits\Administrator\Model;
+
+defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
 
-class CpanelModel extends ListModel
+class ArticlesModel extends ListModel
 {
     /**
      * Constructor

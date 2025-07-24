@@ -1,5 +1,5 @@
 <?php
-namespace Piedpiper\Component\JoomlaHits\Administrator\Extension;
+namespace Joomla\Component\JoomlaHits\Administrator\Extension;
 
 use Joomla\CMS\Extension\BootableExtensionInterface;
 use Joomla\CMS\Extension\MVCComponent;

@@ -13,7 +13,9 @@
 	/    \( (_ \ ) _) /    /( (__  ) _)   /    \( (_ \ ) _)  )   / )(  )  (
 	\_/\_/ \___/(____)\_)__) \___)(____)  \_/\_/ \___/(____)(__\_)(__)(_/\_)
 /------------------------------------------------------------------------------------------------------*/
-namespace Piedpiper\Component\JoomlaHits\Administrator\Controller;
+namespace Joomla\Component\JoomlaHits\Administrator\Controller;
+
+defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\Controller\BaseController;
 

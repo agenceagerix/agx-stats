@@ -13,13 +13,13 @@
 	/    \( (_ \ ) _) /    /( (__  ) _)   /    \( (_ \ ) _)  )   / )(  )  (
 	\_/\_/ \___/(____)\_)__) \___)(____)  \_/\_/ \___/(____)(__\_)(__)(_/\_)
 /------------------------------------------------------------------------------------------------------*/
-namespace Piedpiper\Component\JoomlaHits\Administrator\View\Cpanel;
+namespace Joomla\Component\JoomlaHits\Administrator\View\Articles;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use Piedpiper\Component\JoomlaHits\Administrator\Model\CpanelModel;
+use Joomla\Component\JoomlaHits\Administrator\Model\ArticlesModel;
 
 class HtmlView extends BaseHtmlView
 {
@@ -71,9 +71,8 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null) : void
     {
-        /** @var CpanelModel $model */
+        /** @var ArticlesModel $model */
         $model = $this->getModel();
-        
         // Get component parameters
         $this->params = ComponentHelper::getParams('com_joomlahits');
         

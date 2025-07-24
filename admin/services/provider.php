@@ -9,14 +9,14 @@ use Joomla\CMS\Extension\Service\Provider\MVCFactory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
-use Piedpiper\Component\JoomlaHits\Administrator\Extension\JoomlaHitsComponent;
+use Joomla\Component\JoomlaHits\Administrator\Extension\JoomlaHitsComponent;
 
 return new class implements ServiceProviderInterface
 {
 	public function register(Container $container)
 	{
-        $container->registerServiceProvider(new MVCFactory('\\Piedpiper\\Component\\JoomlaHits'));
-        $container->registerServiceProvider(new ComponentDispatcherFactory('\\Piedpiper\\Component\\JoomlaHits'));
+        $container->registerServiceProvider(new MVCFactory('\\Joomla\\Component\\JoomlaHits'));
+        $container->registerServiceProvider(new ComponentDispatcherFactory('\\Joomla\\Component\\JoomlaHits'));
 
         $container->set(
             ComponentInterface::class,

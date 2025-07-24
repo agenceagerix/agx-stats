@@ -26,19 +26,19 @@ $wa->useScript('bootstrap.collapse');
     <div class="col-md-12">
         <div id="j-main-container" class="j-main-container">
 
-            <!-- Navigation Tabs -->
+            <!-- Page Header -->
             <div class="row mb-4">
                 <div class="col-md-12">
-                    <nav>
-                        <div class="nav nav-tabs" id="nav-tab" role="tablist">
-                            <button class="nav-link active" id="nav-dashboard-tab" data-bs-toggle="tab" data-bs-target="#nav-dashboard" type="button" role="tab" aria-controls="nav-dashboard" aria-selected="true">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">
                                 <i class="icon-dashboard"></i> Dashboard
-                            </button>
-                            <button class="nav-link" id="nav-articles-tab" data-bs-toggle="tab" data-bs-target="#nav-articles" type="button" role="tab" aria-controls="nav-articles" aria-selected="false" onclick="window.location.href='<?php echo Route::_('index.php?option=com_joomlahits&view=cpanel'); ?>'">
-                                <i class="icon-list"></i> Articles List
-                            </button>
+                            </h2>
                         </div>
-                    </nav>
+                        <div class="card-body">
+                            <p class="card-text">View comprehensive statistics and analytics for your articles.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 

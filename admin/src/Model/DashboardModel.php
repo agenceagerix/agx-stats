@@ -13,7 +13,9 @@
 	/    \( (_ \ ) _) /    /( (__  ) _)   /    \( (_ \ ) _)  )   / )(  )  (
 	\_/\_/ \___/(____)\_)__) \___)(____)  \_/\_/ \___/(____)(__\_)(__)(_/\_)
 /------------------------------------------------------------------------------------------------------*/
-namespace Piedpiper\Component\JoomlaHits\Administrator\Model;
+namespace Joomla\Component\JoomlaHits\Administrator\Model;
+
+defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\Factory;
@@ -65,7 +67,8 @@ class DashboardModel extends BaseDatabaseModel
                 ELSE ' . $db->quoteName('a.language') . '
             END as language_name',
             'COUNT(' . $db->quoteName('a.id') . ') as article_count',
-            'SUM(' . $db->quoteName('a.hits') . ') as total_hits'
+            'SUM(' . $db->quoteName('a.hits') . ') as total_hits',
+            'AVG(' . $db->quoteName('a.hits') . ') as average_hits'
         ])
         ->from($db->quoteName('#__content', 'a'))
         ->where($db->quoteName('a.state') . ' = 1')
@@ -205,6 +208,7 @@ class DashboardModel extends BaseDatabaseModel
             $db->quoteName('c.title', 'category_name'),
             'COUNT(' . $db->quoteName('a.id') . ') as article_count',
             'SUM(' . $db->quoteName('a.hits') . ') as total_hits',
+            'AVG(' . $db->quoteName('a.hits') . ') as average_hits',
             'MAX(' . $db->quoteName('a.hits') . ') as max_hits',
             'ROUND((SUM(' . $db->quoteName('a.hits') . ') / (SELECT SUM(hits) FROM ' . $db->quoteName('#__content') . ' WHERE state = 1)) * 100, 2) as hits_percentage'
         ])
