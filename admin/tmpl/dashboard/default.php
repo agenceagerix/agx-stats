@@ -37,6 +37,9 @@ $wa->useScript('bootstrap.collapse');
                         </div>
                         <div class="card-body">
                             <p class="card-text">View comprehensive statistics and analytics for your articles.</p>
+                            <a href="<?php echo Route::_('index.php?option=com_joomlahits&view=controlpanel'); ?>" class="btn btn-secondary">
+                                <i class="icon-arrow-left"></i> Back to Control Panel
+                            </a>
                         </div>
                     </div>
                 </div>

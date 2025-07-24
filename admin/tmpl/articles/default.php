@@ -48,6 +48,9 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                             </div>
                             <div class="card-body">
                                 <p class="card-text">Manage and view statistics for all your articles.</p>
+                                <a href="<?php echo Route::_('index.php?option=com_joomlahits&view=controlpanel'); ?>" class="btn btn-secondary">
+                                    <i class="icon-arrow-left"></i> Back to Control Panel
+                                </a>
                             </div>
                         </div>
                     </div>

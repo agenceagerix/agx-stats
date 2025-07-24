@@ -27,6 +27,8 @@
         </languages>
         <menu img="class:default">COM_JOOMLAHITS</menu>
         <submenu>
+            <menu link="option=com_joomlahits" view="controlpanel" img="class:dashboard"
+                alt="JoomlaHits/ControlPanel">COM_JOOMLAHITS_CONTROLPANEL</menu>
             <menu link="option=com_joomlahits&amp;view=articles" view="articles" img="class:list"
                 alt="JoomlaHits/Articles">COM_JOOMLAHITS_ARTICLES</menu>
             <menu link="option=com_joomlahits&amp;view=dashboard" view="dashboard" img="class:chart"
