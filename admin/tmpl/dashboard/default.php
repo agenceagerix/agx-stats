@@ -436,10 +436,26 @@ $wa->useScript('bootstrap.collapse');
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            <?php foreach ($this->monthlyStats as $monthStat): ?>
+                                                            <?php 
+                                                            $monthNames = [
+                                                                1 => Text::_('JANUARY'),
+                                                                2 => Text::_('FEBRUARY'),
+                                                                3 => Text::_('MARCH'),
+                                                                4 => Text::_('APRIL'),
+                                                                5 => Text::_('MAY'),
+                                                                6 => Text::_('JUNE'),
+                                                                7 => Text::_('JULY'),
+                                                                8 => Text::_('AUGUST'),
+                                                                9 => Text::_('SEPTEMBER'),
+                                                                10 => Text::_('OCTOBER'),
+                                                                11 => Text::_('NOVEMBER'),
+                                                                12 => Text::_('DECEMBER')
+                                                            ];
+                                                            foreach ($this->monthlyStats as $monthStat): 
+                                                            ?>
                                                                 <tr>
                                                                     <td>
-                                                                        <strong><?php echo $monthStat->month_name; ?></strong>
+                                                                        <strong><?php echo $monthNames[$monthStat->month]; ?></strong>
                                                                     </td>
                                                                     <td class="text-center">
                                                                         <?php if ($monthStat->articles_created > 0): ?>
@@ -574,10 +590,8 @@ $wa->useScript('bootstrap.collapse');
                         </div>
                         <?php endif; ?>
                     </div>
-
                 </div>
             </div>
-
         </div>
     </div>
 </div>

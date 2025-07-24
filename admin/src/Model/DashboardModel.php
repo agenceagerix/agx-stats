@@ -30,22 +30,28 @@ class DashboardModel extends BaseDatabaseModel
      */
     public function getDashboardStats()
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true);
 
-        $query->select([
-            'COUNT(*) as total_articles',
-            'SUM(' . $db->quoteName('hits') . ') as total_hits',
-            'AVG(' . $db->quoteName('hits') . ') as average_hits',
-            'MAX(' . $db->quoteName('hits') . ') as max_hits',
-            'COUNT(CASE WHEN ' . $db->quoteName('hits') . ' > 0 THEN 1 END) as articles_with_hits',
-            'COUNT(CASE WHEN ' . $db->quoteName('state') . ' = 1 THEN 1 END) as published_articles',
-            'COUNT(CASE WHEN ' . $db->quoteName('state') . ' = 0 THEN 1 END) as unpublished_articles'
-        ])
-        ->from($db->quoteName('#__content'));
+            $query->select([
+                'COUNT(*) as total_articles',
+                'SUM(' . $db->quoteName('hits') . ') as total_hits',
+                'AVG(' . $db->quoteName('hits') . ') as average_hits',
+                'MAX(' . $db->quoteName('hits') . ') as max_hits',
+                'COUNT(CASE WHEN ' . $db->quoteName('hits') . ' > 0 THEN 1 END) as articles_with_hits',
+                'COUNT(CASE WHEN ' . $db->quoteName('state') . ' = 1 THEN 1 END) as published_articles',
+                'COUNT(CASE WHEN ' . $db->quoteName('state') . ' = 0 THEN 1 END) as unpublished_articles'
+            ])
+            ->from($db->quoteName('#__content'));
 
-        $db->setQuery($query);
-        return $db->loadObject();
+            $db->setQuery($query);
+            return $db->loadObject();
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in getDashboardStats: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - getDashboardStats Error: ' . $e->getMessage());
+            return new \stdClass();
+        }
     }
 
 
@@ -56,28 +62,34 @@ class DashboardModel extends BaseDatabaseModel
      */
     public function getLanguageStats()
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true);
 
-        $query->select([
-            'CASE 
-                WHEN ' . $db->quoteName('a.language') . ' = ' . $db->quote('fr-FR') . ' THEN ' . $db->quote('French') . '
-                WHEN ' . $db->quoteName('a.language') . ' = ' . $db->quote('en-GB') . ' THEN ' . $db->quote('English') . '
-                WHEN ' . $db->quoteName('a.language') . ' = ' . $db->quote('*') . ' THEN ' . $db->quote('All Languages') . '
-                ELSE ' . $db->quoteName('a.language') . '
-            END as language_name',
-            'COUNT(' . $db->quoteName('a.id') . ') as article_count',
-            'SUM(' . $db->quoteName('a.hits') . ') as total_hits',
-            'AVG(' . $db->quoteName('a.hits') . ') as average_hits'
-        ])
-        ->from($db->quoteName('#__content', 'a'))
-        ->where($db->quoteName('a.state') . ' = 1')
-        ->group($db->quoteName('a.language'))
-        ->having('article_count > 0')
-        ->order('total_hits DESC');
+            $query->select([
+                'CASE 
+                    WHEN ' . $db->quoteName('a.language') . ' = ' . $db->quote('fr-FR') . ' THEN ' . $db->quote('French') . '
+                    WHEN ' . $db->quoteName('a.language') . ' = ' . $db->quote('en-GB') . ' THEN ' . $db->quote('English') . '
+                    WHEN ' . $db->quoteName('a.language') . ' = ' . $db->quote('*') . ' THEN ' . $db->quote('All Languages') . '
+                    ELSE ' . $db->quoteName('a.language') . '
+                END as language_name',
+                'COUNT(' . $db->quoteName('a.id') . ') as article_count',
+                'SUM(' . $db->quoteName('a.hits') . ') as total_hits',
+                'AVG(' . $db->quoteName('a.hits') . ') as average_hits'
+            ])
+            ->from($db->quoteName('#__content', 'a'))
+            ->where($db->quoteName('a.state') . ' = 1')
+            ->group($db->quoteName('a.language'))
+            ->having('article_count > 0')
+            ->order('total_hits DESC');
 
-        $db->setQuery($query);
-        return $db->loadObjectList();
+            $db->setQuery($query);
+            return $db->loadObjectList();
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in getLanguageStats: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - getLanguageStats Error: ' . $e->getMessage());
+            return [];
+        }
     }
 
     /**
@@ -87,29 +99,35 @@ class DashboardModel extends BaseDatabaseModel
      */
     public function getRecentActivity($days = 30)
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true);
 
-        $date = new \DateTime();
-        $date->modify("-{$days} days");
-        $pastDate = $date->format('Y-m-d H:i:s');
+            $date = new \DateTime();
+            $date->modify("-{$days} days");
+            $pastDate = $date->format('Y-m-d H:i:s');
 
-        $query->select([
-            $db->quoteName('a.id'),
-            $db->quoteName('a.title'),
-            $db->quoteName('a.hits'),
-            $db->quoteName('a.created'),
-            $db->quoteName('c.title', 'category_title')
-        ])
-        ->from($db->quoteName('#__content', 'a'))
-        ->join('LEFT', $db->quoteName('#__categories', 'c') . ' ON ' . $db->quoteName('a.catid') . ' = ' . $db->quoteName('c.id'))
-        ->where($db->quoteName('a.state') . ' = 1')
-        ->where($db->quoteName('a.created') . ' >= ' . $db->quote($pastDate))
-        ->order($db->quoteName('a.created') . ' DESC')
-        ->setLimit(10);
+            $query->select([
+                $db->quoteName('a.id'),
+                $db->quoteName('a.title'),
+                $db->quoteName('a.hits'),
+                $db->quoteName('a.created'),
+                $db->quoteName('c.title', 'category_title')
+            ])
+            ->from($db->quoteName('#__content', 'a'))
+            ->join('LEFT', $db->quoteName('#__categories', 'c') . ' ON ' . $db->quoteName('a.catid') . ' = ' . $db->quoteName('c.id'))
+            ->where($db->quoteName('a.state') . ' = 1')
+            ->where($db->quoteName('a.created') . ' >= ' . $db->quote($pastDate))
+            ->order($db->quoteName('a.created') . ' DESC')
+            ->setLimit(10);
 
-        $db->setQuery($query);
-        return $db->loadObjectList();
+            $db->setQuery($query);
+            return $db->loadObjectList();
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in getRecentActivity: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - getRecentActivity Error: ' . $e->getMessage());
+            return [];
+        }
     }
     /**
      * Get top articles by language
@@ -120,25 +138,31 @@ class DashboardModel extends BaseDatabaseModel
      */
     public function getTopArticlesByLanguage($language, $limit = 10)
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true);
 
-        $query->select([
-            $db->quoteName('a.id'),
-            $db->quoteName('a.title'),
-            $db->quoteName('a.hits'),
-            $db->quoteName('a.created'),
-            $db->quoteName('c.title', 'category_title')
-        ])
-        ->from($db->quoteName('#__content', 'a'))
-        ->join('LEFT', $db->quoteName('#__categories', 'c') . ' ON ' . $db->quoteName('a.catid') . ' = ' . $db->quoteName('c.id'))
-        ->where($db->quoteName('a.state') . ' = 1')
-        ->where($db->quoteName('a.language') . ' = ' . $db->quote($language))
-        ->order($db->quoteName('a.hits') . ' DESC')
-        ->setLimit($limit);
+            $query->select([
+                $db->quoteName('a.id'),
+                $db->quoteName('a.title'),
+                $db->quoteName('a.hits'),
+                $db->quoteName('a.created'),
+                $db->quoteName('c.title', 'category_title')
+            ])
+            ->from($db->quoteName('#__content', 'a'))
+            ->join('LEFT', $db->quoteName('#__categories', 'c') . ' ON ' . $db->quoteName('a.catid') . ' = ' . $db->quoteName('c.id'))
+            ->where($db->quoteName('a.state') . ' = 1')
+            ->where($db->quoteName('a.language') . ' = ' . $db->quote($language))
+            ->order($db->quoteName('a.hits') . ' DESC')
+            ->setLimit($limit);
 
-        $db->setQuery($query);
-        return $db->loadObjectList();
+            $db->setQuery($query);
+            return $db->loadObjectList();
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in getTopArticlesByLanguage: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - getTopArticlesByLanguage Error: ' . $e->getMessage());
+            return [];
+        }
     }
 
     /**
@@ -148,28 +172,34 @@ class DashboardModel extends BaseDatabaseModel
      */
     public function getAvailableLanguages()
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true);
 
-        $query->select([
-            $db->quoteName('a.language'),
-            'CASE 
-                WHEN ' . $db->quoteName('a.language') . ' = ' . $db->quote('fr-FR') . ' THEN ' . $db->quote('French') . '
-                WHEN ' . $db->quoteName('a.language') . ' = ' . $db->quote('en-GB') . ' THEN ' . $db->quote('English') . '
-                WHEN ' . $db->quoteName('a.language') . ' = ' . $db->quote('*') . ' THEN ' . $db->quote('All Languages') . '
-                ELSE ' . $db->quoteName('a.language') . '
-            END as language_name',
-            'COUNT(' . $db->quoteName('a.id') . ') as article_count'
-        ])
-        ->from($db->quoteName('#__content', 'a'))
-        ->where($db->quoteName('a.state') . ' = 1')
-        ->where($db->quoteName('a.language') . ' != ' . $db->quote('*')) // Exclude "All Languages"
-        ->group($db->quoteName('a.language'))
-        ->having('article_count > 0')
-        ->order('article_count DESC');
+            $query->select([
+                $db->quoteName('a.language'),
+                'CASE 
+                    WHEN ' . $db->quoteName('a.language') . ' = ' . $db->quote('fr-FR') . ' THEN ' . $db->quote('French') . '
+                    WHEN ' . $db->quoteName('a.language') . ' = ' . $db->quote('en-GB') . ' THEN ' . $db->quote('English') . '
+                    WHEN ' . $db->quoteName('a.language') . ' = ' . $db->quote('*') . ' THEN ' . $db->quote('All Languages') . '
+                    ELSE ' . $db->quoteName('a.language') . '
+                END as language_name',
+                'COUNT(' . $db->quoteName('a.id') . ') as article_count'
+            ])
+            ->from($db->quoteName('#__content', 'a'))
+            ->where($db->quoteName('a.state') . ' = 1')
+            ->where($db->quoteName('a.language') . ' != ' . $db->quote('*')) // Exclude "All Languages"
+            ->group($db->quoteName('a.language'))
+            ->having('article_count > 0')
+            ->order('article_count DESC');
 
-        $db->setQuery($query);
-        return $db->loadObjectList();
+            $db->setQuery($query);
+            return $db->loadObjectList();
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in getAvailableLanguages: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - getAvailableLanguages Error: ' . $e->getMessage());
+            return [];
+        }
     }
 
     /**
@@ -179,19 +209,25 @@ class DashboardModel extends BaseDatabaseModel
      */
     public function getArticlesWithoutClicksRate()
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true);
 
-        $query->select([
-            'COUNT(*) as total_articles',
-            'COUNT(CASE WHEN ' . $db->quoteName('hits') . ' = 0 THEN 1 END) as articles_without_clicks',
-            'ROUND((COUNT(CASE WHEN ' . $db->quoteName('hits') . ' = 0 THEN 1 END) / COUNT(*)) * 100, 2) as no_clicks_percentage'
-        ])
-        ->from($db->quoteName('#__content'))
-        ->where($db->quoteName('state') . ' = 1');
+            $query->select([
+                'COUNT(*) as total_articles',
+                'COUNT(CASE WHEN ' . $db->quoteName('hits') . ' = 0 THEN 1 END) as articles_without_clicks',
+                'ROUND((COUNT(CASE WHEN ' . $db->quoteName('hits') . ' = 0 THEN 1 END) / COUNT(*)) * 100, 2) as no_clicks_percentage'
+            ])
+            ->from($db->quoteName('#__content'))
+            ->where($db->quoteName('state') . ' = 1');
 
-        $db->setQuery($query);
-        return $db->loadObject();
+            $db->setQuery($query);
+            return $db->loadObject();
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in getArticlesWithoutClicksRate: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - getArticlesWithoutClicksRate Error: ' . $e->getMessage());
+            return new \stdClass();
+        }
     }
     /**
      * Get enhanced category statistics with rankings
@@ -200,29 +236,35 @@ class DashboardModel extends BaseDatabaseModel
      */
     public function getEnhancedCategoryStats()
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true);
 
-        $query->select([
-            $db->quoteName('c.id', 'category_id'),
-            $db->quoteName('c.title', 'category_name'),
-            'COUNT(' . $db->quoteName('a.id') . ') as article_count',
-            'SUM(' . $db->quoteName('a.hits') . ') as total_hits',
-            'AVG(' . $db->quoteName('a.hits') . ') as average_hits',
-            'MAX(' . $db->quoteName('a.hits') . ') as max_hits',
-            'ROUND((SUM(' . $db->quoteName('a.hits') . ') / (SELECT SUM(hits) FROM ' . $db->quoteName('#__content') . ' WHERE state = 1)) * 100, 2) as hits_percentage'
-        ])
-        ->from($db->quoteName('#__categories', 'c'))
-        ->join('LEFT', $db->quoteName('#__content', 'a') . ' ON ' . $db->quoteName('c.id') . ' = ' . $db->quoteName('a.catid'))
-        ->where($db->quoteName('c.extension') . ' = ' . $db->quote('com_content'))
-        ->where($db->quoteName('c.published') . ' = 1')
-        ->where($db->quoteName('a.state') . ' = 1')
-        ->group($db->quoteName('c.id'))
-        ->having('article_count > 0')
-        ->order('total_hits DESC');
+            $query->select([
+                $db->quoteName('c.id', 'category_id'),
+                $db->quoteName('c.title', 'category_name'),
+                'COUNT(' . $db->quoteName('a.id') . ') as article_count',
+                'SUM(' . $db->quoteName('a.hits') . ') as total_hits',
+                'AVG(' . $db->quoteName('a.hits') . ') as average_hits',
+                'MAX(' . $db->quoteName('a.hits') . ') as max_hits',
+                'ROUND((SUM(' . $db->quoteName('a.hits') . ') / (SELECT SUM(hits) FROM ' . $db->quoteName('#__content') . ' WHERE state = 1)) * 100, 2) as hits_percentage'
+            ])
+            ->from($db->quoteName('#__categories', 'c'))
+            ->join('LEFT', $db->quoteName('#__content', 'a') . ' ON ' . $db->quoteName('c.id') . ' = ' . $db->quoteName('a.catid'))
+            ->where($db->quoteName('c.extension') . ' = ' . $db->quote('com_content'))
+            ->where($db->quoteName('c.published') . ' = 1')
+            ->where($db->quoteName('a.state') . ' = 1')
+            ->group($db->quoteName('c.id'))
+            ->having('article_count > 0')
+            ->order('total_hits DESC');
 
-        $db->setQuery($query);
-        return $db->loadObjectList();
+            $db->setQuery($query);
+            return $db->loadObjectList();
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in getEnhancedCategoryStats: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - getEnhancedCategoryStats Error: ' . $e->getMessage());
+            return [];
+        }
     }
 
     /**
@@ -234,23 +276,29 @@ class DashboardModel extends BaseDatabaseModel
      */
     public function getTopArticlesByCategory($categoryId, $limit = 5)
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true);
 
-        $query->select([
-            $db->quoteName('a.id'),
-            $db->quoteName('a.title'),
-            $db->quoteName('a.hits'),
-            $db->quoteName('a.created')
-        ])
-        ->from($db->quoteName('#__content', 'a'))
-        ->where($db->quoteName('a.state') . ' = 1')
-        ->where($db->quoteName('a.catid') . ' = ' . (int) $categoryId)
-        ->order($db->quoteName('a.hits') . ' DESC')
-        ->setLimit($limit);
+            $query->select([
+                $db->quoteName('a.id'),
+                $db->quoteName('a.title'),
+                $db->quoteName('a.hits'),
+                $db->quoteName('a.created')
+            ])
+            ->from($db->quoteName('#__content', 'a'))
+            ->where($db->quoteName('a.state') . ' = 1')
+            ->where($db->quoteName('a.catid') . ' = ' . (int) $categoryId)
+            ->order($db->quoteName('a.hits') . ' DESC')
+            ->setLimit($limit);
 
-        $db->setQuery($query);
-        return $db->loadObjectList();
+            $db->setQuery($query);
+            return $db->loadObjectList();
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in getTopArticlesByCategory: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - getTopArticlesByCategory Error: ' . $e->getMessage());
+            return [];
+        }
     }
     /**
      * Compare current period with previous period
@@ -260,72 +308,78 @@ class DashboardModel extends BaseDatabaseModel
      */
     public function getPeriodComparison($period = 'month')
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        
-        $currentDate = new \DateTime();
-        $previousDate = new \DateTime();
-        
-        switch($period) {
-            case 'week':
-                $currentStart = $currentDate->format('Y-m-d', strtotime('monday this week'));
-                $currentEnd = $currentDate->format('Y-m-d', strtotime('sunday this week'));
-                $previousStart = $previousDate->modify('-1 week')->format('Y-m-d', strtotime('monday this week'));
-                $previousEnd = $previousDate->format('Y-m-d', strtotime('sunday this week'));
-                break;
-            case 'year':
-                $currentStart = $currentDate->format('Y-01-01');
-                $currentEnd = $currentDate->format('Y-12-31');
-                $previousStart = $previousDate->modify('-1 year')->format('Y-01-01');
-                $previousEnd = $previousDate->format('Y-12-31');
-                break;
-            default: // month
-                $currentStart = $currentDate->format('Y-m-01');
-                $currentEnd = $currentDate->format('Y-m-t');
-                $previousStart = $previousDate->modify('-1 month')->format('Y-m-01');
-                $previousEnd = $previousDate->format('Y-m-t');
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            
+            $currentDate = new \DateTime();
+            $previousDate = new \DateTime();
+            
+            switch($period) {
+                case 'week':
+                    $currentStart = $currentDate->format('Y-m-d', strtotime('monday this week'));
+                    $currentEnd = $currentDate->format('Y-m-d', strtotime('sunday this week'));
+                    $previousStart = $previousDate->modify('-1 week')->format('Y-m-d', strtotime('monday this week'));
+                    $previousEnd = $previousDate->format('Y-m-d', strtotime('sunday this week'));
+                    break;
+                case 'year':
+                    $currentStart = $currentDate->format('Y-01-01');
+                    $currentEnd = $currentDate->format('Y-12-31');
+                    $previousStart = $previousDate->modify('-1 year')->format('Y-01-01');
+                    $previousEnd = $previousDate->format('Y-12-31');
+                    break;
+                default: // month
+                    $currentStart = $currentDate->format('Y-m-01');
+                    $currentEnd = $currentDate->format('Y-m-t');
+                    $previousStart = $previousDate->modify('-1 month')->format('Y-m-01');
+                    $previousEnd = $previousDate->format('Y-m-t');
+            }
+
+            // Current period stats
+            $query = $db->getQuery(true);
+            $query->select([
+                'COUNT(' . $db->quoteName('id') . ') as articles_created',
+                'SUM(' . $db->quoteName('hits') . ') as total_hits'
+            ])
+            ->from($db->quoteName('#__content'))
+            ->where($db->quoteName('state') . ' = 1')
+            ->where($db->quoteName('created') . ' >= ' . $db->quote($currentStart))
+            ->where($db->quoteName('created') . ' <= ' . $db->quote($currentEnd . ' 23:59:59'));
+
+            $db->setQuery($query);
+            $currentStats = $db->loadObject();
+
+            // Previous period stats
+            $query = $db->getQuery(true);
+            $query->select([
+                'COUNT(' . $db->quoteName('id') . ') as articles_created',
+                'SUM(' . $db->quoteName('hits') . ') as total_hits'
+            ])
+            ->from($db->quoteName('#__content'))
+            ->where($db->quoteName('state') . ' = 1')
+            ->where($db->quoteName('created') . ' >= ' . $db->quote($previousStart))
+            ->where($db->quoteName('created') . ' <= ' . $db->quote($previousEnd . ' 23:59:59'));
+
+            $db->setQuery($query);
+            $previousStats = $db->loadObject();
+
+            // Calculate changes
+            $result = new \stdClass();
+            $result->current_period = $currentStats;
+            $result->previous_period = $previousStats;
+            $result->articles_change = $currentStats->articles_created - $previousStats->articles_created;
+            $result->hits_change = $currentStats->total_hits - $previousStats->total_hits;
+            $result->articles_change_percent = $previousStats->articles_created > 0 ? 
+                round((($currentStats->articles_created - $previousStats->articles_created) / $previousStats->articles_created) * 100, 1) : 0;
+            $result->hits_change_percent = $previousStats->total_hits > 0 ? 
+                round((($currentStats->total_hits - $previousStats->total_hits) / $previousStats->total_hits) * 100, 1) : 0;
+            $result->period_name = ucfirst($period);
+
+            return $result;
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in getPeriodComparison: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - getPeriodComparison Error: ' . $e->getMessage());
+            return new \stdClass();
         }
-
-        // Current period stats
-        $query = $db->getQuery(true);
-        $query->select([
-            'COUNT(' . $db->quoteName('id') . ') as articles_created',
-            'SUM(' . $db->quoteName('hits') . ') as total_hits'
-        ])
-        ->from($db->quoteName('#__content'))
-        ->where($db->quoteName('state') . ' = 1')
-        ->where($db->quoteName('created') . ' >= ' . $db->quote($currentStart))
-        ->where($db->quoteName('created') . ' <= ' . $db->quote($currentEnd . ' 23:59:59'));
-
-        $db->setQuery($query);
-        $currentStats = $db->loadObject();
-
-        // Previous period stats
-        $query = $db->getQuery(true);
-        $query->select([
-            'COUNT(' . $db->quoteName('id') . ') as articles_created',
-            'SUM(' . $db->quoteName('hits') . ') as total_hits'
-        ])
-        ->from($db->quoteName('#__content'))
-        ->where($db->quoteName('state') . ' = 1')
-        ->where($db->quoteName('created') . ' >= ' . $db->quote($previousStart))
-        ->where($db->quoteName('created') . ' <= ' . $db->quote($previousEnd . ' 23:59:59'));
-
-        $db->setQuery($query);
-        $previousStats = $db->loadObject();
-
-        // Calculate changes
-        $result = new \stdClass();
-        $result->current_period = $currentStats;
-        $result->previous_period = $previousStats;
-        $result->articles_change = $currentStats->articles_created - $previousStats->articles_created;
-        $result->hits_change = $currentStats->total_hits - $previousStats->total_hits;
-        $result->articles_change_percent = $previousStats->articles_created > 0 ? 
-            round((($currentStats->articles_created - $previousStats->articles_created) / $previousStats->articles_created) * 100, 1) : 0;
-        $result->hits_change_percent = $previousStats->total_hits > 0 ? 
-            round((($currentStats->total_hits - $previousStats->total_hits) / $previousStats->total_hits) * 100, 1) : 0;
-        $result->period_name = ucfirst($period);
-
-        return $result;
     }
 
     /**
@@ -335,20 +389,26 @@ class DashboardModel extends BaseDatabaseModel
      */
     public function getAvailableYears()
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true);
 
-        $query->select([
-            'YEAR(' . $db->quoteName('created') . ') as year',
-            'COUNT(' . $db->quoteName('id') . ') as article_count'
-        ])
-        ->from($db->quoteName('#__content'))
-        ->where($db->quoteName('state') . ' = 1')
-        ->group('YEAR(' . $db->quoteName('created') . ')')
-        ->order('year DESC');
+            $query->select([
+                'YEAR(' . $db->quoteName('created') . ') as year',
+                'COUNT(' . $db->quoteName('id') . ') as article_count'
+            ])
+            ->from($db->quoteName('#__content'))
+            ->where($db->quoteName('state') . ' = 1')
+            ->group('YEAR(' . $db->quoteName('created') . ')')
+            ->order('year DESC');
 
-        $db->setQuery($query);
-        return $db->loadObjectList();
+            $db->setQuery($query);
+            return $db->loadObjectList();
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in getAvailableYears: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - getAvailableYears Error: ' . $e->getMessage());
+            return [];
+        }
     }
 
     /**
@@ -359,53 +419,41 @@ class DashboardModel extends BaseDatabaseModel
      */
     public function getMonthlyStats($year)
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true);
 
-        // Create a query for each month (1-12)
-        $monthlyStats = [];
-        
-        for ($month = 1; $month <= 12; $month++) {
-            $query->clear();
-            $query->select([
-                'COUNT(' . $db->quoteName('id') . ') as articles_created',
-                'SUM(' . $db->quoteName('hits') . ') as total_views',
-                'AVG(' . $db->quoteName('hits') . ') as average_views'
-            ])
-            ->from($db->quoteName('#__content'))
-            ->where($db->quoteName('state') . ' = 1')
-            ->where('YEAR(' . $db->quoteName('created') . ') = ' . (int) $year)
-            ->where('MONTH(' . $db->quoteName('created') . ') = ' . $month);
-
-            $db->setQuery($query);
-            $result = $db->loadObject();
+            // Create a query for each month (1-12)
+            $monthlyStats = [];
             
-            $monthlyStats[] = (object) [
-                'month' => $month,
-                'month_name' => $this->getMonthName($month),
-                'articles_created' => (int) $result->articles_created,
-                'total_views' => (int) ($result->total_views ?: 0),
-                'average_views' => round($result->average_views ?: 0, 1)
-            ];
+            for ($month = 1; $month <= 12; $month++) {
+                $query->clear();
+                $query->select([
+                    'COUNT(' . $db->quoteName('id') . ') as articles_created',
+                    'SUM(' . $db->quoteName('hits') . ') as total_views',
+                    'AVG(' . $db->quoteName('hits') . ') as average_views'
+                ])
+                ->from($db->quoteName('#__content'))
+                ->where($db->quoteName('state') . ' = 1')
+                ->where('YEAR(' . $db->quoteName('created') . ') = ' . (int) $year)
+                ->where('MONTH(' . $db->quoteName('created') . ') = ' . $month);
+
+                $db->setQuery($query);
+                $result = $db->loadObject();
+                
+                $monthlyStats[] = (object) [
+                    'month' => $month,
+                    'articles_created' => (int) $result->articles_created,
+                    'total_views' => (int) ($result->total_views ?: 0),
+                    'average_views' => round($result->average_views ?: 0, 1)
+                ];
+            }
+
+            return $monthlyStats;
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in getMonthlyStats: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - getMonthlyStats Error: ' . $e->getMessage());
+            return [];
         }
-
-        return $monthlyStats;
-    }
-
-    /**
-     * Get month name in French
-     * 
-     * @param int $month Month number (1-12)
-     * @return string Month name in French
-     */
-    private function getMonthName($month)
-    {
-        $months = [
-            1 => 'Janvier', 2 => 'Février', 3 => 'Mars', 4 => 'Avril',
-            5 => 'Mai', 6 => 'Juin', 7 => 'Juillet', 8 => 'Août',
-            9 => 'Septembre', 10 => 'Octobre', 11 => 'Novembre', 12 => 'Décembre'
-        ];
-        
-        return $months[$month] ?? '';
     }
 }
