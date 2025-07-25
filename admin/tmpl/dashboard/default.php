@@ -252,6 +252,14 @@ $wa->useScript('bootstrap.collapse');
                                 </div>
                                 <div class="card-body">
                                     <?php if (!empty($this->enhancedCategoryStats)): ?>
+                                        <!-- Line Chart -->
+                                        <div class="mb-4">
+                                            <div class="chart-container">
+                                                <canvas id="categoryStatsChart"></canvas>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Data Table -->
                                         <div class="table-responsive">
                                             <table class="table table-striped">
                                                 <thead>
@@ -558,29 +566,40 @@ $wa->useScript('bootstrap.collapse');
                                 </div>
                                 <div class="card-body">
                                     <?php if (!empty($this->languageStats)): ?>
-                                        <div class="table-responsive">
-                                            <table class="table table-striped table-sm">
-                                                <thead>
-                                                    <tr>
-                                                        <th><?php echo Text::_('COM_JOOMLAHITS_LANGUAGE'); ?></th>
-                                                        <th class="text-center"><?php echo Text::_('COM_JOOMLAHITS_ARTICLES'); ?></th>
-                                                        <th class="text-center"><?php echo Text::_('COM_JOOMLAHITS_TOTAL_VIEWS'); ?></th>
-                                                        <th class="text-center"><?php echo Text::_('COM_JOOMLAHITS_AVG_VIEWS'); ?></th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <?php foreach ($this->languageStats as $language): ?>
-                                                        <tr>
-                                                            <td><?php echo $this->escape($language->language_name); ?></td>
-                                                            <td class="text-center"><?php echo $language->article_count; ?></td>
-                                                            <td class="text-center">
-                                                                <span class="badge bg-secondary"><?php echo number_format($language->total_hits); ?></span>
-                                                            </td>
-                                                            <td class="text-center"><?php echo number_format($language->average_hits, 1); ?></td>
-                                                        </tr>
-                                                    <?php endforeach; ?>
-                                                </tbody>
-                                            </table>
+                                        <div class="row">
+                                            <!-- Pie Chart -->
+                                            <div class="col-md-6">
+                                                <div class="chart-container">
+                                                    <canvas id="languageStatsChart" width="300" height="300"></canvas>
+                                                </div>
+                                            </div>
+                                            <!-- Data Table -->
+                                            <div class="col-md-6">
+                                                <div class="table-responsive">
+                                                    <table class="table table-striped table-sm">
+                                                        <thead>
+                                                            <tr>
+                                                                <th><?php echo Text::_('COM_JOOMLAHITS_LANGUAGE'); ?></th>
+                                                                <th class="text-center"><?php echo Text::_('COM_JOOMLAHITS_ARTICLES'); ?></th>
+                                                                <th class="text-center"><?php echo Text::_('COM_JOOMLAHITS_TOTAL_VIEWS'); ?></th>
+                                                                <th class="text-center"><?php echo Text::_('COM_JOOMLAHITS_AVG_VIEWS'); ?></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <?php foreach ($this->languageStats as $language): ?>
+                                                                <tr>
+                                                                    <td><?php echo $this->escape($language->language_name); ?></td>
+                                                                    <td class="text-center"><?php echo $language->article_count; ?></td>
+                                                                    <td class="text-center">
+                                                                        <span class="badge bg-secondary"><?php echo number_format($language->total_hits); ?></span>
+                                                                    </td>
+                                                                    <td class="text-center"><?php echo number_format($language->average_hits, 1); ?></td>
+                                                                </tr>
+                                                            <?php endforeach; ?>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
                                         </div>
                                     <?php else: ?>
                                         <p class="text-muted"><?php echo Text::_('COM_JOOMLAHITS_NO_LANGUAGE_STATS'); ?></p>
@@ -596,8 +615,204 @@ $wa->useScript('bootstrap.collapse');
     </div>
 </div>
 
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+.chart-container {
+    position: relative;
+    margin: 20px 0;
+    padding: 10px;
+    min-height: 350px;
+}
+
+#languageStatsChart {
+    max-width: 300px;
+    max-height: 300px;
+    margin: 0 auto;
+}
+
+#categoryStatsChart {
+    height: 350px !important;
+}
+
+.chart-container canvas {
+    border-radius: 8px;
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    
+    // Pie chart for language statistics
+    <?php if (!empty($this->languageStats)): ?>
+    const languageCtx = document.getElementById('languageStatsChart');
+    if (languageCtx) {
+        const languageData = {
+            labels: [
+                <?php foreach ($this->languageStats as $language): ?>
+                    '<?php echo addslashes($language->language_name); ?>',
+                <?php endforeach; ?>
+            ],
+            datasets: [{
+                data: [
+                    <?php foreach ($this->languageStats as $language): ?>
+                        <?php echo $language->total_hits; ?>,
+                    <?php endforeach; ?>
+                ],
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0',
+                    '#9966FF',
+                    '#FF9F40'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        };
+
+        new Chart(languageCtx, {
+            type: 'pie',
+            data: languageData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return label + ': ' + value.toLocaleString() + ' views (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    <?php endif; ?>
+
+    // Line chart for categories
+    <?php if (!empty($this->enhancedCategoryStats)): ?>
+    const categoryCtx = document.getElementById('categoryStatsChart');
+    if (categoryCtx) {
+        const categoryData = {
+            labels: [
+                <?php foreach ($this->enhancedCategoryStats as $category): ?>
+                    '<?php echo addslashes($category->category_name); ?>',
+                <?php endforeach; ?>
+            ],
+            datasets: [{
+                label: 'Total Views',
+                data: [
+                    <?php foreach ($this->enhancedCategoryStats as $category): ?>
+                        <?php echo $category->total_hits; ?>,
+                    <?php endforeach; ?>
+                ],
+                borderColor: '#36A2EB',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#36A2EB',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 6
+            }, {
+                label: 'Articles Count',
+                data: [
+                    <?php foreach ($this->enhancedCategoryStats as $category): ?>
+                        <?php echo $category->article_count; ?>,
+                    <?php endforeach; ?>
+                ],
+                borderColor: '#FF6384',
+                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#FF6384',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                yAxisID: 'y1'
+            }]
+        };
+
+        new Chart(categoryCtx, {
+            type: 'line',
+            data: categoryData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Categories'
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 0
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Number of Views'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Number of Articles'
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        }
+                    }
+                }
+            }
+        });
+    }
+    <?php endif; ?>
+    
+    // Selector Year Change Event
     const yearSelector = document.getElementById('yearSelector');
     const yearForm = document.getElementById('yearSelectorForm');
     
