@@ -129,10 +129,11 @@ class HtmlView extends BaseHtmlView
             $this->availableLanguages = $model->getAvailableLanguages();
             $this->topArticlesByLanguage = [];
             
-            // Get top articles for each available language (max 2 languages)
+            // Get top articles for each available language
             $languageCount = 0;
+            $maxLanguages = $this->params->get('max_languages_display', 4);
             foreach ($this->availableLanguages as $language) {
-                if ($languageCount >= 2) break; // Limit to 2 languages for display
+                if ($languageCount >= $maxLanguages) break; // Limit to configured number of languages for display
                 $this->topArticlesByLanguage[$language->language] = $model->getTopArticlesByLanguage($language->language, 10);
                 $languageCount++;
             }

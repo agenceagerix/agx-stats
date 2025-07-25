@@ -164,8 +164,9 @@ $wa->useScript('bootstrap.collapse');
                     <div class="row mb-4">
                         <?php 
                         $displayedLanguages = 0;
+                        $maxLanguages = $this->params->get('max_languages_display', 4);
                         foreach ($this->availableLanguages as $language): 
-                            if ($displayedLanguages >= 4) break; // Limit to 4 languages
+                            if ($displayedLanguages >= $maxLanguages) break; // Limit to configured number of languages
                             if (!empty($this->topArticlesByLanguage[$language->language])):
                                 // Get language flag/icon
                                 $languageIcon = '';

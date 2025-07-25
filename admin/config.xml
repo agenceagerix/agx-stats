@@ -82,6 +82,18 @@
             <option value="1">JSHOW</option>
         </field>
 
+        <field
+            name="max_languages_display"
+            type="number"
+            label="COM_JOOMLAHITS_CONFIG_MAX_LANGUAGES_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_MAX_LANGUAGES_DESC"
+            default="4"
+            min="1"
+            max="10"
+            step="1"
+            filter="integer"
+            showon="show_language_stats:1"/>
+
     </fieldset>
 
     <fieldset 
