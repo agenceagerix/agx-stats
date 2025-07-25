@@ -88,7 +88,14 @@ class DashboardModel extends BaseDatabaseModel
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage('Error in getLanguageStats: ' . $e->getMessage(), 'error');
             error_log('JoomlaHits - getLanguageStats Error: ' . $e->getMessage());
-            return [];
+            return [
+                (object) [
+                    'language_name' => 'No data available',
+                    'article_count' => 0,
+                    'total_hits' => 0,
+                    'average_hits' => 0
+                ]
+            ];
         }
     }
 
@@ -126,7 +133,15 @@ class DashboardModel extends BaseDatabaseModel
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage('Error in getRecentActivity: ' . $e->getMessage(), 'error');
             error_log('JoomlaHits - getRecentActivity Error: ' . $e->getMessage());
-            return [];
+            return [
+                (object) [
+                    'id' => 0,
+                    'title' => 'No recent activity available',
+                    'hits' => 0,
+                    'created' => date('Y-m-d H:i:s'),
+                    'category_title' => 'N/A'
+                ]
+            ];
         }
     }
     /**
@@ -161,7 +176,15 @@ class DashboardModel extends BaseDatabaseModel
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage('Error in getTopArticlesByLanguage: ' . $e->getMessage(), 'error');
             error_log('JoomlaHits - getTopArticlesByLanguage Error: ' . $e->getMessage());
-            return [];
+            return [
+                (object) [
+                    'id' => 0,
+                    'title' => 'No articles found for this language',
+                    'hits' => 0,
+                    'created' => date('Y-m-d H:i:s'),
+                    'category_title' => 'N/A'
+                ]
+            ];
         }
     }
 
@@ -198,7 +221,13 @@ class DashboardModel extends BaseDatabaseModel
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage('Error in getAvailableLanguages: ' . $e->getMessage(), 'error');
             error_log('JoomlaHits - getAvailableLanguages Error: ' . $e->getMessage());
-            return [];
+            return [
+                (object) [
+                    'language' => 'fr-FR',
+                    'language_name' => 'No languages available',
+                    'article_count' => 0
+                ]
+            ];
         }
     }
 
@@ -263,7 +292,17 @@ class DashboardModel extends BaseDatabaseModel
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage('Error in getEnhancedCategoryStats: ' . $e->getMessage(), 'error');
             error_log('JoomlaHits - getEnhancedCategoryStats Error: ' . $e->getMessage());
-            return [];
+            return [
+                (object) [
+                    'category_id' => 0,
+                    'category_name' => 'No categories available',
+                    'article_count' => 0,
+                    'total_hits' => 0,
+                    'average_hits' => 0,
+                    'max_hits' => 0,
+                    'hits_percentage' => 0
+                ]
+            ];
         }
     }
 
@@ -297,7 +336,14 @@ class DashboardModel extends BaseDatabaseModel
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage('Error in getTopArticlesByCategory: ' . $e->getMessage(), 'error');
             error_log('JoomlaHits - getTopArticlesByCategory Error: ' . $e->getMessage());
-            return [];
+            return [
+                (object) [
+                    'id' => 0,
+                    'title' => 'No articles found in this category',
+                    'hits' => 0,
+                    'created' => date('Y-m-d H:i:s')
+                ]
+            ];
         }
     }
     /**
@@ -407,7 +453,12 @@ class DashboardModel extends BaseDatabaseModel
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage('Error in getAvailableYears: ' . $e->getMessage(), 'error');
             error_log('JoomlaHits - getAvailableYears Error: ' . $e->getMessage());
-            return [];
+            return [
+                (object) [
+                    'year' => date('Y'),
+                    'article_count' => 0
+                ]
+            ];
         }
     }
 
@@ -453,7 +504,14 @@ class DashboardModel extends BaseDatabaseModel
         } catch (\Exception $e) {
             Factory::getApplication()->enqueueMessage('Error in getMonthlyStats: ' . $e->getMessage(), 'error');
             error_log('JoomlaHits - getMonthlyStats Error: ' . $e->getMessage());
-            return [];
+            return [
+                (object) [
+                    'month' => 1,
+                    'articles_created' => 0,
+                    'total_views' => 0,
+                    'average_views' => 0
+                ]
+            ];
         }
     }
 }
