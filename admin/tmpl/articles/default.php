@@ -251,7 +251,15 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                         </tbody>
                     </table>
 
-                    <?php echo $this->pagination->getListFooter(); ?>
+                    <!-- Pagination -->
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <?php echo $this->pagination->getListFooter(); ?>
+                        </div>
+                        <div class="col-sm-6">
+                            <?php echo $this->pagination->getLimitBox(); ?>
+                        </div>
+                    </div>
                 <?php endif; ?>
 
                 <input type="hidden" name="task" value="">

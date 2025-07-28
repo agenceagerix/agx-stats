@@ -29,6 +29,10 @@ class ArticlesModel extends ListModel
      */
     public function __construct($config = array())
     {
+        // Set context for state management
+        if (empty($config['context'])) {
+            $config['context'] = 'com_joomlahits.articles';
+        }
         if (empty($config['filter_fields'])) {
             $config['filter_fields'] = array(
                 'id', 'a.id',
@@ -58,34 +62,19 @@ class ArticlesModel extends ListModel
      */
     protected function populateState($ordering = 'a.hits', $direction = 'DESC')
     {
-        $search = $this->getUserStateFromRequest($this->context . '.filter.search', 'filter_search', '', 'string');
-        $this->setState('filter.search', $search);
-
-        $categoryId = $this->getUserStateFromRequest($this->context . '.filter.category_id', 'filter_category_id', '', 'string');
-        $this->setState('filter.category_id', $categoryId);
-
-        $published = $this->getUserStateFromRequest($this->context . '.filter.published', 'filter_published', '', 'string');
-        $this->setState('filter.published', $published);
-
-        $language = $this->getUserStateFromRequest($this->context . '.filter.language', 'filter_language', '', 'string');
-        $this->setState('filter.language', $language);
-
-        // Get ordering parameters
-        $orderCol = $this->getUserStateFromRequest($this->context . '.list.ordering', 'filter_order', $ordering);
-        $this->setState('list.ordering', $orderCol);
-
-        $orderDirn = $this->getUserStateFromRequest($this->context . '.list.direction', 'filter_order_Dir', $direction);
-        $this->setState('list.direction', $orderDirn);
-
-        // Set pagination limit
-        $limit = $this->getUserStateFromRequest($this->context . '.list.limit', 'limit', 20, 'uint');
-        $this->setState('list.limit', $limit);
-
-        // Set pagination start
-        $start = $this->getUserStateFromRequest($this->context . '.limitstart', 'limitstart', 0, 'uint');
-        $this->setState('list.start', $start);
-
+        // Call parent first
         parent::populateState($ordering, $direction);
+        
+        // Then FORCE our values after parent
+        $app = \Joomla\CMS\Factory::getApplication();
+        $input = $app->input;
+        
+        $limit = $input->getInt('limit', 20);
+        $limitstart = $input->getInt('limitstart', 0);
+        
+        // FORCE override after parent call
+        $this->setState('list.limit', $limit);
+        $this->setState('list.start', $limitstart);
     }
 
     /**
@@ -134,36 +123,8 @@ class ArticlesModel extends ListModel
         ->from($db->quoteName('#__content', 'a'))
         ->join('LEFT', $db->quoteName('#__categories', 'c') . ' ON ' . $db->quoteName('a.catid') . ' = ' . $db->quoteName('c.id'));
 
-        // Apply filters
-
-        $search = $this->getState('filter.search');
-        if (!empty($search)) {
-            if (stripos($search, 'id:') === 0) {
-                $query->where($db->quoteName('a.id') . ' = ' . (int) substr($search, 3));
-            } else {
-                $search = $db->quote('%' . str_replace(' ', '%', $db->escape(trim($search), true) . '%'));
-                $query->where('(' . $db->quoteName('a.title') . ' LIKE ' . $search . ' OR ' . $db->quoteName('c.title') . ' LIKE ' . $search . ')');
-            }
-        }
-
-        $categoryId = $this->getState('filter.category_id');
-        if (is_numeric($categoryId)) {
-            $query->where($db->quoteName('a.catid') . ' = ' . (int) $categoryId);
-        }
-
-        $published = $this->getState('filter.published');
-        if (is_numeric($published)) {
-            $query->where($db->quoteName('a.state') . ' = ' . (int) $published);
-        }
-
-        $language = $this->getState('filter.language');
-        if (!empty($language)) {
-            $query->where($db->quoteName('a.language') . ' = ' . $db->quote($language));
-        }
-
-        $orderCol = $this->state->get('list.ordering', 'a.hits');
-        $orderDirn = $this->state->get('list.direction', 'DESC');
-        $query->order($db->escape($orderCol . ' ' . $orderDirn));
+        // No filters for now - just basic ordering
+        $query->order($db->quoteName('a.hits') . ' DESC');
 
         return $query;
     }
