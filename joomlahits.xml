@@ -33,6 +33,8 @@
                 alt="JoomlaHits/Articles">COM_JOOMLAHITS_ARTICLES</menu>
             <menu link="option=com_joomlahits&amp;view=dashboard" view="dashboard" img="class:chart"
                 alt="JoomlaHits/Dashboard">COM_JOOMLAHITS_DASHBOARD_MENU</menu>
+            <menu link="option=com_joomlahits&amp;view=checkseo" view="checkseo" img="class:search"
+                alt="JoomlaHits/CheckSeo">COM_JOOMLAHITS_CHECKSEO_MENU</menu>
         </submenu>
     </administration>
 </extension>

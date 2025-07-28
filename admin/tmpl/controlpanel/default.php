@@ -41,7 +41,7 @@ use Joomla\CMS\Language\Text;
 
             <!-- Navigation Buttons -->
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="card h-100">
                         <div class="card-body text-center">
                             <div class="mb-3">
@@ -56,7 +56,7 @@ use Joomla\CMS\Language\Text;
                     </div>
                 </div>
                 
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="card h-100">
                         <div class="card-body text-center">
                             <div class="mb-3">
@@ -66,6 +66,21 @@ use Joomla\CMS\Language\Text;
                             <p class="card-text"><?php echo Text::_('COM_JOOMLAHITS_DASHBOARD_DESC'); ?></p>
                             <a href="<?php echo Route::_('index.php?option=com_joomlahits&view=dashboard'); ?>" class="btn btn-success btn-lg">
                                 <i class="icon-dashboard"></i> <?php echo Text::_('COM_JOOMLAHITS_GO_TO_DASHBOARD'); ?>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="icon-search" style="font-size: 48px; color: #007cba;"></i>
+                            </div>
+                            <h4 class="card-title"><?php echo Text::_('COM_JOOMLAHITS_CHECKSEO_PAGE_TITLE'); ?></h4>
+                            <p class="card-text"><?php echo Text::_('COM_JOOMLAHITS_CHECKSEO_PAGE_DESCRIPTION'); ?></p>
+                            <a href="<?php echo Route::_('index.php?option=com_joomlahits&view=checkseo'); ?>" class="btn btn-primary btn-lg">
+                                <i class="icon-search"></i> <?php echo Text::_('COM_JOOMLAHITS_GO_TO_CHECKSEO'); ?>
                             </a>
                         </div>
                     </div>
