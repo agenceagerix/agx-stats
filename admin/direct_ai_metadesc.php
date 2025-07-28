@@ -41,7 +41,7 @@ if (!$articleId) {
 
 // Initialize Joomla environment for database configuration access
 define('_JEXEC', 1);
-define('JPATH_BASE', realpath(dirname(__FILE__) . '/../../../..'));
+define('JPATH_BASE', realpath(dirname(__FILE__) . '/../../..'));
 
 // Verify Joomla configuration file exists
 if (!file_exists(JPATH_BASE . '/configuration.php')) {
@@ -94,21 +94,24 @@ try {
     $extensionQuery = $db->prepare("
         SELECT params 
         FROM " . $config->dbprefix . "extensions 
-        WHERE element = 'com_joomlahits' AND type = 'component'
+        WHERE element = 'com_joomlahits' AND type = 'component' AND client_id = 0
     ");
     $extensionQuery->execute();
     $extension = $extensionQuery->fetch();
     
     // Parse component parameters and extract API key
-    $apiKey = '';
-    if ($extension && !empty($extension->params)) {
+    $apiKey = getenv('MISTRAL_API_KEY');
+    if (!$apiKey && $extension && !empty($extension->params)) {
         $params = json_decode($extension->params, true);
         $apiKey = $params['mistral_api_key'] ?? '';
     }
     
     // Validate API key is configured
     if (empty($apiKey)) {
-        echo json_encode(['success' => false, 'message' => 'Mistral API key not configured in component settings']);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Mistral API key not configured (set MISTRAL_API_KEY env var or component parameter)'
+        ]);
         exit;
     }
     

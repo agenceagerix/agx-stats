@@ -20,6 +20,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use Joomla\CMS\Uri\Uri;
 
 $wa = $this->getDocument()->getWebAssetManager();
 $wa->useScript('table.columns')
@@ -388,7 +389,7 @@ $showResults = $app->input->getBool('show', false);
             currentStatus.textContent = <?php echo json_encode(Text::_('COM_JOOMLAHITS_AI_PROCESSING_ARTICLE')); ?> + ' ' + (currentIndex + 1) + '/' + articleIds.length;
 
             // Make AJAX request
-            fetch('/components/com_joomlahits/admin/api/direct_ai_metadesc.php', {
+            fetch('<?php echo Uri::root(); ?>components/com_joomlahits/admin/direct_ai_metadesc.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
