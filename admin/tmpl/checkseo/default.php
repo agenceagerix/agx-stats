@@ -134,6 +134,46 @@ $showResults = $app->input->getBool('show', false);
                             <?php echo Text::sprintf('COM_JOOMLAHITS_CHECKSEO_METADESC_MISSING_FOUND', count($this->items)); ?>
                         </div>
 
+                        <!-- AI Meta Description Generation -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="card border-primary">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5 class="card-title mb-0">
+                                            <i class="icon-wand"></i> <?php echo Text::_('COM_JOOMLAHITS_AI_METADESC_GENERATOR'); ?>
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text"><?php echo Text::_('COM_JOOMLAHITS_AI_METADESC_DESCRIPTION'); ?></p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <button type="button" id="generateAiMetaDescBtn" class="btn btn-success btn-lg">
+                                                <i class="icon-magic"></i> <?php echo Text::_('COM_JOOMLAHITS_GENERATE_AI_METADESC'); ?>
+                                            </button>
+                                            <small class="text-muted"><?php echo Text::_('COM_JOOMLAHITS_AI_METADESC_HELP'); ?></small>
+                                        </div>
+                                        
+                                        <!-- Progress section (hidden by default) -->
+                                        <div id="ai-progress-section" class="mt-3" style="display: none;">
+                                            <div class="alert alert-info">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <strong id="progress-title"><?php echo Text::_('COM_JOOMLAHITS_AI_PROCESSING'); ?></strong>
+                                                    <button type="button" id="cancelAiProcess" class="btn btn-sm btn-outline-danger">
+                                                        <?php echo Text::_('COM_JOOMLAHITS_CANCEL'); ?>
+                                                    </button>
+                                                </div>
+                                                <div class="progress mb-2">
+                                                    <div id="ai-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                                         role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+                                                <div id="current-status" class="small"></div>
+                                                <div id="results-log" class="mt-2 small"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <table class="table" id="seoCheckList">
                             <caption class="visually-hidden">
                                 <?php echo Text::_('COM_JOOMLAHITS_CHECKSEO_CAPTION'); ?>
@@ -270,5 +310,156 @@ $showResults = $app->input->getBool('show', false);
         document.adminForm.filter_order_Dir.value = dir;
         document.adminForm.submit();
     };
+
+    // AI Meta Description Generator
+    document.addEventListener('DOMContentLoaded', function() {
+        const generateBtn = document.getElementById('generateAiMetaDescBtn');
+        const progressSection = document.getElementById('ai-progress-section');
+        const progressBar = document.getElementById('ai-progress-bar');
+        const currentStatus = document.getElementById('current-status');
+        const resultsLog = document.getElementById('results-log');
+        const cancelBtn = document.getElementById('cancelAiProcess');
+        let isProcessing = false;
+        let cancelRequested = false;
+
+        if (generateBtn) {
+            generateBtn.addEventListener('click', function() {
+                if (isProcessing) {
+                    return;
+                }
+                
+                // Get selected articles or all if none selected
+                const checkboxes = document.querySelectorAll('input[name="cid[]"]:checked');
+                const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+                
+                // If no selection, get all visible article IDs
+                if (selectedIds.length === 0) {
+                    const allCheckboxes = document.querySelectorAll('input[name="cid[]"]');
+                    selectedIds.push(...Array.from(allCheckboxes).map(cb => cb.value));
+                }
+
+                if (selectedIds.length === 0) {
+                    alert(<?php echo json_encode(Text::_('COM_JOOMLAHITS_NO_ARTICLES_FOUND')); ?>);
+                    return;
+                }
+
+                startAiGeneration(selectedIds);
+            });
+        }
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function() {
+                cancelRequested = true;
+                currentStatus.textContent = <?php echo json_encode(Text::_('COM_JOOMLAHITS_AI_CANCELLING')); ?>;
+                cancelBtn.disabled = true;
+            });
+        }
+
+        function startAiGeneration(articleIds) {
+            isProcessing = true;
+            cancelRequested = false;
+            
+            // Show progress section
+            progressSection.style.display = 'block';
+            generateBtn.disabled = true;
+            cancelBtn.disabled = false;
+            
+            // Reset progress
+            progressBar.style.width = '0%';
+            progressBar.setAttribute('aria-valuenow', '0');
+            currentStatus.textContent = <?php echo json_encode(Text::_('COM_JOOMLAHITS_AI_INITIALIZING')); ?>;
+            resultsLog.innerHTML = '';
+
+            processArticles(articleIds, 0);
+        }
+
+        function processArticles(articleIds, currentIndex) {
+            if (cancelRequested || currentIndex >= articleIds.length) {
+                finishProcessing();
+                return;
+            }
+
+            const articleId = articleIds[currentIndex];
+            const progress = Math.round((currentIndex / articleIds.length) * 100);
+            
+            // Update progress
+            progressBar.style.width = progress + '%';
+            progressBar.setAttribute('aria-valuenow', progress);
+            currentStatus.textContent = <?php echo json_encode(Text::_('COM_JOOMLAHITS_AI_PROCESSING_ARTICLE')); ?> + ' ' + (currentIndex + 1) + '/' + articleIds.length;
+
+            // Make AJAX request
+            fetch('/components/com_joomlahits/admin/api/direct_ai_metadesc.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: 'article_id=' + encodeURIComponent(articleId)
+            })
+            .then(response => {
+                return response.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        throw new Error('Server returned invalid JSON: ' + text);
+                    }
+                });
+            })
+            .then(data => {
+                if (data.success) {
+                    resultsLog.innerHTML += '<div class="text-success"><i class="icon-checkmark"></i> ' + data.message + '</div>';
+                    // Update the table cell with new meta description
+                    updateTableMetaDescription(articleId, data.metadesc);
+                } else {
+                    resultsLog.innerHTML += '<div class="text-danger"><i class="icon-warning"></i> ' + data.message + '</div>';
+                }
+                
+                // Process next article
+                setTimeout(() => {
+                    processArticles(articleIds, currentIndex + 1);
+                }, 500); // Small delay to avoid overwhelming the API
+            })
+            .catch(error => {
+                resultsLog.innerHTML += '<div class="text-danger"><i class="icon-warning"></i> Erreur: ' + error.message + '</div>';
+                setTimeout(() => {
+                    processArticles(articleIds, currentIndex + 1);
+                }, 500);
+            });
+        }
+
+        function updateTableMetaDescription(articleId, metadesc) {
+            // Find the row with this article ID and update the meta description cell
+            const rows = document.querySelectorAll('#seoCheckList tbody tr');
+            rows.forEach(row => {
+                const checkbox = row.querySelector('input[name="cid[]"]');
+                if (checkbox && checkbox.value === articleId) {
+                    const metaCell = row.cells[5]; // Meta description column (index 5)
+                    if (metaCell) {
+                        metaCell.innerHTML = '<small class="text-success">' + metadesc.substring(0, 100) + '...</small>';
+                    }
+                }
+            });
+        }
+
+        function finishProcessing() {
+            isProcessing = false;
+            generateBtn.disabled = false;
+            cancelBtn.disabled = true;
+            
+            // Update progress to 100%
+            progressBar.style.width = '100%';
+            progressBar.setAttribute('aria-valuenow', '100');
+            
+            if (cancelRequested) {
+                currentStatus.textContent = <?php echo json_encode(Text::_('COM_JOOMLAHITS_AI_CANCELLED')); ?>;
+            } else {
+                currentStatus.textContent = <?php echo json_encode(Text::_('COM_JOOMLAHITS_AI_COMPLETED')); ?>;
+            }
+            
+            // Hide progress section after 3 seconds
+            setTimeout(() => {
+                progressSection.style.display = 'none';
+            }, 3000);
+        }
+    });
     </script>
 </form>

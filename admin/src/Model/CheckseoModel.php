@@ -20,6 +20,7 @@ defined('_JEXEC') or die;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
+use Exception;
 
 class CheckSeoModel extends BaseDatabaseModel
 {
@@ -167,4 +168,58 @@ class CheckSeoModel extends BaseDatabaseModel
         $db->setQuery($query);
         return $db->loadObjectList();
     }
+
+    /**
+     * Get article content for AI meta description generation
+     *
+     * @param   int  $articleId  The article ID
+     * @return  object|null  Object with title and introtext or null if not found
+     */
+    public function getArticleContent($articleId)
+    {
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true);
+
+        $query->select([
+            $db->quoteName('id'),
+            $db->quoteName('title'),
+            $db->quoteName('introtext'),
+            $db->quoteName('fulltext'),
+            $db->quoteName('metadesc'),
+            $db->quoteName('language')
+        ])
+        ->from($db->quoteName('#__content'))
+        ->where($db->quoteName('id') . ' = ' . (int) $articleId)
+        ->where($db->quoteName('state') . ' != -2'); // Exclude trashed articles
+
+        $db->setQuery($query);
+        return $db->loadObject();
+    }
+
+    /**
+     * Update article meta description
+     *
+     * @param   int     $articleId   The article ID
+     * @param   string  $metadesc    The new meta description
+     * @return  bool    True on success, false on failure
+     */
+    public function updateMetaDescription($articleId, $metadesc)
+    {
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true);
+
+        $query->update($db->quoteName('#__content'))
+            ->set($db->quoteName('metadesc') . ' = ' . $db->quote($metadesc))
+            ->where($db->quoteName('id') . ' = ' . (int) $articleId);
+
+        $db->setQuery($query);
+        
+        try {
+            return $db->execute();
+        } catch (Exception $e) {
+            Factory::getApplication()->enqueueMessage('Database error: ' . $e->getMessage(), 'error');
+            return false;
+        }
+    }
+
 }

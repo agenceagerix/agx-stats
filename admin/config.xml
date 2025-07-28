@@ -97,6 +97,31 @@
     </fieldset>
 
     <fieldset 
+        name="mistral_ai" 
+        label="COM_JOOMLAHITS_CONFIG_MISTRAL_LABEL" 
+        description="COM_JOOMLAHITS_CONFIG_MISTRAL_DESC">
+        
+        <field
+            name="mistral_api_key"
+            type="password"
+            label="COM_JOOMLAHITS_CONFIG_MISTRAL_API_KEY_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_MISTRAL_API_KEY_DESC"
+            size="50"
+            filter="raw"
+            autocomplete="off"/>
+        
+         <field
+            name="mistral_prompt"
+            type="textarea"
+            label="COM_JOOMLAHITS_CONFIG_MISTRAL_PROMPT_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_MISTRAL_PROMPT_DESC"
+            rows="6"
+            cols="80"
+            filter="raw"
+            default="Generate a compelling SEO meta description of exactly 185 characters or less for this article. The meta description should be engaging, include relevant keywords, and encourage clicks. Do not include quotes or special formatting. Just return the meta description text.&#10;&#10;Article Title: {title}&#10;Article Introduction: {introtext}"/>
+    </fieldset>
+
+    <fieldset 
         name="permissions" 
         label="JCONFIG_PERMISSIONS_LABEL" 
         description="JCONFIG_PERMISSIONS_DESC">
