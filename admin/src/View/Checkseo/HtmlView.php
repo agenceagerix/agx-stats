@@ -13,21 +13,34 @@
 	/    \( (_ \ ) _) /    /( (__  ) _)   /    \( (_ \ ) _)  )   / )(  )  (
 	\_/\_/ \___/(____)\_)__) \___)(____)  \_/\_/ \___/(____)(__\_)(__)(_/\_)
 /------------------------------------------------------------------------------------------------------*/
-namespace Joomla\Component\JoomlaHits\Administrator\View\CheckSeo;
+namespace Joomla\Component\JoomlaHits\Administrator\View\Checkseo;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use Joomla\Component\JoomlaHits\Administrator\Model\CheckSeoModel;
+use Joomla\Component\JoomlaHits\Administrator\Model\CheckseoModel;
 
 class HtmlView extends BaseHtmlView
 {
     /**
-     * SEO data for articles
+     * The items to display
      * @var array
      */
-    protected $seoData;
+    protected $items;
+
+
+    /**
+     * Available categories for filtering
+     * @var array
+     */
+    protected $categories;
+
+    /**
+     * Available languages for filtering
+     * @var array
+     */
+    protected $languages;
 
     /**
      * Component parameters
@@ -37,7 +50,7 @@ class HtmlView extends BaseHtmlView
 
     /**
      * Execute and display a template script.
-     * Loads SEO check data from the model.
+     * Loads SEO check data from the model with pagination and filtering.
      *
      * @param   string  $tpl  The name of the template file to parse
      *
@@ -45,14 +58,16 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null) : void
     {
-        /** @var CheckSeoModel $model */
+        /** @var CheckseoModel $model */
         $model = $this->getModel();
         
         // Get component parameters
         $this->params = ComponentHelper::getParams('com_joomlahits');
         
-        // Get SEO data
-        $this->seoData = $model->getSeoData();
+        // Get data
+        $this->items = $model->getItems();
+        $this->categories = $model->getCategories();
+        $this->languages = $model->getLanguages();
         
         $this->addToolbar();
         parent::display($tpl);
@@ -66,7 +81,7 @@ class HtmlView extends BaseHtmlView
      */
     protected function addToolbar()
     {
-        ToolbarHelper::title('COM_JOOMLAHITS_CHECKSEO_PAGE_TITLE');
+        ToolbarHelper::title('JoomlaHits - Check SEO', 'joomlahits');
         
         if (Factory::getApplication()->getIdentity()->authorise('core.admin', 'com_joomlahits')) {
             ToolbarHelper::preferences('com_joomlahits');
