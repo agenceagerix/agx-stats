@@ -389,7 +389,7 @@ $showResults = $app->input->getBool('show', false);
             currentStatus.textContent = <?php echo json_encode(Text::_('COM_JOOMLAHITS_AI_PROCESSING_ARTICLE')); ?> + ' ' + (currentIndex + 1) + '/' + articleIds.length;
 
             // Make AJAX request
-            fetch('<?php echo Uri::root(); ?>components/com_joomlahits/admin/direct_ai_metadesc.php', {
+            fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_ai_metadesc.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'

@@ -94,7 +94,7 @@ try {
     $extensionQuery = $db->prepare("
         SELECT params 
         FROM " . $config->dbprefix . "extensions 
-        WHERE element = 'com_joomlahits' AND type = 'component' AND client_id = 0
+        WHERE element = 'com_joomlahits' AND type = 'component' AND client_id = 1
     ");
     $extensionQuery->execute();
     $extension = $extensionQuery->fetch();
