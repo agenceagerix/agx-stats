@@ -16,6 +16,7 @@
             <filename>access.xml</filename>
             <filename>config.xml</filename>
             <filename>direct_ai_metadesc.php</filename>
+            <filename>direct_seo_analysis.php</filename>
             <folder>language</folder>
             <folder>services</folder>
             <folder>src</folder>

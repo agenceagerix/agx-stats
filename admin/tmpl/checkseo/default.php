@@ -55,9 +55,14 @@ $showResults = $app->input->getBool('show', false);
                                     <a href="<?php echo Route::_('index.php?option=com_joomlahits'); ?>" class="btn btn-secondary">
                                         <i class="icon-arrow-left"></i> <?php echo Text::_('COM_JOOMLAHITS_BACK_TO_CONTROL_PANEL'); ?>
                                     </a>
-                                    <button type="button" class="btn btn-primary btn-lg" id="seoCheckButton">
-                                        <i class="icon-search"></i> <span id="seoCheckButtonText"><?php echo Text::_('COM_JOOMLAHITS_CHECKSEO_START_ANALYSIS'); ?></span>
-                                    </button>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-primary btn-lg" id="seoCheckButton">
+                                            <i class="icon-search"></i> <span id="seoCheckButtonText"><?php echo Text::_('COM_JOOMLAHITS_CHECKSEO_START_ANALYSIS'); ?></span>
+                                        </button>
+                                        <a href="<?php echo Route::_('index.php?option=com_joomlahits&view=seoanalysis'); ?>" class="btn btn-success btn-lg" id="fullAnalysisButton">
+                                            <i class="icon-cog"></i> <?php echo Text::_('COM_JOOMLAHITS_FULL_SEO_ANALYSIS'); ?>
+                                        </a>
+                                    </div>
                                     <div></div> <!-- Spacer for centering -->
                                 </div>
                             </div>
