@@ -41,7 +41,7 @@ if (!$articleId) {
     exit;
 }
 
-if (!$fieldType || !in_array($fieldType, ['title', 'metadesc', 'metakey', 'alias', 'content'])) {
+if (!$fieldType || !in_array($fieldType, ['title', 'metadesc', 'metakey', 'alias'])) {
     echo json_encode(['success' => false, 'message' => 'Invalid field type']);
     exit;
 }
@@ -229,34 +229,21 @@ try {
     $generatedContent = preg_replace('/^```json\s*/', '', $generatedContent);
     $generatedContent = preg_replace('/\s*```$/', '', $generatedContent);
     
-    // For simple field types, extract directly
-    if (in_array($fieldType, ['title', 'metadesc', 'metakey', 'alias'])) {
-        $generatedValue = trim($generatedContent);
-        // Remove quotes if present
-        $generatedValue = trim($generatedValue, '"\'');
-        
-        // Clean the generated value based on field type
-        $cleanedValue = cleanFieldValue($fieldType, $generatedValue);
-        
-        echo json_encode([
-            'success' => true,
-            'message' => ucfirst($fieldType) . ' optimisé avec succès',
-            'article_id' => $articleId,
-            'field_type' => $fieldType,
-            'field_value' => $cleanedValue
-        ], JSON_UNESCAPED_UNICODE);
-    } else {
-        // For content, return as is (with HTML structure)
-        $cleanedContent = trim($generatedContent);
-        
-        echo json_encode([
-            'success' => true,
-            'message' => 'Contenu optimisé avec succès',
-            'article_id' => $articleId,
-            'field_type' => $fieldType,
-            'field_value' => $cleanedContent
-        ], JSON_UNESCAPED_UNICODE);
-    }
+    // Extract and clean the generated value
+    $generatedValue = trim($generatedContent);
+    // Remove quotes if present
+    $generatedValue = trim($generatedValue, '"\'');
+    
+    // Clean the generated value based on field type
+    $cleanedValue = cleanFieldValue($fieldType, $generatedValue);
+    
+    echo json_encode([
+        'success' => true,
+        'message' => ucfirst($fieldType) . ' optimisé avec succès',
+        'article_id' => $articleId,
+        'field_type' => $fieldType,
+        'field_value' => $cleanedValue
+    ], JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {
     // Handle general exceptions
@@ -303,19 +290,6 @@ function generateFieldPrompt($fieldType, $title, $content, $article) {
                    "Réponds UNIQUEMENT avec l'alias URL, sans guillemets ni explication.\n\n" .
                    "Titre : " . $title . "\n" .
                    "Langue : " . $language;
-                   
-        case 'content':
-            return "Tu es un expert en structuration HTML. Ton travail consiste UNIQUEMENT à identifier les parties du texte qui ressemblent à des titres de section et les entourer avec des balises H1, H2 ou H3.\n\n" .
-                   "RÈGLES STRICTES :\n" .
-                   "1. NE CHANGE AUCUN MOT du texte existant\n" .
-                   "2. NE SUPPRIME AUCUN CONTENU\n" .
-                   "3. AJOUTE SEULEMENT les balises <h1>, <h2>, <h3> autour des phrases qui ressemblent à des titres\n" .
-                   "4. Garde TOUS les paragraphes, espaces et formatage existants\n" .
-                   "5. Si tu n'es pas sûr qu'une phrase soit un titre, ne touche pas\n\n" .
-                   "Exemple :\n" .
-                   "AVANT: 'Introduction\nCeci est le texte d'introduction.\nPremière partie\nVoici le contenu de la première partie.'\n" .
-                   "APRÈS: '<h1>Introduction</h1>\nCeci est le texte d'introduction.\n<h2>Première partie</h2>\nVoici le contenu de la première partie.'\n\n" .
-                   "Contenu à structurer :\n" . $content;
                    
         default:
             return '';

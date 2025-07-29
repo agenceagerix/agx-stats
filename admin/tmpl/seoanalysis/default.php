@@ -985,8 +985,8 @@ function fixWithAI() {
     aiBtn.disabled = true;
     aiBtn.innerHTML = '<i class="icon-refresh icon-spin me-2"></i>IA en cours...';
     
-    // Liste des champs à traiter
-    var fields = ['title', 'metadesc', 'metakey', 'alias', 'content'];
+    // Liste des champs à traiter (exclu 'content' car trop risqué pour la séparation introtext/fulltext)
+    var fields = ['title', 'metadesc', 'metakey', 'alias'];
     var currentFieldIndex = 0;
     var processedFields = 0;
     
@@ -996,7 +996,7 @@ function fixWithAI() {
             aiBtn.disabled = false;
             aiBtn.innerHTML = originalText;
             updateFieldCounters();
-            alert('✨ IA a optimisé tous les champs SEO ! Vérifiez les suggestions et sauvegardez si elles vous conviennent.');
+            alert('✨ IA a optimisé les champs SEO (titre, meta desc, mots-clés, URL) ! Le contenu n\'a pas été modifié pour préserver la structure. Vérifiez les suggestions et sauvegardez si elles vous conviennent.');
             return;
         }
         
@@ -1047,8 +1047,7 @@ function getFieldLabel(fieldType) {
         'title': 'Titre',
         'metadesc': 'Meta desc',
         'metakey': 'Mots-clés',
-        'alias': 'URL',
-        'content': 'Contenu'
+        'alias': 'URL'
     };
     return labels[fieldType] || fieldType;
 }
