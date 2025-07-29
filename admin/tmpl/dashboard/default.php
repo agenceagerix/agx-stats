@@ -159,14 +159,34 @@ $wa->useScript('bootstrap.collapse');
                     </div>
                     <?php endif; ?>
 
-                    <!-- Dynamic Top Articles by Language -->
+                    <!-- Dynamic Top Articles by Language - ENHANCED VERSION -->
                     <?php if ($this->params->get('show_language_stats', 1) && !empty($this->availableLanguages) && !empty($this->topArticlesByLanguage)): ?>
                     <div class="row mb-4">
                         <?php 
                         $displayedLanguages = 0;
                         $maxLanguages = $this->params->get('max_languages_display', 4);
+                        $languageCount = min(count($this->availableLanguages), $maxLanguages);
+                        
+                        // Define responsive classes based on the number of languages
+                        $colClasses = '';
+                        switch($languageCount) {
+                            case 1:
+                                $colClasses = 'col-12';
+                                break;
+                            case 2:
+                                $colClasses = 'col-12 col-lg-6';
+                                break;
+                            case 3:
+                                $colClasses = 'col-12 col-md-6 col-xl-4';
+                                break;
+                            case 4:
+                            default:
+                                $colClasses = 'col-12 col-md-6 col-xl-3';
+                                break;
+                        }
+                        
                         foreach ($this->availableLanguages as $language): 
-                            if ($displayedLanguages >= $maxLanguages) break; // Limit to configured number of languages
+                            if ($displayedLanguages >= $maxLanguages) break;
                             if (!empty($this->topArticlesByLanguage[$language->language])):
                                 // Get language flag/icon
                                 $languageIcon = '';
@@ -191,31 +211,73 @@ $wa->useScript('bootstrap.collapse');
                                         $languageIcon = '🌍';
                                 }
                         ?>
-                        <div class="col-12 col-lg-6 mb-4 mb-lg-0">
+                        <div class="<?php echo $colClasses; ?> mb-4">
                             <div class="card stats-card h-100">
-                                <div class="card-header">
-                                    <h5><?php echo $languageIcon; ?> Top 10 <?php echo $this->escape($languageTitle); ?> Articles</h5>
+                                <div class="card-header d-flex align-items-center justify-content-between">
+                                    <h5 class="mb-0 text-truncate">
+                                        <span class="me-2"><?php echo $languageIcon; ?></span>
+                                        <span class="d-none d-sm-inline"><?php echo sprintf(Text::_('COM_JOOMLAHITS_TOP_ARTICLES_TITLE'), $this->escape($languageTitle)); ?></span>
+                                        <span class="d-inline d-sm-none"><?php echo sprintf(Text::_('COM_JOOMLAHITS_TOP_ARTICLES_TITLE'), $this->escape($languageTitle)); ?></span>
+                                    </h5>
+                                    <small class="text-muted d-none d-md-block">
+                                        <?php echo count($this->topArticlesByLanguage[$language->language]); ?> <?php echo Text::_('COM_JOOMLAHITS_ARTICLES_COUNT'); ?>
+                                    </small>
                                 </div>
-                                <div class="card-body">
+                                <div class="card-body p-2 p-sm-3">
                                     <div class="table-responsive">
-                                        <table class="table table-striped table-sm">
-                                            <thead>
+                                        <table class="table table-striped table-sm mb-0">
+                                            <thead class="d-none d-md-table-header-group">
                                                 <tr>
-                                                    <th><?php echo Text::_('COM_JOOMLAHITS_TITLE'); ?></th>
-                                                    <th><?php echo Text::_('COM_JOOMLAHITS_CATEGORY'); ?></th>
-                                                    <th class="text-center"><?php echo Text::_('COM_JOOMLAHITS_VIEWS'); ?></th>
+                                                    <th class="border-top-0"><?php echo Text::_('COM_JOOMLAHITS_TITLE'); ?></th>
+                                                    <th class="border-top-0 d-none d-lg-table-cell"><?php echo Text::_('COM_JOOMLAHITS_CATEGORY'); ?></th>
+                                                    <th class="border-top-0 text-center" style="width: 80px;"><?php echo Text::_('COM_JOOMLAHITS_VIEWS'); ?></th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <?php foreach ($this->topArticlesByLanguage[$language->language] as $article): ?>
-                                                    <tr>
-                                                        <td>
-                                                            <a href="<?php echo Route::_('index.php?option=com_content&task=article.edit&id=' . $article->id); ?>" title="Edit Article">
-                                                                <?php echo $this->escape($article->title); ?>
-                                                            </a>
+                                                <?php 
+                                                $articleIndex = 0;
+                                                foreach ($this->topArticlesByLanguage[$language->language] as $article): 
+                                                    $articleIndex++;
+                                                ?>
+                                                    <tr class="<?php echo $articleIndex > 5 ? 'd-none d-lg-table-row' : ''; ?>" data-language="<?php echo $language->language; ?>">
+                                                        <td class="align-middle">
+                                                            <!-- Mobile version with ranking -->
+                                                            <div class="d-md-none">
+                                                                <div class="d-flex align-items-start">
+                                                                    <span class="badge bg-<?php echo $articleIndex <= 3 ? 'warning' : 'secondary'; ?> me-2 mt-1 flex-shrink-0" style="min-width: 24px;">
+                                                                        <?php echo $articleIndex; ?>
+                                                                    </span>
+                                                                    <div class="flex-grow-1 min-width-0">
+                                                                        <a href="<?php echo Route::_('index.php?option=com_content&task=article.edit&id=' . $article->id); ?>" 
+                                                                           class="text-decoration-none fw-medium d-block text-truncate" 
+                                                                           title="<?php echo $this->escape($article->title); ?>">
+                                                                            <?php echo $this->escape($article->title); ?>
+                                                                        </a>
+                                                                        <div class="d-flex justify-content-between align-items-center mt-1">
+                                                                            <small class="text-muted text-truncate me-2">
+                                                                                <?php echo $this->escape($article->category_title); ?>
+                                                                            </small>
+                                                                            <span class="badge bg-info flex-shrink-0">
+                                                                                <i class="icon-eye"></i> <?php echo number_format($article->hits); ?>
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Desktop version -->
+                                                            <div class="d-none d-md-block">
+                                                                <a href="<?php echo Route::_('index.php?option=com_content&task=article.edit&id=' . $article->id); ?>" 
+                                                                   class="text-decoration-none" 
+                                                                   title="<?php echo $this->escape($article->title); ?>">
+                                                                    <?php echo $this->escape(strlen($article->title) > 40 ? substr($article->title, 0, 40) . '...' : $article->title); ?>
+                                                                </a>
+                                                            </div>
                                                         </td>
-                                                        <td><?php echo $this->escape($article->category_title); ?></td>
-                                                        <td class="text-center">
+                                                        <td class="d-none d-lg-table-cell align-middle">
+                                                            <small><?php echo $this->escape($article->category_title); ?></small>
+                                                        </td>
+                                                        <td class="text-center align-middle d-none d-md-table-cell">
                                                             <span class="badge bg-info"><?php echo number_format($article->hits); ?></span>
                                                         </td>
                                                     </tr>
@@ -223,6 +285,17 @@ $wa->useScript('bootstrap.collapse');
                                             </tbody>
                                         </table>
                                     </div>
+                                    
+                                    <!-- "Show more" button for mobile if more than 5 articles -->
+                                    <?php if (count($this->topArticlesByLanguage[$language->language]) > 5): ?>
+                                    <div class="text-center mt-2 d-lg-none">
+                                        <button class="btn btn-sm btn-outline-secondary toggle-more-articles" 
+                                                data-language="<?php echo $language->language; ?>">
+                                            <span class="show-more"><?php echo sprintf(Text::_('COM_JOOMLAHITS_SHOW_MORE'), count($this->topArticlesByLanguage[$language->language]) - 5); ?></span>
+                                            <span class="show-less d-none"><?php echo Text::_('COM_JOOMLAHITS_SHOW_LESS'); ?></span>
+                                        </button>
+                                    </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -347,7 +420,7 @@ $wa->useScript('bootstrap.collapse');
                                                                     </span>
                                                                     <div class="flex-grow-1">
                                                                         <a href="<?php echo Route::_('index.php?option=com_content&task=article.edit&id=' . $article->id); ?>" 
-                                                                           class="text-decoration-none text-white fw-medium" 
+                                                                           class="text-decoration-none fw-medium" 
                                                                            title="<?php echo $this->escape($article->title); ?>">
                                                                             <?php echo $this->escape(strlen($article->title) > 35 ? substr($article->title, 0, 35) . '...' : $article->title); ?>
                                                                         </a>
@@ -620,6 +693,10 @@ $wa->useScript('bootstrap.collapse');
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+/* CSS to improve responsive design for language containers */
+
+/* Optimization of language statistics cards */
+
 .chart-container {
     position: relative;
     margin: 20px 0;
@@ -640,10 +717,208 @@ $wa->useScript('bootstrap.collapse');
 .chart-container canvas {
     border-radius: 8px;
 }
+
+/* Improvement of mobile display for articles by language */
+@media (max-width: 767.98px) {
+    .stats-card .card-header h5 {
+        font-size: 0.95rem;
+    }
+    
+    .stats-card .card-body {
+        padding: 0.75rem !important;
+    }
+    
+    /* Optimization of list display for mobile */
+    .stats-card .table td {
+        border: none;
+        padding: 0.5rem 0;
+    }
+    
+    .stats-card .table tbody tr {
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .stats-card .table tbody tr:last-child {
+        border-bottom: none;
+    }
+    
+    /* Style for ranking badges on mobile */
+    .badge {
+        font-size: 0.7rem;
+    }
+    
+    /* Improvement of title truncation */
+    .text-truncate {
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* Style for "Show more" buttons */
+    .toggle-more-articles {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+    }
+}
+
+/* Optimization for tablets */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .stats-card .card-header h5 {
+        font-size: 1rem;
+    }
+    
+    /* Reducing the width of view columns */
+    .stats-card .table th:last-child,
+    .stats-card .table td:last-child {
+        width: 80px;
+        text-align: center;
+    }
+}
+
+/* Optimization for large screens */
+@media (min-width: 1200px) {
+    /* When there are 4 columns, optimize spacing */
+    .col-xl-3 .stats-card .card-header h5 {
+        font-size: 0.9rem;
+    }
+    
+    .col-xl-3 .stats-card .table {
+        font-size: 0.85rem;
+    }
+    
+    /* Improvement of truncation for small columns */
+    .col-xl-3 .table td:first-child {
+        max-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+/* Optimization for very large screens */
+@media (min-width: 1400px) {
+    .col-xl-3 .stats-card .card-header h5 {
+        font-size: 1rem;
+    }
+    
+    .col-xl-3 .stats-card .table {
+        font-size: 0.875rem;
+    }
+}
+
+/* Hover effect for stats cards */
+.stats-card {
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: rgba(13, 110, 253, 0.5);
+}
+
+/* Style for article links */
+.stats-card .table a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.stats-card .table a:hover {
+    color: #0d6efd;
+    text-decoration: underline;
+}
+
+/* Accessibility improvement */
+.stats-card .table th,
+.stats-card .table td {
+    vertical-align: middle;
+}
+
+/* Style for language indicators */
+.stats-card .card-header span:first-child {
+    font-size: 1.2em;
+    display: inline-block;
+    margin-right: 0.5rem;
+}
+
+/* Custom responsive breakpoints for this section */
+@media (max-width: 575.98px) {
+    /* Very small screens - 1 column */
+    .stats-card .card-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .stats-card .card-header h5 {
+        font-size: 0.9rem;
+        line-height: 1.3;
+    }
+}
+
+@media (min-width: 576px) and (max-width: 767.98px) {
+    /* Small screens - always 1 column but more space */
+    .stats-card .card-header h5 {
+        font-size: 1rem;
+    }
+}
+
+/* Contrast improvement for accessibility */
+@media (prefers-contrast: high) {
+    .stats-card {
+        border: 2px solid #333;
+    }
+    
+    .badge {
+        border: 1px solid currentColor;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    
+    .stats-card .table tbody tr {
+        border-bottom-color: rgba(255,255,255,0.1);
+    }
+}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    
+    // JavaScript for the "Show more/less" toggle
+    document.querySelectorAll('.toggle-more-articles').forEach(function(button) {
+        button.addEventListener('click', function() {
+            const card = this.closest('.card');
+            const language = this.getAttribute('data-language');
+            const allRows = card.querySelectorAll('tr[data-language="' + language + '"]');
+            const showMoreSpan = this.querySelector('.show-more');
+            const showLessSpan = this.querySelector('.show-less');
+            
+            if (showMoreSpan.classList.contains('d-none')) {
+                // Hide additional rows (show only the first 5)
+                allRows.forEach((row, index) => {
+                    if (index >= 5) {
+                        row.classList.add('d-none');
+                        row.classList.remove('d-lg-table-row');
+                    }
+                });
+                showMoreSpan.classList.remove('d-none');
+                showLessSpan.classList.add('d-none');
+            } else {
+                // Show all rows
+                allRows.forEach((row, index) => {
+                    if (index >= 5) {
+                        row.classList.remove('d-none');
+                        row.classList.add('d-lg-table-row');
+                    }
+                });
+                showMoreSpan.classList.add('d-none');
+                showLessSpan.classList.remove('d-none');
+            }
+        });
+    });
     
     // Pie chart for language statistics
     <?php if (!empty($this->languageStats)): ?>
