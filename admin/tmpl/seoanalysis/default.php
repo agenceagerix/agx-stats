@@ -430,44 +430,45 @@ function startAnalysis() {
 
 // Récupérer la liste des articles
 function getArticlesList() {
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_analysis.php', true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-                try {
-                    var data = JSON.parse(xhr.responseText);
-                    if (data.success) {
-                        articlesList = data.data;
-                        currentAnalysisResults.total_articles = articlesList.length;
-                        document.getElementById('current-analysis-status').textContent = 
-                            'Début de l analyse - ' + articlesList.length + ' articles à traiter';
-                        
-                        // Démarrer l'analyse du premier article
-                        if (articlesList.length > 0) {
-                            analyzeNextArticle();
-                        } else {
-                            finishAnalysis();
-                        }
-                    } else {
-                        alert('Erreur lors de la récupération des articles: ' + data.message);
-                        resetAnalysisUI();
-                    }
-                } catch (e) {
-                    console.error('Erreur parsing JSON:', e);
-                    alert('Erreur lors du parsing de la réponse');
-                    resetAnalysisUI();
-                }
-            } else {
-                alert('Erreur de connexion');
-                resetAnalysisUI();
+    fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_analysis.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'get_articles_list=1'
+    })
+    .then(response => {
+        return response.text().then(text => {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                throw new Error('Server returned invalid JSON: ' + text);
             }
+        });
+    })
+    .then(data => {
+        if (data.success) {
+            articlesList = data.data;
+            currentAnalysisResults.total_articles = articlesList.length;
+            document.getElementById('current-analysis-status').textContent = 
+                'Début de l analyse - ' + articlesList.length + ' articles à traiter';
+            
+            // Démarrer l'analyse du premier article
+            if (articlesList.length > 0) {
+                analyzeNextArticle();
+            } else {
+                finishAnalysis();
+            }
+        } else {
+            alert('Erreur lors de la récupération des articles: ' + data.message);
+            resetAnalysisUI();
         }
-    };
-    
-    xhr.send('get_articles_list=1');
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur lors de la récupération des articles: ' + error.message);
+        resetAnalysisUI();
+    });
 }
 
 // Analyser l'article suivant
@@ -489,57 +490,69 @@ function analyzeNextArticle() {
     currentStatus.textContent = 'Analyse de "' + article.title + '" (' + (currentArticleIndex + 1) + '/' + articlesList.length + ')';
     
     // Analyser l'article
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_analysis.php', true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-                try {
-                    var data = JSON.parse(xhr.responseText);
-                    if (data.success && data.data.issues && data.data.issues.length > 0) {
-                        // Ajouter l'article avec des problèmes
-                        currentAnalysisResults.issues.push(data.data);
-                        
-                        // Mettre à jour les stats
-                        for (var i = 0; i < data.data.issues.length; i++) {
-                            var issue = data.data.issues[i];
-                            var category = getIssueCategoryFromType(issue.type);
-                            if (currentAnalysisResults.stats[category + '_issues'] !== undefined) {
-                                currentAnalysisResults.stats[category + '_issues']++;
-                            }
-                        }
-                        
-                        // Logger le résultat
-                        var severityClass = {
-                            'critical': 'text-danger',
-                            'warning': 'text-warning',
-                            'info': 'text-info'
-                        }[data.data.severity];
-                        
-                        resultsLog.innerHTML += '<div class="' + severityClass + '">' +
-                            '<i class="icon-warning"></i> ' + data.data.issues.length + ' problème(s) trouvé(s) dans "' + article.title + '"' +
-                        '</div>';
-                    } else {
-                        // Article sans problèmes
-                        resultsLog.innerHTML += '<div class="text-success">' +
-                            '<i class="icon-checkmark"></i> "' + article.title + '" - Aucun problème détecté' +
-                        '</div>';
-                    }
-                    resultsLog.scrollTop = resultsLog.scrollHeight;
-                } catch (e) {
-                    console.error('Erreur parsing:', e);
+    fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_analysis.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'article_id=' + encodeURIComponent(article.id)
+    })
+    .then(response => {
+        return response.text().then(text => {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                throw new Error('Server returned invalid JSON: ' + text);
+            }
+        });
+    })
+    .then(data => {
+        if (data.success && data.data.issues && data.data.issues.length > 0) {
+            // Ajouter l'article avec des problèmes
+            currentAnalysisResults.issues.push(data.data);
+            
+            // Mettre à jour les stats
+            for (var i = 0; i < data.data.issues.length; i++) {
+                var issue = data.data.issues[i];
+                var category = getIssueCategoryFromType(issue.type);
+                if (currentAnalysisResults.stats[category + '_issues'] !== undefined) {
+                    currentAnalysisResults.stats[category + '_issues']++;
                 }
             }
             
-            // Passer à l'article suivant
-            currentArticleIndex++;
-            setTimeout(analyzeNextArticle, 1);
+            // Logger le résultat
+            var severityClass = {
+                'critical': 'text-danger',
+                'warning': 'text-warning',
+                'info': 'text-info'
+            }[data.data.severity];
+            
+            resultsLog.innerHTML += '<div class="' + severityClass + '">' +
+                '<i class="icon-warning"></i> ' + data.data.issues.length + ' problème(s) trouvé(s) dans "' + article.title + '"' +
+            '</div>';
+        } else {
+            // Article sans problèmes
+            resultsLog.innerHTML += '<div class="text-success">' +
+                '<i class="icon-checkmark"></i> "' + article.title + '" - Aucun problème détecté' +
+            '</div>';
         }
-    };
-    
-    xhr.send('article_id=' + encodeURIComponent(article.id));
+        resultsLog.scrollTop = resultsLog.scrollHeight;
+        
+        // Passer à l'article suivant
+        currentArticleIndex++;
+        setTimeout(analyzeNextArticle, 1);
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        resultsLog.innerHTML += '<div class="text-danger">' +
+            '<i class="icon-warning"></i> Erreur lors de l\'analyse de "' + article.title + '": ' + error.message +
+        '</div>';
+        resultsLog.scrollTop = resultsLog.scrollHeight;
+        
+        // Passer à l'article suivant même en cas d'erreur
+        currentArticleIndex++;
+        setTimeout(analyzeNextArticle, 1);
+    });
 }
 
 // Obtenir la catégorie d'un type de problème
@@ -1078,42 +1091,48 @@ function fixWithAI() {
         var fieldType = fields[currentFieldIndex];
         aiBtn.innerHTML = '<i class="icon-refresh icon-spin me-2"></i>IA: ' + getFieldLabel(fieldType) + '...';
         
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_ai_seo_fix.php', true);
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    try {
-                        var data = JSON.parse(xhr.responseText);
-                        if (data.success && data.field_value) {
-                            // Stocker la valeur optimisée pour la prévisualisation
-                            window.aiOptimizedValues[fieldType] = data.field_value;
-                            
-                            // Remplir le champ correspondant (temporairement)
-                            var fieldElement = document.getElementById('seo-' + fieldType);
-                            if (fieldElement) {
-                                fieldElement.value = data.field_value;
-                            }
-                            processedFields++;
-                        } else {
-                            console.error('Erreur pour le champ ' + fieldType + ':', data.message);
-                        }
-                    } catch (e) {
-                        console.error('Erreur parsing pour le champ ' + fieldType + ':', e.message);
-                    }
-                } else {
-                    console.error('Erreur HTTP pour le champ ' + fieldType + ':', xhr.status);
+        fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_ai_seo_fix.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'article_id=' + encodeURIComponent(currentArticleData.id) + '&field_type=' + encodeURIComponent(fieldType)
+        })
+        .then(response => {
+            return response.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    throw new Error('Server returned invalid JSON: ' + text);
                 }
+            });
+        })
+        .then(data => {
+            if (data.success && data.field_value) {
+                // Stocker la valeur optimisée pour la prévisualisation
+                window.aiOptimizedValues[fieldType] = data.field_value;
                 
-                // Passer au champ suivant
-                currentFieldIndex++;
-                setTimeout(processNextField, 500); // Délai entre les appels
+                // Remplir le champ correspondant (temporairement)
+                var fieldElement = document.getElementById('seo-' + fieldType);
+                if (fieldElement) {
+                    fieldElement.value = data.field_value;
+                }
+                processedFields++;
+            } else {
+                console.error('Erreur pour le champ ' + fieldType + ':', data.message);
             }
-        };
-        
-        xhr.send('article_id=' + encodeURIComponent(currentArticleData.id) + '&field_type=' + encodeURIComponent(fieldType));
+            
+            // Passer au champ suivant
+            currentFieldIndex++;
+            setTimeout(processNextField, 500); // Délai entre les appels
+        })
+        .catch(error => {
+            console.error('Erreur pour le champ ' + fieldType + ':', error.message);
+            
+            // Passer au champ suivant même en cas d'erreur
+            currentFieldIndex++;
+            setTimeout(processNextField, 500);
+        });
     }
     
     // Commencer le traitement
@@ -1257,78 +1276,87 @@ function saveSeoFixes() {
     
     // Note: L'optimisation IA du contenu est désactivée pour éviter les problèmes
     
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_fix.php', true);
-    
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-                try {
-                    var data = JSON.parse(xhr.responseText);
-                    if (data.success) {
-                        alert('<?php echo Text::_('COM_JOOMLAHITS_SEO_FIX_SUCCESS'); ?>');
-                        seoModal.hide();
-                        // Relancer l'analyse pour cet article
-                        updateSingleArticle(currentArticleData.id);
-                    } else {
-                        alert('Erreur: ' + data.message);
-                    }
-                } catch (e) {
-                    alert('Erreur lors de la sauvegarde');
-                }
+    fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_fix.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        return response.text().then(text => {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                throw new Error('Server returned invalid JSON: ' + text);
             }
+        });
+    })
+    .then(data => {
+        if (data.success) {
+            alert('<?php echo Text::_('COM_JOOMLAHITS_SEO_FIX_SUCCESS'); ?>');
+            seoModal.hide();
+            // Relancer l'analyse pour cet article
+            updateSingleArticle(currentArticleData.id);
+        } else {
+            alert('Erreur: ' + data.message);
         }
-    };
-    
-    xhr.send(formData);
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur lors de la sauvegarde: ' + error.message);
+    });
 }
 
 // Mettre à jour un seul article après correction
 function updateSingleArticle(articleId) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_analysis.php', true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4 && xhr.status === 200) {
+    fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_analysis.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'article_id=' + encodeURIComponent(articleId)
+    })
+    .then(response => {
+        return response.text().then(text => {
             try {
-                var data = JSON.parse(xhr.responseText);
-                if (data.success) {
-                    // Mettre à jour l'article dans les résultats
-                    for (var i = 0; i < filteredResults.length; i++) {
-                        if (filteredResults[i].id == articleId) {
-                            if (data.data.issues && data.data.issues.length > 0) {
-                                filteredResults[i] = data.data;
-                            } else {
-                                // Plus de problèmes, retirer de la liste
-                                filteredResults.splice(i, 1);
-                            }
-                            break;
-                        }
-                    }
-                    
-                    // Mettre à jour analysisResults aussi
-                    for (var j = 0; j < analysisResults.issues.length; j++) {
-                        if (analysisResults.issues[j].id == articleId) {
-                            if (data.data.issues && data.data.issues.length > 0) {
-                                analysisResults.issues[j] = data.data;
-                            } else {
-                                analysisResults.issues.splice(j, 1);
-                            }
-                            break;
-                        }
-                    }
-                    
-                    // Réafficher le tableau
-                    populateTable(filteredResults);
-                }
+                return JSON.parse(text);
             } catch (e) {
-                console.error('Erreur:', e);
+                throw new Error('Server returned invalid JSON: ' + text);
             }
+        });
+    })
+    .then(data => {
+        if (data.success) {
+            // Mettre à jour l'article dans les résultats
+            for (var i = 0; i < filteredResults.length; i++) {
+                if (filteredResults[i].id == articleId) {
+                    if (data.data.issues && data.data.issues.length > 0) {
+                        filteredResults[i] = data.data;
+                    } else {
+                        // Plus de problèmes, retirer de la liste
+                        filteredResults.splice(i, 1);
+                    }
+                    break;
+                }
+            }
+            
+            // Mettre à jour analysisResults aussi
+            for (var j = 0; j < analysisResults.issues.length; j++) {
+                if (analysisResults.issues[j].id == articleId) {
+                    if (data.data.issues && data.data.issues.length > 0) {
+                        analysisResults.issues[j] = data.data;
+                    } else {
+                        analysisResults.issues.splice(j, 1);
+                    }
+                    break;
+                }
+            }
+            
+            // Réafficher le tableau
+            populateTable(filteredResults);
         }
-    };
-    
-    xhr.send('article_id=' + encodeURIComponent(articleId));
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+    });
 }
 
 // Initialisation au chargement
