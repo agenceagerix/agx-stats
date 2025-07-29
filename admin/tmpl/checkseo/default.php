@@ -55,9 +55,9 @@ $showResults = $app->input->getBool('show', false);
                                     <a href="<?php echo Route::_('index.php?option=com_joomlahits'); ?>" class="btn btn-secondary">
                                         <i class="icon-arrow-left"></i> <?php echo Text::_('COM_JOOMLAHITS_BACK_TO_CONTROL_PANEL'); ?>
                                     </a>
-                                    <a href="<?php echo Route::_('index.php?option=com_joomlahits&view=checkseo&show=1'); ?>" class="btn btn-primary btn-lg" id="seoCheckButton">
-                                        <i class="icon-search"></i> <?php echo Text::_('COM_JOOMLAHITS_CHECKSEO_START_ANALYSIS'); ?>
-                                    </a>
+                                    <button type="button" class="btn btn-primary btn-lg" id="seoCheckButton">
+                                        <i class="icon-search"></i> <span id="seoCheckButtonText"><?php echo Text::_('COM_JOOMLAHITS_CHECKSEO_START_ANALYSIS'); ?></span>
+                                    </button>
                                     <div></div> <!-- Spacer for centering -->
                                 </div>
                             </div>
@@ -312,8 +312,28 @@ $showResults = $app->input->getBool('show', false);
         document.adminForm.submit();
     };
 
-    // AI Meta Description Generator
+    // SEO Analysis Button Animation
     document.addEventListener('DOMContentLoaded', function() {
+        const seoCheckButton = document.getElementById('seoCheckButton');
+        const seoCheckButtonText = document.getElementById('seoCheckButtonText');
+        
+        if (seoCheckButton) {
+            seoCheckButton.addEventListener('click', function() {
+                // Start loading animation
+                seoCheckButton.disabled = true;
+                seoCheckButton.innerHTML = '<i class="icon-refresh icon-spin"></i> <span><?php echo Text::_('COM_JOOMLAHITS_CHECKSEO_ANALYZING'); ?></span>';
+                
+                // Set the show parameter and submit form
+                document.querySelector('input[name="show"]').value = '1';
+                
+                // Navigate to analysis page after short delay
+                setTimeout(() => {
+                    document.adminForm.submit();
+                }, 500);
+            });
+        }
+
+        // AI Meta Description Generator
         const generateBtn = document.getElementById('generateAiMetaDescBtn');
         const progressSection = document.getElementById('ai-progress-section');
         const progressBar = document.getElementById('ai-progress-bar');
