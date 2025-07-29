@@ -278,6 +278,9 @@ $listDirn = 'ASC';
                 <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
                     <i class="icon-times me-2"></i><?php echo Text::_('COM_JOOMLAHITS_CANCEL'); ?>
                 </button>
+                <button type="button" class="btn btn-warning px-4 me-2" onclick="fixWithAI()" id="aiFixBtn">
+                    <i class="icon-wand me-2"></i>Corriger avec IA
+                </button>
                 <button type="button" class="btn btn-primary px-4" onclick="saveSeoFixes()">
                     <i class="icon-checkmark me-2"></i><?php echo Text::_('COM_JOOMLAHITS_SAVE_CHANGES'); ?>
                 </button>
@@ -966,6 +969,88 @@ function addIssue(list, message, severity) {
     li.className = className;
     li.innerHTML = '<i class="icon-' + icon + '"></i> ' + message;
     list.appendChild(li);
+}
+
+// Corriger avec l'IA
+function fixWithAI() {
+    if (!currentArticleData) {
+        alert('Aucun article sélectionné');
+        return;
+    }
+    
+    var aiBtn = document.getElementById('aiFixBtn');
+    var originalText = aiBtn.innerHTML;
+    
+    // Désactiver le bouton et afficher le chargement
+    aiBtn.disabled = true;
+    aiBtn.innerHTML = '<i class="icon-refresh icon-spin me-2"></i>IA en cours...';
+    
+    // Liste des champs à traiter
+    var fields = ['title', 'metadesc', 'metakey', 'alias', 'content'];
+    var currentFieldIndex = 0;
+    var processedFields = 0;
+    
+    function processNextField() {
+        if (currentFieldIndex >= fields.length) {
+            // Tous les champs ont été traités
+            aiBtn.disabled = false;
+            aiBtn.innerHTML = originalText;
+            updateFieldCounters();
+            alert('✨ IA a optimisé tous les champs SEO ! Vérifiez les suggestions et sauvegardez si elles vous conviennent.');
+            return;
+        }
+        
+        var fieldType = fields[currentFieldIndex];
+        aiBtn.innerHTML = '<i class="icon-refresh icon-spin me-2"></i>IA: ' + getFieldLabel(fieldType) + '...';
+        
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_ai_seo_fix.php', true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        if (data.success && data.field_value) {
+                            // Remplir le champ correspondant
+                            var fieldElement = document.getElementById('seo-' + fieldType);
+                            if (fieldElement) {
+                                fieldElement.value = data.field_value;
+                            }
+                            processedFields++;
+                        } else {
+                            console.error('Erreur pour le champ ' + fieldType + ':', data.message);
+                        }
+                    } catch (e) {
+                        console.error('Erreur parsing pour le champ ' + fieldType + ':', e.message);
+                    }
+                } else {
+                    console.error('Erreur HTTP pour le champ ' + fieldType + ':', xhr.status);
+                }
+                
+                // Passer au champ suivant
+                currentFieldIndex++;
+                setTimeout(processNextField, 500); // Délai entre les appels
+            }
+        };
+        
+        xhr.send('article_id=' + encodeURIComponent(currentArticleData.id) + '&field_type=' + encodeURIComponent(fieldType));
+    }
+    
+    // Commencer le traitement
+    processNextField();
+}
+
+function getFieldLabel(fieldType) {
+    var labels = {
+        'title': 'Titre',
+        'metadesc': 'Meta desc',
+        'metakey': 'Mots-clés',
+        'alias': 'URL',
+        'content': 'Contenu'
+    };
+    return labels[fieldType] || fieldType;
 }
 
 // Sauvegarder les corrections SEO

@@ -18,6 +18,7 @@
             <filename>direct_ai_metadesc.php</filename>
             <filename>direct_seo_analysis.php</filename>
             <filename>direct_seo_fix.php</filename>
+            <filename>direct_ai_seo_fix.php</filename>
             <folder>language</folder>
             <folder>services</folder>
             <folder>src</folder>
