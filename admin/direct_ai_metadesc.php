@@ -116,13 +116,22 @@ try {
     }
     
     // Clean and prepare article content for AI processing
-    $cleanTitle = $article->title;
+    $cleanTitle = trim(html_entity_decode($article->title, ENT_QUOTES, 'UTF-8'));
     $cleanIntrotext = strip_tags($article->introtext);
+    $cleanIntrotext = html_entity_decode($cleanIntrotext, ENT_QUOTES, 'UTF-8');
     $cleanIntrotext = preg_replace('/\s+/', ' ', trim($cleanIntrotext));
     
+    // Remove any remaining special characters that might cause issues
+    $cleanIntrotext = preg_replace('/[^\p{L}\p{N}\s\-.,!?()]/u', '', $cleanIntrotext);
+    
     // Limit introtext length to avoid API token limits
-    if (strlen($cleanIntrotext) > 500) {
-        $cleanIntrotext = substr($cleanIntrotext, 0, 500) . '...';
+    if (mb_strlen($cleanIntrotext, 'UTF-8') > 500) {
+        $cleanIntrotext = mb_substr($cleanIntrotext, 0, 500, 'UTF-8') . '...';
+    }
+    
+    // Ensure we have valid content
+    if (empty($cleanIntrotext)) {
+        $cleanIntrotext = $cleanTitle;
     }
     
     // Get custom prompt from configuration or use default
@@ -141,6 +150,12 @@ try {
     // Prepare Mistral AI API request
     $url = 'https://api.mistral.ai/v1/chat/completions';
     
+    // Validate prompt content before sending to API
+    if (empty($prompt) || mb_strlen($prompt, 'UTF-8') < 10) {
+        echo json_encode(['success' => false, 'message' => 'Invalid prompt content for article "' . $article->title . '"']);
+        exit;
+    }
+    
     // Create JSON payload for API request
     $payload = json_encode([
         'model' => 'mistral-small-latest',
@@ -149,7 +164,7 @@ try {
         ],
         'max_tokens' => 200,
         'temperature' => 0.7
-    ], JSON_UNESCAPED_UNICODE);
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     
     // Initialize cURL for API communication
     $ch = curl_init();
@@ -184,7 +199,26 @@ try {
     
     // Validate HTTP response code
     if ($httpCode !== 200) {
-        echo json_encode(['success' => false, 'message' => 'Mistral API error: HTTP ' . $httpCode]);
+        // Log detailed error information for debugging
+        $errorDetails = '';
+        if ($httpCode === 422) {
+            $errorDetails = ' - Invalid request data. Check article content for special characters or encoding issues.';
+        } elseif ($httpCode === 401) {
+            $errorDetails = ' - Invalid API key.';
+        } elseif ($httpCode === 429) {
+            $errorDetails = ' - Rate limit exceeded. Please try again later.';
+        }
+        
+        echo json_encode([
+            'success' => false, 
+            'message' => 'Mistral API error: HTTP ' . $httpCode . $errorDetails,
+            'debug_info' => [
+                'article_id' => $articleId,
+                'title' => $article->title,
+                'clean_introtext_length' => mb_strlen($cleanIntrotext, 'UTF-8'),
+                'payload_size' => mb_strlen($payload, 'UTF-8')
+            ]
+        ]);
         exit;
     }
     

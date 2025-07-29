@@ -25,34 +25,92 @@ use Exception;
 class CheckSeoModel extends BaseDatabaseModel
 {
     /**
-     * Get articles with missing meta descriptions
+     * Get articles with missing meta descriptions and total analyzed count
      *
-     * @return  array  Array of article objects
+     * @return  object  Object with 'items' array and 'totalCount' integer
      */
     public function getItems()
     {
         try {
             $app = Factory::getApplication();
             $db = Factory::getContainer()->get(DatabaseInterface::class);
-            $query = $db->getQuery(true);
+            
+            // Build base query for filtering
+            $baseQuery = $db->getQuery(true);
+            $baseQuery->from($db->quoteName('#__content', 'a'))
+                ->join('LEFT', $db->quoteName('#__categories', 'c') . ' ON ' . $db->quoteName('a.catid') . ' = ' . $db->quoteName('c.id'))
+                ->where($db->quoteName('a.state') . ' != -2'); // Exclude trashed articles
 
-        $query->select([
-            $db->quoteName('a.id'),
-            $db->quoteName('a.title'),
-            $db->quoteName('a.alias'),
-            $db->quoteName('a.metadesc'),
-            $db->quoteName('a.hits'),
-            $db->quoteName('a.state'),
-            $db->quoteName('a.created'),
-            $db->quoteName('a.language'),
-            $db->quoteName('c.title', 'category_title'),
-            $db->quoteName('a.catid')
-        ])
-        ->from($db->quoteName('#__content', 'a'))
-        ->join('LEFT', $db->quoteName('#__categories', 'c') . ' ON ' . $db->quoteName('a.catid') . ' = ' . $db->quoteName('c.id'))
-        ->where('(' . $db->quoteName('a.metadesc') . ' IS NULL OR ' . $db->quoteName('a.metadesc') . ' = \'\')')
-        ->where($db->quoteName('a.state') . ' != -2'); // Exclude trashed articles
+            // Apply filters to base query
+            $this->applyFilters($baseQuery, $app, $db);
 
+            // Get total count first (all articles matching filters)
+            $countQuery = clone $baseQuery;
+            $countQuery->select('COUNT(' . $db->quoteName('a.id') . ')');
+            $db->setQuery($countQuery);
+            $totalCount = (int) $db->loadResult();
+
+            // Get articles with missing meta descriptions
+            $itemsQuery = clone $baseQuery;
+            $itemsQuery->select([
+                $db->quoteName('a.id'),
+                $db->quoteName('a.title'),
+                $db->quoteName('a.alias'),
+                $db->quoteName('a.metadesc'),
+                $db->quoteName('a.hits'),
+                $db->quoteName('a.state'),
+                $db->quoteName('a.created'),
+                $db->quoteName('a.language'),
+                $db->quoteName('c.title', 'category_title'),
+                $db->quoteName('a.catid')
+            ])
+            ->where('(' . $db->quoteName('a.metadesc') . ' IS NULL OR ' . $db->quoteName('a.metadesc') . ' = \'\')');
+
+            // Apply ordering
+            $orderCol = $app->input->getString('filter_order', 'a.title');
+            $orderDirn = $app->input->getString('filter_order_Dir', 'ASC');
+            
+            // Validate ordering columns
+            $allowedColumns = ['a.title', 'a.hits', 'a.id', 'category_title', 'a.language', 'a.state'];
+            if (!in_array($orderCol, $allowedColumns)) {
+                $orderCol = 'a.title';
+            }
+            
+            // Validate direction
+            if (!in_array(strtoupper($orderDirn), ['ASC', 'DESC'])) {
+                $orderDirn = 'ASC';
+            }
+            
+            $itemsQuery->order($db->escape($orderCol . ' ' . $orderDirn));
+
+            $db->setQuery($itemsQuery);
+            $items = $db->loadObjectList();
+
+            // Return object with items and total count
+            return (object) [
+                'items' => $items,
+                'totalCount' => $totalCount
+            ];
+
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in getItems: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - CheckseoModel::getItems Error: ' . $e->getMessage());
+            return (object) [
+                'items' => [],
+                'totalCount' => 0
+            ];
+        }
+    }
+
+    /**
+     * Apply common filters to query
+     *
+     * @param   object  $query  The query object
+     * @param   object  $app    The application object
+     * @param   object  $db     The database object
+     */
+    private function applyFilters($query, $app, $db)
+    {
         // Apply search filter
         $search = $app->input->getString('filter_search', '');
         if (!empty($search)) {
@@ -80,31 +138,6 @@ class CheckSeoModel extends BaseDatabaseModel
         $published = $app->input->getString('filter_published', '');
         if (is_numeric($published)) {
             $query->where($db->quoteName('a.state') . ' = ' . (int) $published);
-        }
-
-        // Apply ordering
-        $orderCol = $app->input->getString('filter_order', 'a.title');
-        $orderDirn = $app->input->getString('filter_order_Dir', 'ASC');
-        
-        // Validate ordering columns
-        $allowedColumns = ['a.title', 'a.hits', 'a.id', 'category_title', 'a.language', 'a.state'];
-        if (!in_array($orderCol, $allowedColumns)) {
-            $orderCol = 'a.title';
-        }
-        
-        // Validate direction
-        if (!in_array(strtoupper($orderDirn), ['ASC', 'DESC'])) {
-            $orderDirn = 'ASC';
-        }
-        
-        $query->order($db->escape($orderCol . ' ' . $orderDirn));
-
-        $db->setQuery($query);
-        return $db->loadObjectList();
-        } catch (\Exception $e) {
-            Factory::getApplication()->enqueueMessage('Error in getItems: ' . $e->getMessage(), 'error');
-            error_log('JoomlaHits - CheckseoModel::getItems Error: ' . $e->getMessage());
-            return [];
         }
     }
 
@@ -231,6 +264,7 @@ class CheckSeoModel extends BaseDatabaseModel
             return null;
         }
     }
+
 
     /**
      * Update article meta description

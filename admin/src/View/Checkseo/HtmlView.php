@@ -65,7 +65,9 @@ class HtmlView extends BaseHtmlView
         $this->params = ComponentHelper::getParams('com_joomlahits');
         
         // Get data
-        $this->items = $model->getItems();
+        $itemsData = $model->getItems();
+        $this->items = $itemsData->items;
+        $this->totalAnalyzedCount = $itemsData->totalCount;
         $this->categories = $model->getCategories();
         $this->languages = $model->getLanguages();
         

@@ -129,10 +129,28 @@ $showResults = $app->input->getBool('show', false);
                             <span class="icon-checkmark" aria-hidden="true"></span><span class="visually-hidden"><?php echo Text::_('SUCCESS'); ?></span>
                             <?php echo Text::_('COM_JOOMLAHITS_CHECKSEO_NO_METADESC_MISSING'); ?>
                         </div>
-                    <?php else : ?>
+                    <?php else : 
+                        $missingCount = count($this->items);
+                        $totalCount = $this->totalAnalyzedCount ?? 0;
+                        $percentage = $totalCount > 0 ? round(($missingCount / $totalCount) * 100, 1) : 0;
+                    ?>
                         <div class="alert alert-warning mb-3">
                             <span class="icon-warning" aria-hidden="true"></span>
-                            <?php echo Text::sprintf('COM_JOOMLAHITS_CHECKSEO_METADESC_MISSING_FOUND', count($this->items)); ?>
+                            <?php echo Text::sprintf('COM_JOOMLAHITS_CHECKSEO_METADESC_MISSING_FOUND', $missingCount); ?>
+                            <br><div class="mt-2" style="font-size: 0.95em; line-height: 1.4;">
+                                <i class="icon-info me-1"></i> 
+                                <strong>Analyse :</strong>
+                                <?php 
+                                // Fallback display if translation key is missing
+                                $statsText = Text::_('COM_JOOMLAHITS_CHECKSEO_ANALYSIS_STATS');
+                                if ($statsText === 'COM_JOOMLAHITS_CHECKSEO_ANALYSIS_STATS') {
+                                    // Translation key not found, use hardcoded text
+                                    echo $missingCount . ' anomalies détectées sur ' . $totalCount . ' articles analysés (' . $percentage . '%)';
+                                } else {
+                                    echo Text::sprintf('COM_JOOMLAHITS_CHECKSEO_ANALYSIS_STATS', $missingCount, $totalCount, $percentage);
+                                }
+                                ?>
+                            </div>
                         </div>
 
                         <!-- AI Meta Description Generation -->
