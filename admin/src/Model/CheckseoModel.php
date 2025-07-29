@@ -31,9 +31,10 @@ class CheckSeoModel extends BaseDatabaseModel
      */
     public function getItems()
     {
-        $app = Factory::getApplication();
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
+        try {
+            $app = Factory::getApplication();
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true);
 
         $query->select([
             $db->quoteName('a.id'),
@@ -100,6 +101,11 @@ class CheckSeoModel extends BaseDatabaseModel
 
         $db->setQuery($query);
         return $db->loadObjectList();
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in getItems: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - CheckseoModel::getItems Error: ' . $e->getMessage());
+            return [];
+        }
     }
 
     /**
@@ -110,8 +116,9 @@ class CheckSeoModel extends BaseDatabaseModel
      */
     public function getCategories()
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true);
 
         $query->select([
             $db->quoteName('c.id', 'value'),
@@ -130,6 +137,17 @@ class CheckSeoModel extends BaseDatabaseModel
 
         $db->setQuery($query);
         return $db->loadObjectList();
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in getCategories: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - CheckseoModel::getCategories Error: ' . $e->getMessage());
+            return [
+                (object) [
+                    'value' => 0,
+                    'text' => 'No categories available',
+                    'article_count' => 0
+                ]
+            ];
+        }
     }
 
     /**
@@ -140,8 +158,9 @@ class CheckSeoModel extends BaseDatabaseModel
      */
     public function getLanguages()
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true);
 
         $query->select([
             $db->quoteName('a.language', 'value'),
@@ -167,6 +186,17 @@ class CheckSeoModel extends BaseDatabaseModel
 
         $db->setQuery($query);
         return $db->loadObjectList();
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in getLanguages: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - CheckseoModel::getLanguages Error: ' . $e->getMessage());
+            return [
+                (object) [
+                    'value' => 'fr-FR',
+                    'text' => 'No languages available',
+                    'article_count' => 0
+                ]
+            ];
+        }
     }
 
     /**
@@ -177,8 +207,9 @@ class CheckSeoModel extends BaseDatabaseModel
      */
     public function getArticleContent($articleId)
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true);
 
         $query->select([
             $db->quoteName('id'),
@@ -194,6 +225,11 @@ class CheckSeoModel extends BaseDatabaseModel
 
         $db->setQuery($query);
         return $db->loadObject();
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in getArticleContent: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - CheckseoModel::getArticleContent Error: ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**
@@ -205,19 +241,19 @@ class CheckSeoModel extends BaseDatabaseModel
      */
     public function updateMetaDescription($articleId, $metadesc)
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true);
 
         $query->update($db->quoteName('#__content'))
             ->set($db->quoteName('metadesc') . ' = ' . $db->quote($metadesc))
             ->where($db->quoteName('id') . ' = ' . (int) $articleId);
 
         $db->setQuery($query);
-        
-        try {
-            return $db->execute();
-        } catch (Exception $e) {
-            Factory::getApplication()->enqueueMessage('Database error: ' . $e->getMessage(), 'error');
+        return $db->execute();
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in updateMetaDescription: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - CheckseoModel::updateMetaDescription Error: ' . $e->getMessage());
             return false;
         }
     }

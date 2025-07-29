@@ -137,8 +137,9 @@ class ArticlesModel extends ListModel
      */
     public function getCategories()
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true);
 
         $query->select([
             $db->quoteName('c.id', 'value'),
@@ -155,6 +156,17 @@ class ArticlesModel extends ListModel
 
         $db->setQuery($query);
         return $db->loadObjectList();
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in getCategories: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - ArticlesModel::getCategories Error: ' . $e->getMessage());
+            return [
+                (object) [
+                    'value' => 0,
+                    'text' => 'No categories available',
+                    'article_count' => 0
+                ]
+            ];
+        }
     }
 
     /**
@@ -166,8 +178,9 @@ class ArticlesModel extends ListModel
      */
     public function getLanguages()
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true);
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true);
 
         $query->select([
             $db->quoteName('a.language', 'value'),
@@ -192,5 +205,16 @@ class ArticlesModel extends ListModel
 
         $db->setQuery($query);
         return $db->loadObjectList();
+        } catch (\Exception $e) {
+            Factory::getApplication()->enqueueMessage('Error in getLanguages: ' . $e->getMessage(), 'error');
+            error_log('JoomlaHits - ArticlesModel::getLanguages Error: ' . $e->getMessage());
+            return [
+                (object) [
+                    'value' => 'fr-FR',
+                    'text' => 'No languages available',
+                    'article_count' => 0
+                ]
+            ];
+        }
     }
 }
