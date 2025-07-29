@@ -128,14 +128,15 @@ try {
     // Get custom prompt from configuration or use default
     $defaultPrompt = "Generate a compelling SEO meta description of exactly 185 characters or less for this article. " .
                      "The meta description should be engaging, include relevant keywords, and encourage clicks. " .
-                     "Do not include quotes or special formatting. Just return the meta description text.\n\n" .
+                     "Do not include quotes or special formatting. Just return the meta description text. " .
+                     "Write the meta description in the same language as the article (language code: {language}).\n\n" .
                      "Article Title: {title}\n" .
                      "Article Introduction: {introtext}";
     
     $customPrompt = $params['mistral_prompt'] ?? $defaultPrompt;
     
     // Replace placeholders with actual content
-    $prompt = str_replace(['{title}', '{introtext}'], [$cleanTitle, $cleanIntrotext], $customPrompt);
+    $prompt = str_replace(['{title}', '{introtext}', '{language}'], [$cleanTitle, $cleanIntrotext, $article->language ?: 'en-GB'], $customPrompt);
     
     // Prepare Mistral AI API request
     $url = 'https://api.mistral.ai/v1/chat/completions';
