@@ -88,13 +88,7 @@ try {
         $fields[] = '`alias` = :alias';
     }
     
-    // Content (split into introtext and fulltext)
-    if (isset($_POST['content'])) {
-        $content = $_POST['content'];
-        // For simplicity, put all content in introtext
-        $fields[] = '`introtext` = :content';
-        $fields[] = '`fulltext` = :empty_fulltext';
-    }
+    // Note: Content fields (introtext/fulltext) are not modified to preserve original structure
     
     // Update article if there are fields to update
     if (!empty($fields)) {
@@ -120,11 +114,7 @@ try {
             $stmt->bindParam(':alias', $alias, PDO::PARAM_STR);
         }
         
-        if (isset($_POST['content'])) {
-            $stmt->bindParam(':content', $_POST['content'], PDO::PARAM_STR);
-            $emptyFulltext = '';
-            $stmt->bindParam(':empty_fulltext', $emptyFulltext, PDO::PARAM_STR);
-        }
+        // Note: Content binding removed to preserve introtext/fulltext separation
         
         $result = $stmt->execute();
         

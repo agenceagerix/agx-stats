@@ -229,7 +229,7 @@ try {
     $generatedContent = preg_replace('/^```json\s*/', '', $generatedContent);
     $generatedContent = preg_replace('/\s*```$/', '', $generatedContent);
     
-    // Extract and clean the generated value
+    // Handle all fields normally (content field disabled)
     $generatedValue = trim($generatedContent);
     // Remove quotes if present
     $generatedValue = trim($generatedValue, '"\'');

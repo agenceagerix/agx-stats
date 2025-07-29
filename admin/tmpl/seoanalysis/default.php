@@ -74,7 +74,7 @@ $listDirn = 'ASC';
                                      role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
                             <div id="current-analysis-status" class="small"></div>
-                            <div id="analysis-results-log" class="mt-2 small" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f8f9fa;"></div>
+                            <div id="analysis-results-log" class="mt-2 small" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px;"></div>
                         </div>
                     </div>
                 </div>
@@ -180,8 +180,8 @@ $listDirn = 'ASC';
 
 <!-- SEO Fix Modal -->
 <div class="modal fade" id="seoFixModal" tabindex="-1" aria-labelledby="seoFixModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content" style="height: 90vh;">
             <div class="modal-header">
                 <h4 class="modal-title fw-bold" id="seoFixModalLabel">
                     <i class="icon-cog text-primary me-2"></i>
@@ -189,7 +189,7 @@ $listDirn = 'ASC';
                 </h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="overflow-y: auto; max-height: calc(90vh - 120px);">
                 <form id="seoFixForm">
                     <input type="hidden" id="seo-article-id" name="article_id">
                     
@@ -272,6 +272,28 @@ $listDirn = 'ASC';
                             <ul id="issues-details" class="mb-0 ps-4"></ul>
                         </div>
                     </div>
+                    
+                    <!-- AI Preview Section (initially hidden) -->
+                    <div id="ai-preview-section" class="card mt-3" style="display: none;">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="icon-eye text-success me-2"></i>Prévisualisation des modifications IA
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="ai-preview-content">
+                                <!-- Content will be populated by JavaScript -->
+                            </div>
+                            <div class="mt-3 text-center">
+                                <button type="button" class="btn btn-outline-success btn-sm me-2" onclick="acceptAIChanges()">
+                                    <i class="icon-checkmark me-1"></i>Accepter les modifications
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="rejectAIChanges()">
+                                    <i class="icon-times me-1"></i>Annuler les modifications
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -305,6 +327,47 @@ $listDirn = 'ASC';
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+#ai-preview-section .card-body {
+    word-wrap: break-word;
+}
+
+#ai-preview-section .border-danger {
+    border-left: 4px solid #dc3545 !important;
+}
+
+#ai-preview-section .border-success {
+    border-left: 4px solid #198754 !important;
+}
+
+#ai-preview-section .text-dark.fw-bold {
+    background-color: #d1e7dd;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+/* Améliorer l'apparence du modal avec scroll */
+#seoFixModal .modal-body {
+    padding: 1.5rem;
+}
+
+#seoFixModal .modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+#seoFixModal .modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#seoFixModal .modal-body::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+#seoFixModal .modal-body::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 
 </style>
@@ -981,11 +1044,21 @@ function fixWithAI() {
     var aiBtn = document.getElementById('aiFixBtn');
     var originalText = aiBtn.innerHTML;
     
+    // Stocker les valeurs originales pour la prévisualisation
+    window.originalValues = {
+        title: document.getElementById('seo-title').value,
+        metadesc: document.getElementById('seo-metadesc').value,
+        metakey: document.getElementById('seo-metakey').value,
+        alias: document.getElementById('seo-alias').value
+    };
+    
+    window.aiOptimizedValues = {};
+    
     // Désactiver le bouton et afficher le chargement
     aiBtn.disabled = true;
     aiBtn.innerHTML = '<i class="icon-refresh icon-spin me-2"></i>IA en cours...';
     
-    // Liste des champs à traiter (exclu 'content' car trop risqué pour la séparation introtext/fulltext)
+    // Liste des champs à traiter (contenu désactivé car IA trop imprévisible)
     var fields = ['title', 'metadesc', 'metakey', 'alias'];
     var currentFieldIndex = 0;
     var processedFields = 0;
@@ -996,7 +1069,9 @@ function fixWithAI() {
             aiBtn.disabled = false;
             aiBtn.innerHTML = originalText;
             updateFieldCounters();
-            alert('✨ IA a optimisé les champs SEO (titre, meta desc, mots-clés, URL) ! Le contenu n\'a pas été modifié pour préserver la structure. Vérifiez les suggestions et sauvegardez si elles vous conviennent.');
+            
+            // Afficher la prévisualisation
+            showAIPreview();
             return;
         }
         
@@ -1013,7 +1088,10 @@ function fixWithAI() {
                     try {
                         var data = JSON.parse(xhr.responseText);
                         if (data.success && data.field_value) {
-                            // Remplir le champ correspondant
+                            // Stocker la valeur optimisée pour la prévisualisation
+                            window.aiOptimizedValues[fieldType] = data.field_value;
+                            
+                            // Remplir le champ correspondant (temporairement)
                             var fieldElement = document.getElementById('seo-' + fieldType);
                             if (fieldElement) {
                                 fieldElement.value = data.field_value;
@@ -1052,10 +1130,132 @@ function getFieldLabel(fieldType) {
     return labels[fieldType] || fieldType;
 }
 
+// Afficher la prévisualisation des modifications IA
+function showAIPreview() {
+    var previewSection = document.getElementById('ai-preview-section');
+    var previewContent = document.getElementById('ai-preview-content');
+    
+    var html = '';
+    var fieldLabels = {
+        'title': 'Titre',
+        'metadesc': 'Meta Description',
+        'metakey': 'Mots-clés',
+        'alias': 'Alias URL'
+    };
+    
+    Object.keys(window.originalValues).forEach(function(fieldType) {
+        var original = window.originalValues[fieldType];
+        var optimized = window.aiOptimizedValues[fieldType];
+        
+        if (original !== optimized) {
+            html += '<div class="row mb-3">';
+            html += '<div class="col-12">';
+            html += '<h6 class="fw-bold text-primary">' + fieldLabels[fieldType] + '</h6>';
+            html += '</div>';
+            html += '<div class="col-md-6">';
+            html += '<div class="card border-danger">';
+            html += '<div class="card-header py-2">';
+            html += '<small class="text-danger fw-bold"><i class="icon-times me-1"></i>AVANT</small>';
+            html += '</div>';
+            html += '<div class="card-body py-2">';
+            html += '<small class="text-muted">' + (original || '<em>Vide</em>') + '</small>';
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+            html += '<div class="col-md-6">';
+            html += '<div class="card border-success">';
+            html += '<div class="card-header py-2">';
+            html += '<small class="text-success fw-bold"><i class="icon-checkmark me-1"></i>APRÈS</small>';
+            html += '</div>';
+            html += '<div class="card-body py-2">';
+            html += '<small class="text-dark fw-bold">' + optimized + '</small>';
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+        }
+    });
+    
+    if (html === '') {
+        html = '<div class="text-center text-muted py-3">';
+        html += '<i class="icon-info me-2"></i>Aucune modification n\'a été apportée par l\'IA.';
+        html += '</div>';
+    }
+    
+    previewContent.innerHTML = html;
+    previewSection.style.display = 'block';
+    
+    // Scroll vers la prévisualisation dans le modal
+    setTimeout(function() {
+        var modalBody = document.querySelector('#seoFixModal .modal-body');
+        var previewPosition = previewSection.offsetTop - modalBody.offsetTop;
+        modalBody.scrollTo({
+            top: previewPosition - 50, // Un peu d'espace au-dessus
+            behavior: 'smooth'
+        });
+    }, 100);
+}
+
+// Accepter les modifications IA
+function acceptAIChanges() {
+    // Les valeurs sont déjà dans les champs, on cache juste la prévisualisation
+    document.getElementById('ai-preview-section').style.display = 'none';
+    updateFieldCounters();
+    
+    // Afficher un message de confirmation
+    var alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+    alertDiv.innerHTML = '<i class="icon-checkmark me-2"></i>Modifications IA acceptées ! Vous pouvez maintenant sauvegarder.' +
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+    
+    var form = document.getElementById('seoFixForm');
+    form.insertBefore(alertDiv, form.firstChild);
+    
+    // Supprimer l'alerte après 5 secondes
+    setTimeout(function() {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// Rejeter les modifications IA
+function rejectAIChanges() {
+    // Restaurer les valeurs originales
+    Object.keys(window.originalValues).forEach(function(fieldType) {
+        var fieldElement = document.getElementById('seo-' + fieldType);
+        if (fieldElement) {
+            fieldElement.value = window.originalValues[fieldType];
+        }
+    });
+    
+    // Cacher la prévisualisation
+    document.getElementById('ai-preview-section').style.display = 'none';
+    updateFieldCounters();
+    
+    // Afficher un message de confirmation
+    var alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-info alert-dismissible fade show mt-3';
+    alertDiv.innerHTML = '<i class="icon-info me-2"></i>Modifications IA annulées. Les valeurs originales ont été restaurées.' +
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+    
+    var form = document.getElementById('seoFixForm');
+    form.insertBefore(alertDiv, form.firstChild);
+    
+    // Supprimer l'alerte après 5 secondes
+    setTimeout(function() {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
 // Sauvegarder les corrections SEO
 function saveSeoFixes() {
     var form = document.getElementById('seoFixForm');
     var formData = new FormData(form);
+    
+    // Note: L'optimisation IA du contenu est désactivée pour éviter les problèmes
     
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_fix.php', true);
