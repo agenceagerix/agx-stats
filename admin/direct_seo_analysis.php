@@ -96,6 +96,10 @@ try {
             'data' => [
                 'id' => $article->id,
                 'title' => $article->title,
+                'alias' => $article->alias,
+                'metadesc' => $article->metadesc,
+                'metakey' => $article->metakey,
+                'content' => trim($article->introtext . ' ' . $article->fulltext),
                 'category' => $article->category_title ?: 'Sans catégorie',
                 'language' => $article->language ?: 'fr-FR',
                 'hits' => $article->hits,
@@ -276,10 +280,10 @@ function analyzeArticle($article)
         ];
         $categories[] = 'meta_description';
         if ($maxSeverity !== 'critical') $maxSeverity = 'warning';
-    } elseif ($metaDescLength > 160) {
+    } elseif ($metaDescLength > 185) {
         $issues[] = [
             'type' => 'meta_desc_too_long',
-            'message' => "Méta-description trop longue ({$metaDescLength} caractères, recommandé: 120-160)",
+            'message' => "Méta-description trop longue ({$metaDescLength} caractères, recommandé: 120-185)",
             'severity' => 'warning',
             'icon' => 'warning'
         ];

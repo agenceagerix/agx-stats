@@ -20,7 +20,8 @@ use Joomla\CMS\Uri\Uri;
 $wa = $this->getDocument()->getWebAssetManager();
 $wa->useScript('core')
     ->useScript('table.columns')
-    ->useScript('multiselect');
+    ->useScript('multiselect')
+    ->useScript('bootstrap.modal');
 
 $app = Factory::getApplication();
 $user = $this->getCurrentUser();
@@ -47,7 +48,7 @@ $listDirn = 'ASC';
                                 <a href="<?php echo Route::_('index.php?option=com_joomlahits&view=checkseo'); ?>" class="btn btn-secondary">
                                     <i class="icon-arrow-left"></i> <?php echo Text::_('COM_JOOMLAHITS_BACK_TO_CHECKSEO'); ?>
                                 </a>
-                                <button type="button" class="btn btn-success btn-lg" id="startAnalysisBtn" onclick="startAnalysis()">
+                                <button type="button" class="btn btn-success btn-lg" id="startAnalysisBtn">
                                     <i class="icon-search"></i> <span id="analysisButtonText"><?php echo Text::_('COM_JOOMLAHITS_START_FULL_ANALYSIS'); ?></span>
                                 </button>
                                 <div></div>
@@ -177,6 +178,114 @@ $listDirn = 'ASC';
     </div>
 </div>
 
+<!-- SEO Fix Modal -->
+<div class="modal fade" id="seoFixModal" tabindex="-1" aria-labelledby="seoFixModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title fw-bold" id="seoFixModalLabel">
+                    <i class="icon-cog text-primary me-2"></i>
+                    <?php echo Text::_('COM_JOOMLAHITS_SEO_FIX_MODAL_TITLE'); ?>
+                </h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="seoFixForm">
+                    <input type="hidden" id="seo-article-id" name="article_id">
+                    
+                    <!-- Title Section -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <label for="seo-title" class="form-label"><i class="icon-pencil-2 text-primary me-2"></i><?php echo Text::_('COM_JOOMLAHITS_TITLE'); ?></label>
+                            <input type="text" class="form-control" id="seo-title" name="title" oninput="updateFieldCounters()">
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <div class="form-text mb-0">
+                                    <span class="badge bg-secondary me-2"><span id="title-counter">0</span> <?php echo Text::_('COM_JOOMLAHITS_CHARACTERS'); ?></span>
+                                    <span class="text-muted"><?php echo Text::_('COM_JOOMLAHITS_SEO_TITLE_HELP'); ?></span>
+                                </div>
+                                <span id="title-status"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Meta Description Section -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <label for="seo-metadesc" class="form-label"><i class="icon-quote text-primary me-2"></i><?php echo Text::_('COM_JOOMLAHITS_CHECKSEO_META_DESCRIPTION'); ?></label>
+                            <textarea class="form-control" id="seo-metadesc" name="metadesc" rows="3" maxlength="185" oninput="updateFieldCounters()" style="resize: vertical;"></textarea>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <div class="form-text mb-0">
+                                    <span class="badge bg-secondary me-2"><span id="metadesc-counter">0</span>/185</span>
+                                    <span class="text-muted"><?php echo Text::_('COM_JOOMLAHITS_SEO_METADESC_HELP_185'); ?></span>
+                                </div>
+                                <span id="metadesc-status"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Meta Keywords Section -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <label for="seo-metakey" class="form-label"><i class="icon-tags-2 text-primary me-2"></i><?php echo Text::_('COM_JOOMLAHITS_CHECKSEO_META_KEYWORDS'); ?></label>
+                            <input type="text" class="form-control" id="seo-metakey" name="metakey" placeholder="<?php echo Text::_('COM_JOOMLAHITS_SEO_METAKEY_HELP'); ?>">
+                            <div class="form-text mt-2">
+                                <small class="text-muted"><?php echo Text::_('COM_JOOMLAHITS_SEO_METAKEY_HELP'); ?></small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- URL Alias Section -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <label for="seo-alias" class="form-label"><i class="icon-link text-primary me-2"></i><?php echo Text::_('COM_JOOMLAHITS_ALIAS'); ?></label>
+                            <input type="text" class="form-control" id="seo-alias" name="alias" oninput="updateFieldCounters()">
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <div class="form-text mb-0">
+                                    <span class="badge bg-secondary me-2"><span id="alias-counter">0</span> <?php echo Text::_('COM_JOOMLAHITS_CHARACTERS'); ?></span>
+                                    <span class="text-muted"><?php echo Text::_('COM_JOOMLAHITS_SEO_ALIAS_HELP'); ?></span>
+                                </div>
+                                <span id="alias-status"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Content Section -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <label for="seo-content" class="form-label"><i class="icon-file-text text-primary me-2"></i><?php echo Text::_('COM_JOOMLAHITS_SEO_CONTENT'); ?></label>
+                            <textarea class="form-control" id="seo-content" name="content" rows="10" oninput="updateFieldCounters()" style="resize: vertical;"></textarea>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <div class="form-text mb-0">
+                                    <span class="badge bg-secondary me-2"><span id="content-counter">0</span> <?php echo Text::_('COM_JOOMLAHITS_CHARACTERS'); ?></span>
+                                    <span class="badge bg-secondary me-2"><span id="words-counter">0</span> <?php echo Text::_('COM_JOOMLAHITS_WORDS'); ?></span>
+                                    <span class="text-muted"><?php echo Text::_('COM_JOOMLAHITS_SEO_CONTENT_HELP'); ?></span>
+                                </div>
+                                <span id="content-status"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Issues Summary -->
+                    <div id="seo-issues-list" class="card">
+                        <div class="card-body">
+                            <h6 class="card-title"><i class="icon-warning-circle text-warning me-2"></i><?php echo Text::_('COM_JOOMLAHITS_SEO_ISSUES_DETECTED'); ?></h6>
+                            <ul id="issues-details" class="mb-0 ps-4"></ul>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                    <i class="icon-times me-2"></i><?php echo Text::_('COM_JOOMLAHITS_CANCEL'); ?>
+                </button>
+                <button type="button" class="btn btn-primary px-4" onclick="saveSeoFixes()">
+                    <i class="icon-checkmark me-2"></i><?php echo Text::_('COM_JOOMLAHITS_SAVE_CHANGES'); ?>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 .badge {
     font-size: 0.75em;
@@ -268,7 +377,7 @@ function getArticlesList() {
                         articlesList = data.data;
                         currentAnalysisResults.total_articles = articlesList.length;
                         document.getElementById('current-analysis-status').textContent = 
-                            'Début de l\'analyse - ' + articlesList.length + ' articles à traiter';
+                            'Début de l analyse - ' + articlesList.length + ' articles à traiter';
                         
                         // Démarrer l'analyse du premier article
                         if (articlesList.length > 0) {
@@ -413,7 +522,7 @@ function finishAnalysis() {
 function resetAnalysisUI() {
     var btn = document.getElementById('startAnalysisBtn');
     btn.disabled = false;
-    btn.innerHTML = '<i class="icon-search"></i> <span>Lancer l\'analyse complète</span>';
+    btn.innerHTML = '<i class="icon-search"></i> <span>Lancer l analyse complète</span>';
 }
 
 // Annuler l'analyse
@@ -519,7 +628,12 @@ function createTableRow(article) {
         '<td class="d-none d-md-table-cell">' + article.category + '</td>' +
         '<td class="d-none d-md-table-cell text-center"><span class="badge ' + severityClass + '">' + severityText + '</span></td>' +
         '<td class="d-none d-md-table-cell">' + issuesBadges + '</td>' +
-        '<td class="text-center"><a href="index.php?option=com_content&task=article.edit&id=' + article.id + '" class="btn btn-sm btn-outline-primary" title="Éditer l\'article"><i class="icon-edit"></i></a></td>';
+        '<td class="text-center">' +
+            '<div class="btn-group" role="group">' +
+                '<a href="index.php?option=com_content&task=article.edit&id=' + article.id + '" class="btn btn-sm btn-outline-primary" title="<?php echo htmlspecialchars(Text::_('COM_JOOMLAHITS_EDIT_ARTICLE'), ENT_QUOTES, 'UTF-8'); ?>"><i class="icon-edit"></i></a>' +
+                '<button type="button" class="btn btn-sm btn-outline-success" onclick="openSeoModal(' + article.id + ')" title="<?php echo htmlspecialchars(Text::_('COM_JOOMLAHITS_FIX_SEO'), ENT_QUOTES, 'UTF-8'); ?>"><i class="icon-cog"></i></button>' +
+            '</div>' +
+        '</td>';
     
     return tr;
 }
@@ -632,8 +746,317 @@ Joomla.tableOrdering = function(column, direction, task) {
     return false;
 };
 
+// Variables pour le modal
+var currentArticleData = null;
+var seoModal = null;
+
+// Ouvrir le modal SEO
+function openSeoModal(articleId) {
+    // Trouver l'article dans les résultats
+    var article = null;
+    for (var i = 0; i < filteredResults.length; i++) {
+        if (filteredResults[i].id == articleId) {
+            article = filteredResults[i];
+            break;
+        }
+    }
+    
+    if (!article) return;
+    
+    currentArticleData = article;
+    
+    // Remplir le formulaire
+    document.getElementById('seo-article-id').value = article.id;
+    document.getElementById('seo-title').value = article.title;
+    document.getElementById('seo-metadesc').value = article.metadesc || '';
+    document.getElementById('seo-metakey').value = article.metakey || '';
+    document.getElementById('seo-alias').value = article.alias || '';
+    document.getElementById('seo-content').value = article.content || '';
+    
+    // Mettre à jour les compteurs
+    updateFieldCounters();
+    
+    // Afficher les problèmes
+    var issuesList = document.getElementById('issues-details');
+    issuesList.innerHTML = '';
+    for (var j = 0; j < article.issues.length; j++) {
+        var li = document.createElement('li');
+        li.textContent = article.issues[j].message;
+        issuesList.appendChild(li);
+    }
+    
+    // Ouvrir le modal
+    if (!seoModal) {
+        seoModal = new bootstrap.Modal(document.getElementById('seoFixModal'));
+    }
+    seoModal.show();
+}
+
+// Mettre à jour les compteurs et statuts
+function updateFieldCounters() {
+    // Titre
+    var title = document.getElementById('seo-title');
+    var titleLength = title.value.length;
+    var titleCounter = document.getElementById('title-counter');
+    var titleStatus = document.getElementById('title-status');
+    
+    titleCounter.textContent = titleLength;
+    
+    if (titleLength === 0) {
+        titleStatus.innerHTML = '<span class="text-danger"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_TITLE_MISSING'); ?></span>';
+    } else if (titleLength < 30) {
+        titleStatus.innerHTML = '<span class="text-warning"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_TITLE_TOO_SHORT'); ?></span>';
+    } else if (titleLength > 70) {
+        titleStatus.innerHTML = '<span class="text-warning"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_TITLE_TOO_LONG'); ?></span>';
+    } else {
+        titleStatus.innerHTML = '<span class="text-success"><i class="icon-checkmark"></i> <?php echo Text::_('COM_JOOMLAHITS_SEO_OPTIMAL'); ?></span>';
+    }
+    
+    // Méta description
+    var metadesc = document.getElementById('seo-metadesc');
+    var metadescLength = metadesc.value.length;
+    var metadescCounter = document.getElementById('metadesc-counter');
+    var metadescStatus = document.getElementById('metadesc-status');
+    
+    metadescCounter.textContent = metadescLength;
+    
+    if (metadescLength === 0) {
+        metadescStatus.innerHTML = '<span class="text-danger"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_META_DESC_MISSING'); ?></span>';
+    } else if (metadescLength < 120) {
+        metadescStatus.innerHTML = '<span class="text-warning"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_META_DESC_TOO_SHORT'); ?></span>';
+    } else if (metadescLength > 185) {
+        metadescStatus.innerHTML = '<span class="text-warning"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_META_DESC_TOO_LONG'); ?></span>';
+    } else {
+        metadescStatus.innerHTML = '<span class="text-success"><i class="icon-checkmark"></i> <?php echo Text::_('COM_JOOMLAHITS_SEO_OPTIMAL'); ?></span>';
+    }
+    
+    // Alias
+    var alias = document.getElementById('seo-alias');
+    var aliasLength = alias.value.length;
+    var aliasCounter = document.getElementById('alias-counter');
+    var aliasStatus = document.getElementById('alias-status');
+    
+    aliasCounter.textContent = aliasLength;
+    
+    if (aliasLength > 70) {
+        aliasStatus.innerHTML = '<span class="text-warning"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_URL_TOO_LONG'); ?></span>';
+    } else if (aliasLength > 0) {
+        aliasStatus.innerHTML = '<span class="text-success"><i class="icon-checkmark"></i> <?php echo Text::_('COM_JOOMLAHITS_SEO_OPTIMAL'); ?></span>';
+    } else {
+        aliasStatus.innerHTML = '';
+    }
+    
+    // Contenu
+    var content = document.getElementById('seo-content');
+    var contentText = content.value;
+    var contentLength = contentText.length;
+    var wordsCount = contentText.trim() ? contentText.trim().split(/\s+/).length : 0;
+    var contentCounter = document.getElementById('content-counter');
+    var wordsCounter = document.getElementById('words-counter');
+    var contentStatus = document.getElementById('content-status');
+    
+    contentCounter.textContent = contentLength;
+    wordsCounter.textContent = wordsCount;
+    
+    var hasH1 = /<h1[^>]*>/i.test(contentText);
+    
+    if (wordsCount < 300) {
+        contentStatus.innerHTML = '<span class="text-warning"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_CONTENT_TOO_SHORT'); ?></span>';
+    } else if (!hasH1) {
+        contentStatus.innerHTML = '<span class="text-warning"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_MISSING_H1'); ?></span>';
+    } else {
+        contentStatus.innerHTML = '<span class="text-success"><i class="icon-checkmark"></i> <?php echo Text::_('COM_JOOMLAHITS_SEO_OPTIMAL'); ?></span>';
+    }
+    
+    // Mettre à jour la liste des problèmes
+    updateIssuesList();
+}
+
+// Mettre à jour la liste des problèmes en temps réel
+function updateIssuesList() {
+    var issuesList = document.getElementById('issues-details');
+    issuesList.innerHTML = '';
+    
+    var hasIssues = false;
+    
+    // Vérifier le titre
+    var titleLength = document.getElementById('seo-title').value.length;
+    if (titleLength === 0) {
+        addIssue(issuesList, '<?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_TITLE_MISSING'); ?>', 'danger');
+        hasIssues = true;
+    } else if (titleLength < 30) {
+        addIssue(issuesList, '<?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_TITLE_TOO_SHORT'); ?> (' + titleLength + ' <?php echo Text::_('COM_JOOMLAHITS_CHARACTERS'); ?>)', 'warning');
+        hasIssues = true;
+    } else if (titleLength > 70) {
+        addIssue(issuesList, '<?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_TITLE_TOO_LONG'); ?> (' + titleLength + ' <?php echo Text::_('COM_JOOMLAHITS_CHARACTERS'); ?>)', 'warning');
+        hasIssues = true;
+    }
+    
+    // Vérifier la méta description
+    var metadescLength = document.getElementById('seo-metadesc').value.length;
+    if (metadescLength === 0) {
+        addIssue(issuesList, '<?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_META_DESC_MISSING'); ?>', 'danger');
+        hasIssues = true;
+    } else if (metadescLength < 120) {
+        addIssue(issuesList, '<?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_META_DESC_TOO_SHORT'); ?> (' + metadescLength + ' <?php echo Text::_('COM_JOOMLAHITS_CHARACTERS'); ?>)', 'warning');
+        hasIssues = true;
+    } else if (metadescLength > 185) {
+        addIssue(issuesList, '<?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_META_DESC_TOO_LONG'); ?> (' + metadescLength + ' <?php echo Text::_('COM_JOOMLAHITS_CHARACTERS'); ?>)', 'warning');
+        hasIssues = true;
+    }
+    
+    // Vérifier l'alias
+    var aliasLength = document.getElementById('seo-alias').value.length;
+    if (aliasLength > 70) {
+        addIssue(issuesList, '<?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_URL_TOO_LONG'); ?> (' + aliasLength + ' <?php echo Text::_('COM_JOOMLAHITS_CHARACTERS'); ?>)', 'warning');
+        hasIssues = true;
+    }
+    
+    // Vérifier le contenu
+    var contentText = document.getElementById('seo-content').value;
+    var wordsCount = contentText.trim() ? contentText.trim().split(/\s+/).length : 0;
+    var hasH1 = /<h1[^>]*>/i.test(contentText);
+    
+    if (wordsCount < 300) {
+        addIssue(issuesList, '<?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_CONTENT_TOO_SHORT'); ?> (' + wordsCount + ' <?php echo Text::_('COM_JOOMLAHITS_WORDS'); ?>)', 'warning');
+        hasIssues = true;
+    }
+    
+    if (!hasH1) {
+        addIssue(issuesList, '<?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_MISSING_H1'); ?>', 'warning');
+        hasIssues = true;
+    }
+    
+    // Vérifier les mots-clés
+    var metakey = document.getElementById('seo-metakey').value;
+    if (!metakey) {
+        addIssue(issuesList, '<?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_META_KEYWORDS_MISSING'); ?>', 'info');
+        hasIssues = true;
+    }
+    
+    if (!hasIssues) {
+        var li = document.createElement('li');
+        li.className = 'text-success';
+        li.innerHTML = '<i class="icon-checkmark"></i> <?php echo Text::_('COM_JOOMLAHITS_SEO_ALL_GOOD'); ?>';
+        issuesList.appendChild(li);
+    }
+}
+
+// Ajouter un problème à la liste
+function addIssue(list, message, severity) {
+    var li = document.createElement('li');
+    var className = '';
+    var icon = '';
+    
+    switch(severity) {
+        case 'danger':
+            className = 'text-danger';
+            icon = 'exclamation-triangle';
+            break;
+        case 'warning':
+            className = 'text-warning';
+            icon = 'warning';
+            break;
+        case 'info':
+            className = 'text-info';
+            icon = 'info';
+            break;
+    }
+    
+    li.className = className;
+    li.innerHTML = '<i class="icon-' + icon + '"></i> ' + message;
+    list.appendChild(li);
+}
+
+// Sauvegarder les corrections SEO
+function saveSeoFixes() {
+    var form = document.getElementById('seoFixForm');
+    var formData = new FormData(form);
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_fix.php', true);
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data.success) {
+                        alert('<?php echo Text::_('COM_JOOMLAHITS_SEO_FIX_SUCCESS'); ?>');
+                        seoModal.hide();
+                        // Relancer l'analyse pour cet article
+                        updateSingleArticle(currentArticleData.id);
+                    } else {
+                        alert('Erreur: ' + data.message);
+                    }
+                } catch (e) {
+                    alert('Erreur lors de la sauvegarde');
+                }
+            }
+        }
+    };
+    
+    xhr.send(formData);
+}
+
+// Mettre à jour un seul article après correction
+function updateSingleArticle(articleId) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_analysis.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+                var data = JSON.parse(xhr.responseText);
+                if (data.success) {
+                    // Mettre à jour l'article dans les résultats
+                    for (var i = 0; i < filteredResults.length; i++) {
+                        if (filteredResults[i].id == articleId) {
+                            if (data.data.issues && data.data.issues.length > 0) {
+                                filteredResults[i] = data.data;
+                            } else {
+                                // Plus de problèmes, retirer de la liste
+                                filteredResults.splice(i, 1);
+                            }
+                            break;
+                        }
+                    }
+                    
+                    // Mettre à jour analysisResults aussi
+                    for (var j = 0; j < analysisResults.issues.length; j++) {
+                        if (analysisResults.issues[j].id == articleId) {
+                            if (data.data.issues && data.data.issues.length > 0) {
+                                analysisResults.issues[j] = data.data;
+                            } else {
+                                analysisResults.issues.splice(j, 1);
+                            }
+                            break;
+                        }
+                    }
+                    
+                    // Réafficher le tableau
+                    populateTable(filteredResults);
+                }
+            } catch (e) {
+                console.error('Erreur:', e);
+            }
+        }
+    };
+    
+    xhr.send('article_id=' + encodeURIComponent(articleId));
+}
+
 // Initialisation au chargement
 document.addEventListener('DOMContentLoaded', function() {
     console.log('SEO Analysis page loaded');
+    
+    // Ajouter l'event listener pour le bouton d'analyse
+    var startBtn = document.getElementById('startAnalysisBtn');
+    if (startBtn) {
+        startBtn.addEventListener('click', startAnalysis);
+    }
+    
+    // Les event listeners sont déjà ajoutés avec oninput dans le HTML
 });
 </script>
