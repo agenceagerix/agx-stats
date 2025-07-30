@@ -62,19 +62,26 @@ class ArticlesModel extends ListModel
      */
     protected function populateState($ordering = 'a.hits', $direction = 'DESC')
     {
-        // Call parent first
+        $app = Factory::getApplication();
+        
+        // Search filter
+        $search = $app->getUserStateFromRequest($this->context . '.filter.search', 'filter_search', '', 'string');
+        $this->setState('filter.search', $search);
+        
+        // Category filter
+        $categoryId = $app->getUserStateFromRequest($this->context . '.filter.category_id', 'filter_category_id', '', 'string');
+        $this->setState('filter.category_id', $categoryId);
+        
+        // Published filter
+        $published = $app->getUserStateFromRequest($this->context . '.filter.published', 'filter_published', '', 'string');
+        $this->setState('filter.published', $published);
+        
+        // Language filter
+        $language = $app->getUserStateFromRequest($this->context . '.filter.language', 'filter_language', '', 'string');
+        $this->setState('filter.language', $language);
+        
+        // Call parent to handle ordering and pagination
         parent::populateState($ordering, $direction);
-        
-        // Then FORCE our values after parent
-        $app = \Joomla\CMS\Factory::getApplication();
-        $input = $app->input;
-        
-        $limit = $input->getInt('limit', 20);
-        $limitstart = $input->getInt('limitstart', 0);
-        
-        // FORCE override after parent call
-        $this->setState('list.limit', $limit);
-        $this->setState('list.start', $limitstart);
     }
 
     /**
@@ -123,8 +130,44 @@ class ArticlesModel extends ListModel
         ->from($db->quoteName('#__content', 'a'))
         ->join('LEFT', $db->quoteName('#__categories', 'c') . ' ON ' . $db->quoteName('a.catid') . ' = ' . $db->quoteName('c.id'));
 
-        // No filters for now - just basic ordering
-        $query->order($db->quoteName('a.hits') . ' DESC');
+        // Search filter
+        $search = $this->getState('filter.search');
+        if (!empty($search)) {
+            if (stripos($search, 'id:') === 0) {
+                $query->where($db->quoteName('a.id') . ' = ' . (int) substr($search, 3));
+            } else {
+                $search = $db->quote('%' . str_replace(' ', '%', $db->escape(trim($search), true) . '%'));
+                $query->where('(' . $db->quoteName('a.title') . ' LIKE ' . $search
+                    . ' OR ' . $db->quoteName('a.alias') . ' LIKE ' . $search
+                    . ' OR ' . $db->quoteName('a.introtext') . ' LIKE ' . $search . ')');
+            }
+        }
+
+        // Category filter
+        $categoryId = $this->getState('filter.category_id');
+        if (is_numeric($categoryId)) {
+            $query->where($db->quoteName('a.catid') . ' = ' . (int) $categoryId);
+        }
+
+        // Published filter
+        $published = $this->getState('filter.published');
+        if (is_numeric($published)) {
+            $query->where($db->quoteName('a.state') . ' = ' . (int) $published);
+        }
+
+        // Language filter
+        $language = $this->getState('filter.language');
+        if (!empty($language)) {
+            $query->where($db->quoteName('a.language') . ' = ' . $db->quote($language));
+        }
+
+        // Ordering
+        $orderCol = $this->state->get('list.ordering', 'a.hits');
+        $orderDirn = $this->state->get('list.direction', 'DESC');
+        
+        if ($orderCol && $orderDirn) {
+            $query->order($db->escape($orderCol . ' ' . $orderDirn));
+        }
 
         return $query;
     }
