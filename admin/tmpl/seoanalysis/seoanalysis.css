@@ -1,0 +1,97 @@
+/*-----------------------------------------------------------------------------------------------------/
+	@version		1.2.0
+	@build			29th July, 2025
+	@created		29th July, 2025
+	@package		JoomlaHits
+	@subpackage		seoanalysis.css
+	@author			Hugo Dantas - Agence Agerix <https://www.agerix.fr>
+	@copyright		Copyright (C) 2025. All Rights Reserved
+	@license		GNU/GPL Version 2 or later - http://www.gnu.org/licenses/gpl-2.0.html
+/------------------------------------------------------------------------------------------------------*/
+
+/* General Styles */
+.badge {
+    font-size: 0.75em;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.icon-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#ai-preview-section .card-body {
+    word-wrap: break-word;
+}
+
+#ai-preview-section .border-danger {
+    border-left: 4px solid #dc3545 !important;
+}
+
+#ai-preview-section .border-success {
+    border-left: 4px solid #198754 !important;
+}
+
+#ai-preview-section .text-dark.fw-bold {
+    background-color: #d1e7dd;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+/* Améliorer l'apparence du modal avec scroll */
+#seoFixModal .modal-body {
+    padding: 1.5rem;
+}
+
+#seoFixModal .modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+#seoFixModal .modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#seoFixModal .modal-body::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+#seoFixModal .modal-body::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Simple notification animations */
+@keyframes fadeInRight {
+    from {
+        opacity: 0;
+        transform: translateX(300px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeOutRight {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(300px);
+    }
+}
+
+#joomla-notification-container .alert {
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
