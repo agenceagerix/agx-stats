@@ -119,6 +119,46 @@
             cols="80"
             filter="raw"
             default="Generate a compelling SEO meta description of exactly 185 characters or less for this article. The meta description should be engaging, include relevant keywords, and encourage clicks. Do not include quotes or special formatting. Just return the meta description text.&#10;&#10;Article Title: {title}&#10;Article Introduction: {introtext}"/>
+        
+        <field
+            name="ai_prompt_title"
+            type="textarea"
+            label="COM_JOOMLAHITS_CONFIG_AI_PROMPT_TITLE_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_AI_PROMPT_TITLE_DESC"
+            rows="6"
+            cols="80"
+            filter="raw"
+            default="COM_JOOMLAHITS_DEFAULT_AI_PROMPT_TITLE"/>
+        
+        <field
+            name="ai_prompt_metadesc"
+            type="textarea"
+            label="COM_JOOMLAHITS_CONFIG_AI_PROMPT_METADESC_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_AI_PROMPT_METADESC_DESC"
+            rows="6"
+            cols="80"
+            filter="raw"
+            default="COM_JOOMLAHITS_DEFAULT_AI_PROMPT_METADESC"/>
+        
+        <field
+            name="ai_prompt_metakey"
+            type="textarea"
+            label="COM_JOOMLAHITS_CONFIG_AI_PROMPT_METAKEY_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_AI_PROMPT_METAKEY_DESC"
+            rows="6"
+            cols="80"
+            filter="raw"
+            default="COM_JOOMLAHITS_DEFAULT_AI_PROMPT_METAKEY"/>
+        
+        <field
+            name="ai_prompt_alias"
+            type="textarea"
+            label="COM_JOOMLAHITS_CONFIG_AI_PROMPT_ALIAS_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_AI_PROMPT_ALIAS_DESC"
+            rows="6"
+            cols="80"
+            filter="raw"
+            default="COM_JOOMLAHITS_DEFAULT_AI_PROMPT_ALIAS"/>
     </fieldset>
 
     <fieldset 

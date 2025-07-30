@@ -67,6 +67,7 @@ $minMetaLength = 120;
 $maxMetaLength = 160;
 $minUrlLength = 5;
 $maxUrlLength = 50;
+$minContentLength = 300;
 
 try {
     // Establish direct PDO database connection
@@ -107,6 +108,8 @@ try {
     
     // Parse component parameters and extract API key and SEO settings
     $apiKey = getenv('MISTRAL_API_KEY');
+    $promptTemplates = [];
+    
     if (!$apiKey && $extension && !empty($extension->params)) {
         $params = json_decode($extension->params, true);
         $apiKey = $params['mistral_api_key'] ?? '';
@@ -118,6 +121,13 @@ try {
         $maxMetaLength = isset($params['seo_max_meta_length']) ? intval($params['seo_max_meta_length']) : 160;
         $minUrlLength = isset($params['seo_min_url_length']) ? intval($params['seo_min_url_length']) : 5;
         $maxUrlLength = isset($params['seo_max_url_length']) ? intval($params['seo_max_url_length']) : 50;
+        $minContentLength = isset($params['seo_min_content_length']) ? intval($params['seo_min_content_length']) : 300;
+        
+        // Load custom AI prompts
+        $promptTemplates['title'] = $params['ai_prompt_title'] ?? '';
+        $promptTemplates['metadesc'] = $params['ai_prompt_metadesc'] ?? '';
+        $promptTemplates['metakey'] = $params['ai_prompt_metakey'] ?? '';
+        $promptTemplates['alias'] = $params['ai_prompt_alias'] ?? '';
     }
     
     // Validate API key is configured
@@ -149,7 +159,7 @@ try {
     }
     
     // Create field-specific prompt with SEO parameters
-    $prompt = generateFieldPrompt($fieldType, $cleanTitle, $cleanContent, $article, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minUrlLength, $maxUrlLength);
+    $prompt = generateFieldPrompt($fieldType, $cleanTitle, $cleanContent, $article, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minUrlLength, $maxUrlLength, $minContentLength, $promptTemplates);
     
     // Prepare Mistral AI API request
     $url = 'https://api.mistral.ai/v1/chat/completions';
@@ -272,44 +282,60 @@ try {
 /**
  * Generate field-specific prompts for AI
  */
-function generateFieldPrompt($fieldType, $title, $content, $article, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minUrlLength, $maxUrlLength) {
+function generateFieldPrompt($fieldType, $title, $content, $article, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minUrlLength, $maxUrlLength, $minContentLength, $promptTemplates) {
     $language = $article->language ?: 'fr-FR';
+    $contentSnippet = mb_substr($content, 0, 400, 'UTF-8');
     
-    switch ($fieldType) {
-        case 'title':
-            return "Tu es un expert SEO. Génère UNIQUEMENT un titre optimisé SEO pour cet article. " .
-                   "Règles strictes : entre {$minTitleLength}-{$maxTitleLength} caractères, accrocheur, avec mots-clés principaux. " .
+    // Default prompts if not configured
+    $defaultPrompts = [
+        'title' => "Tu es un expert SEO. Génère UNIQUEMENT un titre optimisé SEO pour cet article. " .
+                   "Règles strictes : entre {minTitleLength}-{maxTitleLength} caractères, accrocheur, avec mots-clés principaux. " .
                    "Réponds UNIQUEMENT avec le titre, sans guillemets ni explication.\n\n" .
-                   "Titre actuel : " . $title . "\n" .
-                   "Contenu : " . mb_substr($content, 0, 400, 'UTF-8') . "\n" .
-                   "Langue : " . $language;
+                   "Titre actuel : {title}\n" .
+                   "Contenu : {content}\n" .
+                   "Langue : {language}",
                    
-        case 'metadesc':
-            return "Tu es un expert SEO. Génère UNIQUEMENT une meta description optimisée pour cet article. " .
-                   "Règles strictes : entre {$minMetaLength}-{$maxMetaLength} caractères, incitative au clic, résume le contenu. " .
-                   "Réponds UNIQUEMENT avec la meta description, sans guillemets ni explication.\n\n" .
-                   "Titre : " . $title . "\n" .
-                   "Contenu : " . mb_substr($content, 0, 400, 'UTF-8') . "\n" .
-                   "Langue : " . $language;
-                   
-        case 'metakey':
-            return "Tu es un expert SEO. Génère UNIQUEMENT des mots-clés meta pour cet article. " .
-                   "Règles strictes : 5-8 mots-clés pertinents, séparés par des virgules. " .
-                   "Réponds UNIQUEMENT avec la liste de mots-clés, sans guillemets ni explication.\n\n" .
-                   "Titre : " . $title . "\n" .
-                   "Contenu : " . mb_substr($content, 0, 400, 'UTF-8') . "\n" .
-                   "Langue : " . $language;
-                   
-        case 'alias':
-            return "Tu es un expert SEO. Génère UNIQUEMENT un alias URL optimisé pour cet article. " .
-                   "Règles strictes : max {$maxUrlLength} caractères, lettres minuscules, tirets uniquement, SEO-friendly. " .
+        'metadesc' => "Tu es un expert SEO. Génère UNIQUEMENT une meta description optimisée pour cet article. " .
+                      "Règles strictes : entre {minMetaLength}-{maxMetaLength} caractères, incitative au clic, résume le contenu. " .
+                      "Réponds UNIQUEMENT avec la meta description, sans guillemets ni explication.\n\n" .
+                      "Titre : {title}\n" .
+                      "Contenu : {content}\n" .
+                      "Langue : {language}",
+                      
+        'metakey' => "Tu es un expert SEO. Génère UNIQUEMENT des mots-clés meta pour cet article. " .
+                     "Règles strictes : 5-8 mots-clés pertinents, séparés par des virgules. " .
+                     "Réponds UNIQUEMENT avec la liste de mots-clés, sans guillemets ni explication.\n\n" .
+                     "Titre : {title}\n" .
+                     "Contenu : {content}\n" .
+                     "Langue : {language}",
+                     
+        'alias' => "Tu es un expert SEO. Génère UNIQUEMENT un alias URL optimisé pour cet article. " .
+                   "Règles strictes : entre {minUrlLength}-{maxUrlLength} caractères, lettres minuscules, tirets uniquement, SEO-friendly. " .
                    "Réponds UNIQUEMENT avec l'alias URL, sans guillemets ni explication.\n\n" .
-                   "Titre : " . $title . "\n" .
-                   "Langue : " . $language;
-                   
-        default:
-            return '';
-    }
+                   "Titre : {title}\n" .
+                   "Langue : {language}"
+    ];
+    
+    // Get the prompt template (use default if not configured)
+    $promptTemplate = (!empty($promptTemplates[$fieldType])) ? $promptTemplates[$fieldType] : $defaultPrompts[$fieldType];
+    
+    // Replace variables in the prompt template
+    $replacements = [
+        '{title}' => $title,
+        '{content}' => $contentSnippet,
+        '{language}' => $language,
+        '{minTitleLength}' => $minTitleLength,
+        '{maxTitleLength}' => $maxTitleLength,
+        '{minMetaLength}' => $minMetaLength,
+        '{maxMetaLength}' => $maxMetaLength,
+        '{minUrlLength}' => $minUrlLength,
+        '{maxUrlLength}' => $maxUrlLength,
+        '{minContentLength}' => $minContentLength
+    ];
+    
+    $prompt = str_replace(array_keys($replacements), array_values($replacements), $promptTemplate);
+    
+    return $prompt;
 }
 
 /**
