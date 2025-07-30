@@ -60,6 +60,14 @@ if (!file_exists(JPATH_BASE . '/configuration.php')) {
 require_once JPATH_BASE . '/configuration.php';
 $config = new JConfig();
 
+// Initialize default configuration values
+$minTitleLength = 30;
+$maxTitleLength = 60;
+$minMetaLength = 120;
+$maxMetaLength = 160;
+$minUrlLength = 5;
+$maxUrlLength = 50;
+
 try {
     // Establish direct PDO database connection
     $db = new PDO(
@@ -97,11 +105,19 @@ try {
     $extensionQuery->execute();
     $extension = $extensionQuery->fetch();
     
-    // Parse component parameters and extract API key
+    // Parse component parameters and extract API key and SEO settings
     $apiKey = getenv('MISTRAL_API_KEY');
     if (!$apiKey && $extension && !empty($extension->params)) {
         $params = json_decode($extension->params, true);
         $apiKey = $params['mistral_api_key'] ?? '';
+        
+        // Load SEO parameters
+        $minTitleLength = isset($params['seo_min_title_length']) ? intval($params['seo_min_title_length']) : 30;
+        $maxTitleLength = isset($params['seo_max_title_length']) ? intval($params['seo_max_title_length']) : 60;
+        $minMetaLength = isset($params['seo_min_meta_length']) ? intval($params['seo_min_meta_length']) : 120;
+        $maxMetaLength = isset($params['seo_max_meta_length']) ? intval($params['seo_max_meta_length']) : 160;
+        $minUrlLength = isset($params['seo_min_url_length']) ? intval($params['seo_min_url_length']) : 5;
+        $maxUrlLength = isset($params['seo_max_url_length']) ? intval($params['seo_max_url_length']) : 50;
     }
     
     // Validate API key is configured
@@ -132,8 +148,8 @@ try {
         $cleanContent = $cleanTitle;
     }
     
-    // Create field-specific prompt
-    $prompt = generateFieldPrompt($fieldType, $cleanTitle, $cleanContent, $article);
+    // Create field-specific prompt with SEO parameters
+    $prompt = generateFieldPrompt($fieldType, $cleanTitle, $cleanContent, $article, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minUrlLength, $maxUrlLength);
     
     // Prepare Mistral AI API request
     $url = 'https://api.mistral.ai/v1/chat/completions';
@@ -235,7 +251,7 @@ try {
     $generatedValue = trim($generatedValue, '"\'');
     
     // Clean the generated value based on field type
-    $cleanedValue = cleanFieldValue($fieldType, $generatedValue);
+    $cleanedValue = cleanFieldValue($fieldType, $generatedValue, $maxTitleLength, $maxMetaLength, $maxUrlLength);
     
     echo json_encode([
         'success' => true,
@@ -256,13 +272,13 @@ try {
 /**
  * Generate field-specific prompts for AI
  */
-function generateFieldPrompt($fieldType, $title, $content, $article) {
+function generateFieldPrompt($fieldType, $title, $content, $article, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minUrlLength, $maxUrlLength) {
     $language = $article->language ?: 'fr-FR';
     
     switch ($fieldType) {
         case 'title':
             return "Tu es un expert SEO. Génère UNIQUEMENT un titre optimisé SEO pour cet article. " .
-                   "Règles strictes : entre 30-70 caractères, accrocheur, avec mots-clés principaux. " .
+                   "Règles strictes : entre {$minTitleLength}-{$maxTitleLength} caractères, accrocheur, avec mots-clés principaux. " .
                    "Réponds UNIQUEMENT avec le titre, sans guillemets ni explication.\n\n" .
                    "Titre actuel : " . $title . "\n" .
                    "Contenu : " . mb_substr($content, 0, 400, 'UTF-8') . "\n" .
@@ -270,7 +286,7 @@ function generateFieldPrompt($fieldType, $title, $content, $article) {
                    
         case 'metadesc':
             return "Tu es un expert SEO. Génère UNIQUEMENT une meta description optimisée pour cet article. " .
-                   "Règles strictes : entre 120-185 caractères, incitative au clic, résume le contenu. " .
+                   "Règles strictes : entre {$minMetaLength}-{$maxMetaLength} caractères, incitative au clic, résume le contenu. " .
                    "Réponds UNIQUEMENT avec la meta description, sans guillemets ni explication.\n\n" .
                    "Titre : " . $title . "\n" .
                    "Contenu : " . mb_substr($content, 0, 400, 'UTF-8') . "\n" .
@@ -286,7 +302,7 @@ function generateFieldPrompt($fieldType, $title, $content, $article) {
                    
         case 'alias':
             return "Tu es un expert SEO. Génère UNIQUEMENT un alias URL optimisé pour cet article. " .
-                   "Règles strictes : max 70 caractères, lettres minuscules, tirets uniquement, SEO-friendly. " .
+                   "Règles strictes : max {$maxUrlLength} caractères, lettres minuscules, tirets uniquement, SEO-friendly. " .
                    "Réponds UNIQUEMENT avec l'alias URL, sans guillemets ni explication.\n\n" .
                    "Titre : " . $title . "\n" .
                    "Langue : " . $language;
@@ -299,13 +315,13 @@ function generateFieldPrompt($fieldType, $title, $content, $article) {
 /**
  * Clean field values based on type
  */
-function cleanFieldValue($fieldType, $value) {
+function cleanFieldValue($fieldType, $value, $maxTitleLength, $maxMetaLength, $maxUrlLength) {
     switch ($fieldType) {
         case 'title':
-            return mb_substr(trim($value), 0, 70, 'UTF-8');
+            return mb_substr(trim($value), 0, $maxTitleLength, 'UTF-8');
             
         case 'metadesc':
-            return mb_substr(trim($value), 0, 185, 'UTF-8');
+            return mb_substr(trim($value), 0, $maxMetaLength, 'UTF-8');
             
         case 'metakey':
             return trim($value);
@@ -315,7 +331,7 @@ function cleanFieldValue($fieldType, $value) {
             $alias = preg_replace('/[^a-z0-9\-]/', '-', $alias);
             $alias = preg_replace('/-+/', '-', $alias);
             $alias = trim($alias, '-');
-            return mb_substr($alias, 0, 70, 'UTF-8');
+            return mb_substr($alias, 0, $maxUrlLength, 'UTF-8');
             
         default:
             return trim($value);

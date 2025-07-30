@@ -288,21 +288,27 @@ $listDirn = 'ASC';
                     </div>
                     
                     <!-- AI Preview Section (initially hidden) -->
-                    <div id="ai-preview-section" class="card mt-3" style="display: none;">
-                        <div class="card-header">
+                    <div id="ai-preview-section" class="card mt-3 border-warning" style="display: none;">
+                        <div class="card-header bg-warning text-dark">
                             <h6 class="card-title mb-0">
-                                <i class="icon-eye text-success me-2"></i>Prévisualisation des modifications IA
+                                <i class="icon-eye me-2"></i>Prévisualisation des modifications IA
                             </h6>
+                            <small class="d-block mt-1">
+                                <i class="icon-warning me-1"></i><strong>Action requise :</strong> Acceptez ou annulez ces modifications pour pouvoir enregistrer
+                            </small>
                         </div>
                         <div class="card-body">
                             <div id="ai-preview-content">
                                 <!-- Content will be populated by JavaScript -->
                             </div>
                             <div class="mt-3 text-center">
-                                <button type="button" class="btn btn-outline-success btn-sm me-2" onclick="acceptAIChanges()">
+                                <div class="alert alert-info mb-3">
+                                    <i class="icon-info me-2"></i>Vous devez choisir une action avant de pouvoir enregistrer vos modifications.
+                                </div>
+                                <button type="button" class="btn btn-success me-2" onclick="acceptAIChanges()">
                                     <i class="icon-checkmark me-1"></i>Accepter les modifications
                                 </button>
-                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="rejectAIChanges()">
+                                <button type="button" class="btn btn-danger" onclick="rejectAIChanges()">
                                     <i class="icon-times me-1"></i>Annuler les modifications
                                 </button>
                             </div>
@@ -317,7 +323,7 @@ $listDirn = 'ASC';
                 <button type="button" class="btn btn-warning px-4 me-2" onclick="fixWithAI()" id="aiFixBtn">
                     <i class="icon-wand me-2"></i>Corriger avec IA
                 </button>
-                <button type="button" class="btn btn-primary px-4" onclick="saveSeoFixes()">
+                <button type="button" class="btn btn-primary px-4" onclick="saveSeoFixes()" id="saveSeoBtn">
                     <i class="icon-checkmark me-2"></i><?php echo Text::_('COM_JOOMLAHITS_SAVE_CHANGES'); ?>
                 </button>
             </div>
@@ -387,7 +393,7 @@ $listDirn = 'ASC';
 </style>
 
 <script>
-// Variables globales
+// Global variables
 var analysisResults = [];
 var filteredResults = [];
 var isAnalysisCancelled = false;
@@ -406,7 +412,7 @@ var currentAnalysisResults = {
 var articlesList = [];
 var currentArticleIndex = 0;
 
-// Fonction principale de démarrage
+// Main startup function
 function startAnalysis() {
     console.log('Starting analysis...');
     
@@ -415,7 +421,7 @@ function startAnalysis() {
     var resultsSection = document.getElementById('results-section');
     var noIssuesSection = document.getElementById('no-issues-section');
     
-    // Désactiver le bouton et afficher le chargement
+    // Disable button and show loading
     btn.disabled = true;
     btn.innerHTML = '<i class="icon-refresh icon-spin"></i> <span>Analyse en cours...</span>';
     
@@ -423,7 +429,7 @@ function startAnalysis() {
     resultsSection.style.display = 'none';
     noIssuesSection.style.display = 'none';
     
-    // Réinitialiser l'état
+    // Reset state
     isAnalysisCancelled = false;
     currentArticleIndex = 0;
     currentAnalysisResults = {
@@ -438,11 +444,11 @@ function startAnalysis() {
         }
     };
     
-    // Récupérer la liste des articles
+    // Get articles list
     getArticlesList();
 }
 
-// Récupérer la liste des articles
+// Get articles list
 function getArticlesList() {
     fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_analysis.php', {
         method: 'POST',
@@ -465,27 +471,27 @@ function getArticlesList() {
             articlesList = data.data;
             currentAnalysisResults.total_articles = articlesList.length;
             document.getElementById('current-analysis-status').textContent = 
-                'Début de l analyse - ' + articlesList.length + ' articles à traiter';
+                'Analysis started - ' + articlesList.length + ' articles to process';
             
-            // Démarrer l'analyse du premier article
+            // Start analyzing first article
             if (articlesList.length > 0) {
                 analyzeNextArticle();
             } else {
                 finishAnalysis();
             }
         } else {
-            alert('Erreur lors de la récupération des articles: ' + data.message);
+            alert('Error retrieving articles: ' + data.message);
             resetAnalysisUI();
         }
     })
     .catch(error => {
-        console.error('Erreur:', error);
-        alert('Erreur lors de la récupération des articles: ' + error.message);
+        console.error('Error:', error);
+        alert('Error retrieving articles: ' + error.message);
         resetAnalysisUI();
     });
 }
 
-// Analyser l'article suivant
+// Analyze next article
 function analyzeNextArticle() {
     if (isAnalysisCancelled || currentArticleIndex >= articlesList.length) {
         finishAnalysis();
@@ -497,13 +503,13 @@ function analyzeNextArticle() {
     var currentStatus = document.getElementById('current-analysis-status');
     var resultsLog = document.getElementById('analysis-results-log');
     
-    // Mettre à jour la progression
+    // Update progress
     var progress = Math.round((currentArticleIndex / articlesList.length) * 100);
     progressBar.style.width = progress + '%';
     progressBar.setAttribute('aria-valuenow', progress);
-    currentStatus.textContent = 'Analyse de "' + article.title + '" (' + (currentArticleIndex + 1) + '/' + articlesList.length + ')';
+    currentStatus.textContent = 'Analyzing "' + article.title + '" (' + (currentArticleIndex + 1) + '/' + articlesList.length + ')';
     
-    // Analyser l'article
+    // Analyze article
     fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_analysis.php', {
         method: 'POST',
         headers: {
@@ -522,10 +528,10 @@ function analyzeNextArticle() {
     })
     .then(data => {
         if (data.success && data.data.issues && data.data.issues.length > 0) {
-            // Ajouter l'article avec des problèmes
+            // Add article with issues
             currentAnalysisResults.issues.push(data.data);
             
-            // Mettre à jour les stats
+            // Update stats
             for (var i = 0; i < data.data.issues.length; i++) {
                 var issue = data.data.issues[i];
                 var category = getIssueCategoryFromType(issue.type);
@@ -534,7 +540,7 @@ function analyzeNextArticle() {
                 }
             }
             
-            // Logger le résultat
+            // Log result
             var severityClass = {
                 'critical': 'text-danger',
                 'warning': 'text-warning',
@@ -542,34 +548,34 @@ function analyzeNextArticle() {
             }[data.data.severity];
             
             resultsLog.innerHTML += '<div class="' + severityClass + '">' +
-                '<i class="icon-warning"></i> ' + data.data.issues.length + ' problème(s) trouvé(s) dans "' + article.title + '"' +
+                '<i class="icon-warning"></i> ' + data.data.issues.length + ' issue(s) found in "' + article.title + '"' +
             '</div>';
         } else {
-            // Article sans problèmes
+            // Article without issues
             resultsLog.innerHTML += '<div class="text-success">' +
-                '<i class="icon-checkmark"></i> "' + article.title + '" - Aucun problème détecté' +
+                '<i class="icon-checkmark"></i> "' + article.title + '" - No issues detected' +
             '</div>';
         }
         resultsLog.scrollTop = resultsLog.scrollHeight;
         
-        // Passer à l'article suivant
+        // Move to next article
         currentArticleIndex++;
         setTimeout(analyzeNextArticle, 1);
     })
     .catch(error => {
-        console.error('Erreur:', error);
+        console.error('Error:', error);
         resultsLog.innerHTML += '<div class="text-danger">' +
-            '<i class="icon-warning"></i> Erreur lors de l\'analyse de "' + article.title + '": ' + error.message +
+            '<i class="icon-warning"></i> Error analyzing "' + article.title + '": ' + error.message +
         '</div>';
         resultsLog.scrollTop = resultsLog.scrollHeight;
         
-        // Passer à l'article suivant même en cas d'erreur
+        // Move to next article even on error
         currentArticleIndex++;
         setTimeout(analyzeNextArticle, 1);
     });
 }
 
-// Obtenir la catégorie d'un type de problème
+// Get category from issue type
 function getIssueCategoryFromType(issueType) {
     if (issueType.indexOf('title') !== -1) return 'title';
     if (issueType.indexOf('meta_desc') !== -1) return 'meta_description';
@@ -579,7 +585,7 @@ function getIssueCategoryFromType(issueType) {
     return 'content';
 }
 
-// Terminer l'analyse
+// Finish analysis
 function finishAnalysis() {
     var progressBar = document.getElementById('analysis-progress-bar');
     var currentStatus = document.getElementById('current-analysis-status');
@@ -589,20 +595,20 @@ function finishAnalysis() {
     progressBar.setAttribute('aria-valuenow', '100');
     
     if (isAnalysisCancelled) {
-        currentStatus.textContent = 'Analyse annulée';
+        currentStatus.textContent = 'Analysis cancelled';
     } else {
-        currentStatus.textContent = 'Analyse terminée - ' + currentAnalysisResults.issues.length + ' articles avec problèmes sur ' + currentAnalysisResults.total_articles;
+        currentStatus.textContent = 'Analysis completed - ' + currentAnalysisResults.issues.length + ' articles with issues out of ' + currentAnalysisResults.total_articles;
     }
     
     cancelBtn.disabled = true;
     
-    // Trier les résultats par gravité
+    // Sort results by severity
     currentAnalysisResults.issues.sort(function(a, b) {
         var severityOrder = {'critical': 0, 'warning': 1, 'info': 2};
         return severityOrder[a.severity] - severityOrder[b.severity];
     });
     
-    // Afficher les résultats après un délai
+    // Display results after delay
     setTimeout(function() {
         document.getElementById('loading-section').style.display = 'none';
         analysisResults = currentAnalysisResults;
@@ -611,68 +617,33 @@ function finishAnalysis() {
     }, 2000);
 }
 
-// Réinitialiser l'interface
+// Reset UI
 function resetAnalysisUI() {
     var btn = document.getElementById('startAnalysisBtn');
     btn.disabled = false;
     btn.innerHTML = '<i class="icon-search"></i> <span>Lancer l analyse complète</span>';
 }
 
-// Annuler l'analyse
+// Cancel analysis
 function cancelAnalysis() {
     isAnalysisCancelled = true;
-    document.getElementById('current-analysis-status').textContent = 'Annulation en cours...';
+    document.getElementById('current-analysis-status').textContent = 'Cancelling...';
     document.getElementById('cancelAnalysis').disabled = true;
 }
 
-// Afficher les résultats
+// Display results
 function displayResults(results) {
     if (!results.issues || results.issues.length === 0) {
         document.getElementById('no-issues-section').style.display = 'block';
         return;
     }
     
-    // updateStatistics(results); // Fonction désactivée
     filteredResults = results.issues;
     document.getElementById('results-section').style.display = 'block';
     populateTable(filteredResults);
 }
 
-// Mettre à jour les statistiques
-function updateStatistics(results) {
-    var totalArticles = results.total_articles;
-    var issuesCount = results.issues.length;
-    var healthyArticles = totalArticles - issuesCount;
-    var seoScore = Math.round((healthyArticles / totalArticles) * 100);
-    
-    var criticalCount = 0;
-    var warningCount = 0;
-    var infoCount = 0;
-    
-    for (var i = 0; i < results.issues.length; i++) {
-        var article = results.issues[i];
-        switch(article.severity) {
-            case 'critical':
-                criticalCount++;
-                break;
-            case 'warning':
-                warningCount++;
-                break;
-            case 'info':
-                infoCount++;
-                break;
-        }
-    }
-    
-    document.getElementById('total-articles').textContent = totalArticles;
-    document.getElementById('critical-issues').textContent = criticalCount;
-    document.getElementById('warning-issues').textContent = warningCount;
-    document.getElementById('info-issues').textContent = infoCount;
-    document.getElementById('healthy-articles').textContent = healthyArticles;
-    document.getElementById('seo-score').textContent = seoScore + '%';
-}
-
-// Remplir le tableau
+// Populate table
 function populateTable(articles) {
     var tbody = document.getElementById('results-tbody');
     tbody.innerHTML = '';
@@ -683,7 +654,7 @@ function populateTable(articles) {
     }
 }
 
-// Créer une ligne du tableau
+// Create table row
 function createTableRow(article) {
     var tr = document.createElement('tr');
     
@@ -731,7 +702,7 @@ function createTableRow(article) {
     return tr;
 }
 
-// Appliquer les filtres
+// Apply filters
 function applyFilters() {
     var severityFilter = document.getElementById('severity-filter').value;
     var issueTypeFilter = document.getElementById('issue-type-filter').value;
@@ -743,12 +714,12 @@ function applyFilters() {
         var article = analysisResults.issues[i];
         var shouldInclude = true;
         
-        // Filtre de gravité
+        // Severity filter
         if (severityFilter && article.severity !== severityFilter) {
             shouldInclude = false;
         }
         
-        // Filtre de type de problème
+        // Issue type filter
         if (shouldInclude && issueTypeFilter) {
             var hasIssueType = false;
             for (var j = 0; j < article.issues.length; j++) {
@@ -762,7 +733,7 @@ function applyFilters() {
             }
         }
         
-        // Filtre de recherche
+        // Search filter
         if (shouldInclude && searchFilter) {
             if (article.title.toLowerCase().indexOf(searchFilter) === -1) {
                 shouldInclude = false;
@@ -778,7 +749,7 @@ function applyFilters() {
 }
 
 
-// Fonction de tri Joomla
+// Joomla sorting function
 if (typeof Joomla === 'undefined') {
     window.Joomla = {};
 }
@@ -786,14 +757,14 @@ if (typeof Joomla === 'undefined') {
 Joomla.tableOrdering = function(column, direction, task) {
     var form = document.getElementById('adminForm');
     if (!form) {
-        // Créer un formulaire temporaire pour le tri
+        // Create temporary form for sorting
         form = document.createElement('form');
         form.id = 'adminForm';
         form.method = 'post';
         document.body.appendChild(form);
     }
     
-    // Trier les résultats localement
+    // Sort results locally
     if (currentSort.column === column) {
         currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
     } else {
@@ -839,13 +810,14 @@ Joomla.tableOrdering = function(column, direction, task) {
     return false;
 };
 
-// Variables pour le modal
+// Modal variables
 var currentArticleData = null;
 var seoModal = null;
+var aiPreviewState = null; // null: no preview, 'pending': waiting for accept/reject, 'accepted': accepted, 'rejected': rejected
 
-// Ouvrir le modal SEO
+// Open SEO modal
 function openSeoModal(articleId) {
-    // Trouver l'article dans les résultats
+    // Find article in results
     var article = null;
     for (var i = 0; i < filteredResults.length; i++) {
         if (filteredResults[i].id == articleId) {
@@ -858,7 +830,12 @@ function openSeoModal(articleId) {
     
     currentArticleData = article;
     
-    // Remplir le formulaire
+    // Reset AI preview state
+    aiPreviewState = null;
+    document.getElementById('ai-preview-section').style.display = 'none';
+    updateSaveButtonState();
+    
+    // Fill form
     document.getElementById('seo-article-id').value = article.id;
     document.getElementById('seo-title').value = article.title;
     document.getElementById('seo-metadesc').value = article.metadesc || '';
@@ -866,10 +843,10 @@ function openSeoModal(articleId) {
     document.getElementById('seo-alias').value = article.alias || '';
     document.getElementById('seo-content').value = article.content || '';
     
-    // Mettre à jour les compteurs
+    // Update counters
     updateFieldCounters();
     
-    // Afficher les problèmes
+    // Display issues
     var issuesList = document.getElementById('issues-details');
     issuesList.innerHTML = '';
     for (var j = 0; j < article.issues.length; j++) {
@@ -878,16 +855,16 @@ function openSeoModal(articleId) {
         issuesList.appendChild(li);
     }
     
-    // Ouvrir le modal
+    // Open modal
     if (!seoModal) {
         seoModal = new bootstrap.Modal(document.getElementById('seoFixModal'));
     }
     seoModal.show();
 }
 
-// Mettre à jour les compteurs et statuts
+// Update field counters and status
 function updateFieldCounters() {
-    // Titre
+    // Title
     var title = document.getElementById('seo-title');
     var titleLength = title.value.length;
     var titleCounter = document.getElementById('title-counter');
@@ -905,7 +882,7 @@ function updateFieldCounters() {
         titleStatus.innerHTML = '<span class="text-success"><i class="icon-checkmark"></i> <?php echo Text::_('COM_JOOMLAHITS_SEO_OPTIMAL'); ?></span>';
     }
     
-    // Méta description
+    // Meta description
     var metadesc = document.getElementById('seo-metadesc');
     var metadescLength = metadesc.value.length;
     var metadescCounter = document.getElementById('metadesc-counter');
@@ -939,7 +916,7 @@ function updateFieldCounters() {
         aliasStatus.innerHTML = '';
     }
     
-    // Contenu
+    // Content
     var content = document.getElementById('seo-content');
     var contentText = content.value;
     var contentLength = contentText.length;
@@ -961,18 +938,18 @@ function updateFieldCounters() {
         contentStatus.innerHTML = '<span class="text-success"><i class="icon-checkmark"></i> <?php echo Text::_('COM_JOOMLAHITS_SEO_OPTIMAL'); ?></span>';
     }
     
-    // Mettre à jour la liste des problèmes
+    // Update issues list
     updateIssuesList();
 }
 
-// Mettre à jour la liste des problèmes en temps réel
+// Update issues list in real time
 function updateIssuesList() {
     var issuesList = document.getElementById('issues-details');
     issuesList.innerHTML = '';
     
     var hasIssues = false;
     
-    // Vérifier le titre
+    // Check title
     var titleLength = document.getElementById('seo-title').value.length;
     if (titleLength === 0) {
         addIssue(issuesList, '<?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_TITLE_MISSING'); ?>', 'danger');
@@ -985,7 +962,7 @@ function updateIssuesList() {
         hasIssues = true;
     }
     
-    // Vérifier la méta description
+    // Check meta description
     var metadescLength = document.getElementById('seo-metadesc').value.length;
     if (metadescLength === 0) {
         addIssue(issuesList, '<?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_META_DESC_MISSING'); ?>', 'danger');
@@ -998,14 +975,14 @@ function updateIssuesList() {
         hasIssues = true;
     }
     
-    // Vérifier l'alias
+    // Check alias
     var aliasLength = document.getElementById('seo-alias').value.length;
     if (aliasLength > 70) {
         addIssue(issuesList, '<?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_URL_TOO_LONG'); ?> (' + aliasLength + ' <?php echo Text::_('COM_JOOMLAHITS_CHARACTERS'); ?>)', 'warning');
         hasIssues = true;
     }
     
-    // Vérifier le contenu
+    // Check content
     var contentText = document.getElementById('seo-content').value;
     var wordsCount = contentText.trim() ? contentText.trim().split(/\s+/).length : 0;
     var hasH1 = /<h1[^>]*>/i.test(contentText);
@@ -1020,7 +997,7 @@ function updateIssuesList() {
         hasIssues = true;
     }
     
-    // Vérifier les mots-clés
+    // Check keywords
     var metakey = document.getElementById('seo-metakey').value;
     if (!metakey) {
         addIssue(issuesList, '<?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_META_KEYWORDS_MISSING'); ?>', 'info');
@@ -1035,7 +1012,7 @@ function updateIssuesList() {
     }
 }
 
-// Ajouter un problème à la liste
+// Add issue to list
 function addIssue(list, message, severity) {
     var li = document.createElement('li');
     var className = '';
@@ -1061,7 +1038,7 @@ function addIssue(list, message, severity) {
     list.appendChild(li);
 }
 
-// Corriger avec l'IA
+// Fix with AI
 function fixWithAI() {
     if (!currentArticleData) {
         alert('Aucun article sélectionné');
@@ -1071,7 +1048,7 @@ function fixWithAI() {
     var aiBtn = document.getElementById('aiFixBtn');
     var originalText = aiBtn.innerHTML;
     
-    // Stocker les valeurs originales pour la prévisualisation
+    // Store original values for preview
     window.originalValues = {
         title: document.getElementById('seo-title').value,
         metadesc: document.getElementById('seo-metadesc').value,
@@ -1081,24 +1058,27 @@ function fixWithAI() {
     
     window.aiOptimizedValues = {};
     
-    // Désactiver le bouton et afficher le chargement
+    // Disable button and show loading
     aiBtn.disabled = true;
     aiBtn.innerHTML = '<i class="icon-refresh icon-spin me-2"></i>IA en cours...';
     
-    // Liste des champs à traiter (contenu désactivé car IA trop imprévisible)
+    // List of fields to process (content disabled as AI too unpredictable)
     var fields = ['title', 'metadesc', 'metakey', 'alias'];
     var currentFieldIndex = 0;
-    var processedFields = 0;
     
     function processNextField() {
         if (currentFieldIndex >= fields.length) {
-            // Tous les champs ont été traités
+            // All fields have been processed
             aiBtn.disabled = false;
             aiBtn.innerHTML = originalText;
             updateFieldCounters();
             
-            // Afficher la prévisualisation
+            // Show preview
             showAIPreview();
+            
+            // Set state to "pending"
+            aiPreviewState = 'pending';
+            updateSaveButtonState();
             return;
         }
         
@@ -1123,7 +1103,7 @@ function fixWithAI() {
         })
         .then(data => {
             if (data.success && data.field_value) {
-                // Stocker la valeur optimisée pour la prévisualisation
+                // Store optimized value for preview
                 window.aiOptimizedValues[fieldType] = data.field_value;
                 
                 // Remplir le champ correspondant (temporairement)
@@ -1131,19 +1111,18 @@ function fixWithAI() {
                 if (fieldElement) {
                     fieldElement.value = data.field_value;
                 }
-                processedFields++;
             } else {
                 console.error('Erreur pour le champ ' + fieldType + ':', data.message);
             }
             
             // Passer au champ suivant
             currentFieldIndex++;
-            setTimeout(processNextField, 500); // Délai entre les appels
+            setTimeout(processNextField, 500); // Delay between calls
         })
         .catch(error => {
             console.error('Erreur pour le champ ' + fieldType + ':', error.message);
             
-            // Passer au champ suivant même en cas d'erreur
+            // Move to next field even on error
             currentFieldIndex++;
             setTimeout(processNextField, 500);
         });
@@ -1163,7 +1142,7 @@ function getFieldLabel(fieldType) {
     return labels[fieldType] || fieldType;
 }
 
-// Afficher la prévisualisation des modifications IA
+// Show AI changes preview
 function showAIPreview() {
     var previewSection = document.getElementById('ai-preview-section');
     var previewContent = document.getElementById('ai-preview-content');
@@ -1218,12 +1197,12 @@ function showAIPreview() {
     previewContent.innerHTML = html;
     previewSection.style.display = 'block';
     
-    // Scroll vers la prévisualisation dans le modal
+    // Scroll to preview in modal
     setTimeout(function() {
         var modalBody = document.querySelector('#seoFixModal .modal-body');
         var previewPosition = previewSection.offsetTop - modalBody.offsetTop;
         modalBody.scrollTo({
-            top: previewPosition - 50, // Un peu d'espace au-dessus
+            top: previewPosition - 50, // Some space above
             behavior: 'smooth'
         });
     }, 100);
@@ -1231,8 +1210,10 @@ function showAIPreview() {
 
 // Accepter les modifications IA
 function acceptAIChanges() {
-    // Les valeurs sont déjà dans les champs, on cache juste la prévisualisation
+    // Values are already in fields, just hide preview
     document.getElementById('ai-preview-section').style.display = 'none';
+    aiPreviewState = 'accepted';
+    updateSaveButtonState();
     updateFieldCounters();
     
     // Afficher un message de confirmation
@@ -1244,7 +1225,7 @@ function acceptAIChanges() {
     var form = document.getElementById('seoFixForm');
     form.insertBefore(alertDiv, form.firstChild);
     
-    // Supprimer l'alerte après 5 secondes
+    // Remove alert after 5 seconds
     setTimeout(function() {
         if (alertDiv.parentNode) {
             alertDiv.remove();
@@ -1262,8 +1243,10 @@ function rejectAIChanges() {
         }
     });
     
-    // Cacher la prévisualisation
+    // Hide preview
     document.getElementById('ai-preview-section').style.display = 'none';
+    aiPreviewState = 'rejected';
+    updateSaveButtonState();
     updateFieldCounters();
     
     // Afficher un message de confirmation
@@ -1275,7 +1258,7 @@ function rejectAIChanges() {
     var form = document.getElementById('seoFixForm');
     form.insertBefore(alertDiv, form.firstChild);
     
-    // Supprimer l'alerte après 5 secondes
+    // Remove alert after 5 seconds
     setTimeout(function() {
         if (alertDiv.parentNode) {
             alertDiv.remove();
@@ -1283,12 +1266,37 @@ function rejectAIChanges() {
     }, 5000);
 }
 
+// Update Save button state
+function updateSaveButtonState() {
+    var saveBtn = document.getElementById('saveSeoBtn');
+    
+    if (aiPreviewState === 'pending') {
+        // En attente d'acceptation/refus des modifications IA
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="icon-warning me-2"></i>Acceptez ou annulez les modifications IA';
+        saveBtn.className = 'btn btn-warning px-4';
+        saveBtn.title = 'Vous devez accepter ou annuler les modifications IA avant de pouvoir enregistrer';
+    } else {
+        // Normal or after acceptance/rejection
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="icon-checkmark me-2"></i><?php echo Text::_('COM_JOOMLAHITS_SAVE_CHANGES'); ?>';
+        saveBtn.className = 'btn btn-primary px-4';
+        saveBtn.title = '';
+    }
+}
+
 // Sauvegarder les corrections SEO
 function saveSeoFixes() {
+    // Check if we can save
+    if (aiPreviewState === 'pending') {
+        alert('Vous devez d\'abord accepter ou annuler les modifications IA avant de pouvoir enregistrer.');
+        return;
+    }
+    
     var form = document.getElementById('seoFixForm');
     var formData = new FormData(form);
     
-    // Note: L'optimisation IA du contenu est désactivée pour éviter les problèmes
+    // Note: AI content optimization is disabled to avoid issues
     
     fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_fix.php', {
         method: 'POST',
@@ -1319,7 +1327,7 @@ function saveSeoFixes() {
     });
 }
 
-// Mettre à jour un seul article après correction
+// Update single article after correction
 function updateSingleArticle(articleId) {
     fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_analysis.php', {
         method: 'POST',
@@ -1339,20 +1347,20 @@ function updateSingleArticle(articleId) {
     })
     .then(data => {
         if (data.success) {
-            // Mettre à jour l'article dans les résultats
+            // Update article in results
             for (var i = 0; i < filteredResults.length; i++) {
                 if (filteredResults[i].id == articleId) {
                     if (data.data.issues && data.data.issues.length > 0) {
                         filteredResults[i] = data.data;
                     } else {
-                        // Plus de problèmes, retirer de la liste
+                        // No more issues, remove from list
                         filteredResults.splice(i, 1);
                     }
                     break;
                 }
             }
             
-            // Mettre à jour analysisResults aussi
+            // Update analysisResults too
             for (var j = 0; j < analysisResults.issues.length; j++) {
                 if (analysisResults.issues[j].id == articleId) {
                     if (data.data.issues && data.data.issues.length > 0) {
@@ -1364,7 +1372,7 @@ function updateSingleArticle(articleId) {
                 }
             }
             
-            // Réafficher le tableau
+            // Redisplay table
             populateTable(filteredResults);
         }
     })
@@ -1373,16 +1381,14 @@ function updateSingleArticle(articleId) {
     });
 }
 
-// Initialisation au chargement
 document.addEventListener('DOMContentLoaded', function() {
     console.log('SEO Analysis page loaded');
     
-    // Ajouter l'event listener pour le bouton d'analyse
     var startBtn = document.getElementById('startAnalysisBtn');
     if (startBtn) {
         startBtn.addEventListener('click', startAnalysis);
     }
     
-    // Les event listeners sont déjà ajoutés avec oninput dans le HTML
+    // Event listeners are already added with oninput in HTML
 });
 </script>

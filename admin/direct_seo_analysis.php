@@ -60,6 +60,7 @@ $selectedIssues = [
     'missing_h1',
     'missing_alt_tags',
     'content_too_short',
+    'url_too_short',
     'url_too_long'
 ];
 $minTitleLength = 30;
@@ -67,6 +68,8 @@ $maxTitleLength = 60;
 $minMetaLength = 120;
 $maxMetaLength = 160;
 $minContentLength = 300;
+$minUrlLength = 5;
+$maxUrlLength = 50;
 
 // Try to load component parameters
 try {
@@ -117,6 +120,7 @@ try {
                     'missing_h1',
                     'missing_alt_tags',
                     'content_too_short',
+                    'url_too_short',
                     'url_too_long'
                 ];
             }
@@ -125,6 +129,8 @@ try {
             $minMetaLength = isset($paramsData['seo_min_meta_length']) ? intval($paramsData['seo_min_meta_length']) : 120;
             $maxMetaLength = isset($paramsData['seo_max_meta_length']) ? intval($paramsData['seo_max_meta_length']) : 160;
             $minContentLength = isset($paramsData['seo_min_content_length']) ? intval($paramsData['seo_min_content_length']) : 300;
+            $minUrlLength = isset($paramsData['seo_min_url_length']) ? intval($paramsData['seo_min_url_length']) : 5;
+            $maxUrlLength = isset($paramsData['seo_max_url_length']) ? intval($paramsData['seo_max_url_length']) : 50;
         }
     }
 } catch (Exception $e) {
@@ -172,7 +178,7 @@ try {
             exit;
         }
         
-        $articleIssues = analyzeArticle($article, $selectedIssues, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minContentLength);
+        $articleIssues = analyzeArticle($article, $selectedIssues, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minContentLength, $minUrlLength, $maxUrlLength);
         
         echo json_encode([
             'success' => true,
@@ -308,7 +314,7 @@ try {
         $articles = $stmt->fetchAll();
         
         // Analyze all articles for SEO issues
-        $results = analyzeArticles($articles, $selectedIssues, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minContentLength);
+        $results = analyzeArticles($articles, $selectedIssues, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minContentLength, $minUrlLength, $maxUrlLength);
         
         // Return success response
         echo json_encode([
@@ -329,7 +335,7 @@ try {
 /**
  * Analyze articles for SEO issues
  */
-function analyzeArticles($articles, $selectedIssues, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minContentLength)
+function analyzeArticles($articles, $selectedIssues, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minContentLength, $minUrlLength, $maxUrlLength)
 {
     $results = [
         'total_articles' => count($articles),
@@ -344,7 +350,7 @@ function analyzeArticles($articles, $selectedIssues, $minTitleLength, $maxTitleL
     ];
 
     foreach ($articles as $article) {
-        $articleIssues = analyzeArticle($article, $selectedIssues, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minContentLength);
+        $articleIssues = analyzeArticle($article, $selectedIssues, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minContentLength, $minUrlLength, $maxUrlLength);
         
         if (!empty($articleIssues['issues'])) {
             $results['issues'][] = [
@@ -378,7 +384,7 @@ function analyzeArticles($articles, $selectedIssues, $minTitleLength, $maxTitleL
 /**
  * Analyze a single article for SEO issues
  */
-function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, $maxTitleLength = 60, $minMetaLength = 120, $maxMetaLength = 160, $minContentLength = 300)
+function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, $maxTitleLength = 60, $minMetaLength = 120, $maxMetaLength = 160, $minContentLength = 300, $minUrlLength = 5, $maxUrlLength = 50)
 {
     // Default selected issues if not provided
     if ($selectedIssues === null) {
@@ -442,10 +448,10 @@ function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, 
         ];
         $categories[] = 'meta_description';
         if ($maxSeverity !== 'critical') $maxSeverity = 'warning';
-    } elseif ($metaDescLength > 185 && in_array('meta_desc_too_long', $selectedIssues)) {
+    } elseif ($metaDescLength > $maxMetaLength && in_array('meta_desc_too_long', $selectedIssues)) {
         $issues[] = [
             'type' => 'meta_desc_too_long',
-            'message' => "Méta-description trop longue ({$metaDescLength} caractères, recommandé: {$minMetaLength}-185)",
+            'message' => "Méta-description trop longue ({$metaDescLength} caractères, recommandé: {$minMetaLength}-{$maxMetaLength})",
             'severity' => 'warning',
             'icon' => 'warning'
         ];
@@ -498,10 +504,20 @@ function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, 
     }
 
     // 5. URL Analysis
-    if (strlen($article->alias) > 50 && in_array('url_too_long', $selectedIssues)) {
+    $urlLength = strlen($article->alias);
+    if ($urlLength < $minUrlLength && in_array('url_too_short', $selectedIssues)) {
+        $issues[] = [
+            'type' => 'url_too_short',
+            'message' => "Alias d'URL trop court ({$urlLength} caractères, recommandé: {$minUrlLength}-{$maxUrlLength})",
+            'severity' => 'warning',
+            'icon' => 'link'
+        ];
+        $categories[] = 'url';
+        if ($maxSeverity !== 'critical') $maxSeverity = 'warning';
+    } elseif ($urlLength > $maxUrlLength && in_array('url_too_long', $selectedIssues)) {
         $issues[] = [
             'type' => 'url_too_long',
-            'message' => 'Alias d\'URL trop long (' . strlen($article->alias) . ' caractères)',
+            'message' => "Alias d'URL trop long ({$urlLength} caractères, recommandé: {$minUrlLength}-{$maxUrlLength})",
             'severity' => 'info',
             'icon' => 'link'
         ];

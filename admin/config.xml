@@ -177,6 +177,7 @@
             <option value="missing_h1">COM_JOOMLAHITS_CONFIG_SEO_ISSUE_H1_MISSING</option>
             <option value="missing_alt_tags">COM_JOOMLAHITS_CONFIG_SEO_ISSUE_ALT_MISSING</option>
             <option value="content_too_short">COM_JOOMLAHITS_CONFIG_SEO_ISSUE_CONTENT_SHORT</option>
+            <option value="url_too_short">COM_JOOMLAHITS_CONFIG_SEO_ISSUE_URL_SHORT</option>
             <option value="url_too_long">COM_JOOMLAHITS_CONFIG_SEO_ISSUE_URL_LONG</option>
         </field>
 
@@ -233,6 +234,28 @@
             min="100"
             max="1000"
             step="50"
+            filter="integer"/>
+
+        <field
+            name="seo_min_url_length"
+            type="number"
+            label="COM_JOOMLAHITS_CONFIG_SEO_MIN_URL_LENGTH_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_SEO_MIN_URL_LENGTH_DESC"
+            default="5"
+            min="1"
+            max="20"
+            step="1"
+            filter="integer"/>
+
+        <field
+            name="seo_max_url_length"
+            type="number"
+            label="COM_JOOMLAHITS_CONFIG_SEO_MAX_URL_LENGTH_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_SEO_MAX_URL_LENGTH_DESC"
+            default="50"
+            min="30"
+            max="100"
+            step="5"
             filter="integer"/>
 
     </fieldset>
