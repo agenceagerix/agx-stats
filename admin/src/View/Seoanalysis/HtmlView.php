@@ -17,6 +17,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
+use Joomla\CMS\Component\ComponentHelper;
 
 /**
  * View class for a list of SEO analysis.
@@ -66,6 +67,13 @@ class HtmlView extends BaseHtmlView
     public $form;
 
     /**
+     * Component parameters
+     *
+     * @var    Registry
+     */
+    public $params;
+
+    /**
      * Display the view.
      *
      * @param   string  $tpl  The name of the template file to parse; automatically searches through the template paths.
@@ -74,6 +82,9 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null)
     {
+        // Get component parameters
+        $this->params = ComponentHelper::getParams('com_joomlahits');
+        
         $this->addToolbar();
 
         parent::display($tpl);

@@ -48,6 +48,89 @@ if (!file_exists(JPATH_BASE . '/configuration.php')) {
 require_once JPATH_BASE . '/configuration.php';
 $config = new JConfig();
 
+// Initialize default configuration values
+$selectedCategories = [];
+$selectedIssues = [
+    'title_missing',
+    'title_too_short', 
+    'title_too_long',
+    'meta_desc_missing',
+    'meta_desc_too_short',
+    'meta_desc_too_long',
+    'missing_h1',
+    'missing_alt_tags',
+    'content_too_short',
+    'url_too_long'
+];
+$minTitleLength = 30;
+$maxTitleLength = 60;
+$minMetaLength = 120;
+$maxMetaLength = 160;
+$minContentLength = 300;
+
+// Try to load component parameters
+try {
+    // Establish direct PDO connection to read parameters
+    $paramsDb = new PDO(
+        'mysql:host=' . $config->host . ';dbname=' . $config->db . ';charset=utf8mb4',
+        $config->user,
+        $config->password,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ
+        ]
+    );
+    
+    // Get component parameters from database
+    $stmt = $paramsDb->prepare("
+        SELECT params 
+        FROM " . $config->dbprefix . "extensions 
+        WHERE element = 'com_joomlahits' AND type = 'component'
+    ");
+    $stmt->execute();
+    $result = $stmt->fetch();
+    
+    if ($result && !empty($result->params)) {
+        $paramsData = json_decode($result->params, true);
+        if ($paramsData) {
+            // Get configuration values
+            $analyzeAllCategories = isset($paramsData['seo_analyze_all_categories']) ? $paramsData['seo_analyze_all_categories'] : '1';
+            $selectedCategories = isset($paramsData['seo_categories']) ? $paramsData['seo_categories'] : [];
+            
+            // If analyze all categories is enabled, clear the selected categories
+            if ($analyzeAllCategories == '1') {
+                $selectedCategories = [];
+            }
+            
+            $detectAllIssues = isset($paramsData['seo_detect_all_issues']) ? $paramsData['seo_detect_all_issues'] : '1';
+            $selectedIssues = isset($paramsData['seo_critical_issues']) ? $paramsData['seo_critical_issues'] : ['title_missing', 'meta_desc_missing'];
+            
+            // If detect all issues is enabled, set all available issues
+            if ($detectAllIssues == '1') {
+                $selectedIssues = [
+                    'title_missing',
+                    'title_too_short', 
+                    'title_too_long',
+                    'meta_desc_missing',
+                    'meta_desc_too_short',
+                    'meta_desc_too_long',
+                    'missing_h1',
+                    'missing_alt_tags',
+                    'content_too_short',
+                    'url_too_long'
+                ];
+            }
+            $minTitleLength = isset($paramsData['seo_min_title_length']) ? intval($paramsData['seo_min_title_length']) : 30;
+            $maxTitleLength = isset($paramsData['seo_max_title_length']) ? intval($paramsData['seo_max_title_length']) : 60;
+            $minMetaLength = isset($paramsData['seo_min_meta_length']) ? intval($paramsData['seo_min_meta_length']) : 120;
+            $maxMetaLength = isset($paramsData['seo_max_meta_length']) ? intval($paramsData['seo_max_meta_length']) : 160;
+            $minContentLength = isset($paramsData['seo_min_content_length']) ? intval($paramsData['seo_min_content_length']) : 300;
+        }
+    }
+} catch (Exception $e) {
+    // If we can't load parameters, continue with defaults
+}
+
 try {
     // Establish direct PDO database connection
     $db = new PDO(
@@ -89,7 +172,7 @@ try {
             exit;
         }
         
-        $articleIssues = analyzeArticle($article);
+        $articleIssues = analyzeArticle($article, $selectedIssues, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minContentLength);
         
         echo json_encode([
             'success' => true,
@@ -111,12 +194,49 @@ try {
         
     } elseif (isset($_POST['get_articles_list'])) {
         // Get list of all articles for progressive analysis
-        $stmt = $db->prepare("
+        $query = "
             SELECT a.id, a.title
             FROM " . $config->dbprefix . "content a
             WHERE a.state = 1
-            ORDER BY a.title
-        ");
+        ";
+        
+        // Filter by selected categories if specified (including subcategories)
+        if (!empty($selectedCategories) && !in_array('', $selectedCategories)) {
+            $allCategoryIds = [];
+            
+            foreach ($selectedCategories as $catId) {
+                $catId = intval($catId);
+                if ($catId > 0) {
+                    $allCategoryIds[] = $catId;
+                    
+                    // Find subcategories using simpler nested set query
+                    $subCatStmt = $db->prepare("
+                        SELECT c2.id 
+                        FROM " . $config->dbprefix . "categories c1, " . $config->dbprefix . "categories c2
+                        WHERE c2.lft > c1.lft AND c2.rgt < c1.rgt
+                        AND c1.id = :parent_id
+                        AND c2.extension = 'com_content'
+                        AND c2.published = 1
+                    ");
+                    $subCatStmt->bindParam(':parent_id', $catId, PDO::PARAM_INT);
+                    $subCatStmt->execute();
+                    $subCategories = $subCatStmt->fetchAll();
+                    
+                    foreach ($subCategories as $subCat) {
+                        $allCategoryIds[] = intval($subCat->id);
+                    }
+                }
+            }
+            
+            if (!empty($allCategoryIds)) {
+                $allCategoryIds = array_unique($allCategoryIds);
+                $query .= " AND a.catid IN (" . implode(',', $allCategoryIds) . ")";
+            }
+        }
+        
+        $query .= " ORDER BY a.title";
+        
+        $stmt = $db->prepare($query);
         $stmt->execute();
         $articlesList = $stmt->fetchAll();
         
@@ -128,7 +248,7 @@ try {
         
     } else {
         // Original: Analyze all articles at once (fallback)
-        $stmt = $db->prepare("
+        $query = "
             SELECT 
                 a.id,
                 a.title,
@@ -145,13 +265,50 @@ try {
             FROM " . $config->dbprefix . "content a
             LEFT JOIN " . $config->dbprefix . "categories c ON c.id = a.catid
             WHERE a.state = 1
-            ORDER BY a.title
-        ");
+        ";
+        
+        // Filter by selected categories if specified (including subcategories)
+        if (!empty($selectedCategories) && !in_array('', $selectedCategories)) {
+            $allCategoryIds = [];
+            
+            foreach ($selectedCategories as $catId) {
+                $catId = intval($catId);
+                if ($catId > 0) {
+                    $allCategoryIds[] = $catId;
+                    
+                    // Find subcategories using simpler nested set query
+                    $subCatStmt = $db->prepare("
+                        SELECT c2.id 
+                        FROM " . $config->dbprefix . "categories c1, " . $config->dbprefix . "categories c2
+                        WHERE c2.lft > c1.lft AND c2.rgt < c1.rgt
+                        AND c1.id = :parent_id
+                        AND c2.extension = 'com_content'
+                        AND c2.published = 1
+                    ");
+                    $subCatStmt->bindParam(':parent_id', $catId, PDO::PARAM_INT);
+                    $subCatStmt->execute();
+                    $subCategories = $subCatStmt->fetchAll();
+                    
+                    foreach ($subCategories as $subCat) {
+                        $allCategoryIds[] = intval($subCat->id);
+                    }
+                }
+            }
+            
+            if (!empty($allCategoryIds)) {
+                $allCategoryIds = array_unique($allCategoryIds);
+                $query .= " AND a.catid IN (" . implode(',', $allCategoryIds) . ")";
+            }
+        }
+        
+        $query .= " ORDER BY a.title";
+        
+        $stmt = $db->prepare($query);
         $stmt->execute();
         $articles = $stmt->fetchAll();
         
         // Analyze all articles for SEO issues
-        $results = analyzeArticles($articles);
+        $results = analyzeArticles($articles, $selectedIssues, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minContentLength);
         
         // Return success response
         echo json_encode([
@@ -172,7 +329,7 @@ try {
 /**
  * Analyze articles for SEO issues
  */
-function analyzeArticles($articles)
+function analyzeArticles($articles, $selectedIssues, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minContentLength)
 {
     $results = [
         'total_articles' => count($articles),
@@ -187,7 +344,7 @@ function analyzeArticles($articles)
     ];
 
     foreach ($articles as $article) {
-        $articleIssues = analyzeArticle($article);
+        $articleIssues = analyzeArticle($article, $selectedIssues, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minContentLength);
         
         if (!empty($articleIssues['issues'])) {
             $results['issues'][] = [
@@ -221,15 +378,20 @@ function analyzeArticles($articles)
 /**
  * Analyze a single article for SEO issues
  */
-function analyzeArticle($article)
+function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, $maxTitleLength = 60, $minMetaLength = 120, $maxMetaLength = 160, $minContentLength = 300)
 {
+    // Default selected issues if not provided
+    if ($selectedIssues === null) {
+        $selectedIssues = ['title_missing', 'meta_desc_missing'];
+    }
+    
     $issues = [];
     $categories = [];
     $maxSeverity = 'info';
 
     // 1. Title Analysis
     $titleLength = mb_strlen($article->title, 'UTF-8');
-    if (empty($article->title)) {
+    if (empty($article->title) && in_array('title_missing', $selectedIssues)) {
         $issues[] = [
             'type' => 'title_missing',
             'message' => 'Titre manquant',
@@ -238,19 +400,19 @@ function analyzeArticle($article)
         ];
         $categories[] = 'title';
         $maxSeverity = 'critical';
-    } elseif ($titleLength < 30) {
+    } elseif ($titleLength < $minTitleLength && in_array('title_too_short', $selectedIssues)) {
         $issues[] = [
             'type' => 'title_too_short',
-            'message' => "Titre trop court ({$titleLength} caractères, recommandé: 30-60)",
+            'message' => "Titre trop court ({$titleLength} caractères, recommandé: {$minTitleLength}-{$maxTitleLength})",
             'severity' => 'warning',
             'icon' => 'warning'
         ];
         $categories[] = 'title';
         if ($maxSeverity !== 'critical') $maxSeverity = 'warning';
-    } elseif ($titleLength > 60) {
+    } elseif ($titleLength > $maxTitleLength && in_array('title_too_long', $selectedIssues)) {
         $issues[] = [
             'type' => 'title_too_long',
-            'message' => "Titre trop long ({$titleLength} caractères, recommandé: 30-60)",
+            'message' => "Titre trop long ({$titleLength} caractères, recommandé: {$minTitleLength}-{$maxTitleLength})",
             'severity' => 'warning',
             'icon' => 'warning'
         ];
@@ -262,7 +424,7 @@ function analyzeArticle($article)
     $metaDesc = trim($article->metadesc ?? '');
     $metaDescLength = mb_strlen($metaDesc, 'UTF-8');
     
-    if (empty($metaDesc) || $metaDescLength === 0) {
+    if ((empty($metaDesc) || $metaDescLength === 0) && in_array('meta_desc_missing', $selectedIssues)) {
         $issues[] = [
             'type' => 'meta_desc_missing',
             'message' => 'Méta-description manquante',
@@ -271,19 +433,19 @@ function analyzeArticle($article)
         ];
         $categories[] = 'meta_description';
         $maxSeverity = 'critical';
-    } elseif ($metaDescLength < 120) {
+    } elseif ($metaDescLength < $minMetaLength && in_array('meta_desc_too_short', $selectedIssues)) {
         $issues[] = [
             'type' => 'meta_desc_too_short',
-            'message' => "Méta-description trop courte ({$metaDescLength} caractères, recommandé: 120-160)",
+            'message' => "Méta-description trop courte ({$metaDescLength} caractères, recommandé: {$minMetaLength}-{$maxMetaLength})",
             'severity' => 'warning',
             'icon' => 'warning'
         ];
         $categories[] = 'meta_description';
         if ($maxSeverity !== 'critical') $maxSeverity = 'warning';
-    } elseif ($metaDescLength > 185) {
+    } elseif ($metaDescLength > 185 && in_array('meta_desc_too_long', $selectedIssues)) {
         $issues[] = [
             'type' => 'meta_desc_too_long',
-            'message' => "Méta-description trop longue ({$metaDescLength} caractères, recommandé: 120-185)",
+            'message' => "Méta-description trop longue ({$metaDescLength} caractères, recommandé: {$minMetaLength}-185)",
             'severity' => 'warning',
             'icon' => 'warning'
         ];
@@ -295,10 +457,10 @@ function analyzeArticle($article)
     $content = $article->introtext . ' ' . $article->fulltext;
     $contentLength = mb_strlen(strip_tags($content), 'UTF-8');
     
-    if ($contentLength < 300) {
+    if ($contentLength < $minContentLength && in_array('content_too_short', $selectedIssues)) {
         $issues[] = [
             'type' => 'content_too_short',
-            'message' => "Contenu trop court ({$contentLength} caractères, recommandé: 300+)",
+            'message' => "Contenu trop court ({$contentLength} caractères, recommandé: {$minContentLength}+)",
             'severity' => 'info',
             'icon' => 'info'
         ];
@@ -306,7 +468,7 @@ function analyzeArticle($article)
     }
 
     // Check for H1 tags
-    if (stripos($content, '<h1') === false) {
+    if (stripos($content, '<h1') === false && in_array('missing_h1', $selectedIssues)) {
         $issues[] = [
             'type' => 'missing_h1',
             'message' => 'Balise H1 manquante dans le contenu',
@@ -318,23 +480,25 @@ function analyzeArticle($article)
     }
 
     // 4. Image Analysis
-    $imageCount = substr_count(strtolower($content), '<img');
-    $altCount = substr_count(strtolower($content), 'alt=');
-    
-    if ($imageCount > 0 && $altCount < $imageCount) {
-        $missingAlt = $imageCount - $altCount;
-        $issues[] = [
-            'type' => 'missing_alt_tags',
-            'message' => "{$missingAlt} image(s) sans attribut alt sur {$imageCount} total",
-            'severity' => 'warning',
-            'icon' => 'image'
-        ];
-        $categories[] = 'image';
-        if ($maxSeverity !== 'critical') $maxSeverity = 'warning';
+    if (in_array('missing_alt_tags', $selectedIssues)) {
+        $imageCount = substr_count(strtolower($content), '<img');
+        $altCount = substr_count(strtolower($content), 'alt=');
+        
+        if ($imageCount > 0 && $altCount < $imageCount) {
+            $missingAlt = $imageCount - $altCount;
+            $issues[] = [
+                'type' => 'missing_alt_tags',
+                'message' => "{$missingAlt} image(s) sans attribut alt sur {$imageCount} total",
+                'severity' => 'warning',
+                'icon' => 'image'
+            ];
+            $categories[] = 'image';
+            if ($maxSeverity !== 'critical') $maxSeverity = 'warning';
+        }
     }
 
     // 5. URL Analysis
-    if (strlen($article->alias) > 50) {
+    if (strlen($article->alias) > 50 && in_array('url_too_long', $selectedIssues)) {
         $issues[] = [
             'type' => 'url_too_long',
             'message' => 'Alias d\'URL trop long (' . strlen($article->alias) . ' caractères)',
@@ -345,7 +509,7 @@ function analyzeArticle($article)
     }
 
     // 6. Missing meta keywords (optional check)
-    if (empty($article->metakey)) {
+    if (empty($article->metakey) && in_array('meta_keywords_missing', $selectedIssues)) {
         $issues[] = [
             'type' => 'meta_keywords_missing',
             'message' => 'Mots-clés meta manquants',

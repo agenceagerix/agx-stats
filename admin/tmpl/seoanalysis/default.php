@@ -44,6 +44,20 @@ $listDirn = 'ASC';
                         </div>
                         <div class="card-body">
                             <p class="card-text"><?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_PAGE_DESCRIPTION'); ?></p>
+                            
+                            <?php 
+                            // Get configuration info
+                            $selectedCategories = $this->params->get('seo_categories', []);
+                            $selectedIssues = $this->params->get('seo_critical_issues', ['title_missing', 'meta_desc_missing']);
+                            
+                            if (!empty($selectedCategories) && !in_array('', $selectedCategories)) : ?>
+                            <div class="alert alert-info mb-3">
+                                <i class="icon-info-circle"></i> 
+                                <strong><?php echo Text::_('COM_JOOMLAHITS_CONFIG_SEO_CATEGORIES_LABEL'); ?>:</strong> 
+                                <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_ANALYZING_SELECTED_CATEGORIES'); ?>
+                            </div>
+                            <?php endif; ?>
+                            
                             <div class="d-flex justify-content-between align-items-center">
                                 <a href="<?php echo Route::_('index.php?option=com_joomlahits&view=checkseo'); ?>" class="btn btn-secondary">
                                     <i class="icon-arrow-left"></i> <?php echo Text::_('COM_JOOMLAHITS_BACK_TO_CHECKSEO'); ?>
