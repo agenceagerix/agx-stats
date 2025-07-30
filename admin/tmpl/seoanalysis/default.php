@@ -96,7 +96,7 @@ $listDirn = 'ASC';
 
             <!-- Results Section -->
             <div id="results-section" style="display: none;">
-                
+                <form action="<?php echo Route::_('index.php?option=com_joomlahits&view=seoanalysis'); ?>" method="post" name="adminForm" id="adminForm">
 
                 <!-- Filters -->
                 <div class="row mb-3" id="filters-section">
@@ -147,6 +147,9 @@ $listDirn = 'ASC';
                     </caption>
                     <thead>
                         <tr>
+                            <th scope="col" class="w-1 text-center">
+                                <?php echo HTMLHelper::_('grid.checkall'); ?>
+                            </th>
                             <th scope="col" class="w-5 d-none d-lg-table-cell">
                                 <a href="#" onclick="Joomla.tableOrdering('id','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>','')">
                                     ID <?php if ($listOrder == 'id') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
@@ -178,6 +181,11 @@ $listDirn = 'ASC';
                     <tbody id="results-tbody">
                     </tbody>
                 </table>
+                
+                <input type="hidden" name="task" value="">
+                <input type="hidden" name="boxchecked" value="0">
+                <?php echo HTMLHelper::_('form.token'); ?>
+                </form>
             </div>
 
             <!-- No Issues Message -->
@@ -185,6 +193,61 @@ $listDirn = 'ASC';
                 <div class="alert alert-success">
                     <span class="icon-checkmark" aria-hidden="true"></span>
                     <strong><?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_CONGRATULATIONS'); ?></strong> <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_NO_ISSUES_FOUND'); ?>
+                </div>
+            </div>
+
+            <!-- Force AI Processing Section -->
+            <div id="force-ai-section" style="display: none;">
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white">
+                                <h4 class="card-title mb-0">
+                                    <i class="icon-lightning"></i> <?php echo Text::_('COM_JOOMLAHITS_FORCE_AI_PROCESSING'); ?>
+                                </h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <strong id="force-progress-title"><?php echo Text::_('COM_JOOMLAHITS_FORCE_AI_PROCESSING'); ?></strong>
+                                    <button type="button" id="cancelForceAi" class="btn btn-sm btn-outline-danger" onclick="cancelForceAi()">
+                                        <?php echo Text::_('COM_JOOMLAHITS_CANCEL'); ?>
+                                    </button>
+                                </div>
+                                <div class="progress mb-2">
+                                    <div id="force-ai-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                         role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <div id="force-current-status" class="small"></div>
+                                <div id="force-results-log" class="mt-2 small" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Force AI Results Section -->
+            <div id="force-ai-results-section" style="display: none;">
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white">
+                                <h4 class="card-title mb-0">
+                                    <i class="icon-checkmark"></i> <?php echo Text::_('COM_JOOMLAHITS_FORCE_AI_COMPLETED'); ?>
+                                </h4>
+                            </div>
+                            <div class="card-body">
+                                <div id="force-ai-summary" class="mb-3"></div>
+                                <div class="d-flex justify-content-center gap-3">
+                                    <button type="button" class="btn btn-danger btn-lg" onclick="cancelForceAiChanges()">
+                                        <i class="icon-times me-2"></i><?php echo Text::_('COM_JOOMLAHITS_FORCE_AI_CANCEL'); ?>
+                                    </button>
+                                    <button type="button" class="btn btn-success btn-lg" onclick="saveForceAiChanges()">
+                                        <i class="icon-checkmark me-2"></i><?php echo Text::_('COM_JOOMLAHITS_FORCE_AI_SAVE'); ?>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -487,6 +550,21 @@ var currentAnalysisResults = {
 var articlesList = [];
 var currentArticleIndex = 0;
 
+// Bulk AI Fix variables
+var bulkAiArticles = [];
+var currentBulkArticleIndex = 0;
+var bulkAiResults = {};
+var bulkAiChanges = {}; // Store all changes before final save
+var isBulkAiProcessing = false;
+var bulkProcessingPhase = 'editing'; // 'editing' or 'reviewing'
+
+// Force AI variables
+var forceAiArticles = [];
+var currentForceAiIndex = 0;
+var forceAiChanges = {};
+var isForceAiProcessing = false;
+var forceAiCancelled = false;
+
 // Main startup function
 function startAnalysis() {    
     var btn = document.getElementById('startAnalysisBtn');
@@ -760,7 +838,10 @@ function createTableRow(article) {
         '</span>';
     }
     
-    tr.innerHTML = '<td class="d-none d-lg-table-cell">' + article.id + '</td>' +
+    tr.innerHTML = '<td class="text-center">' +
+            '<input type="checkbox" id="cb' + i + '" name="cid[]" value="' + article.id + '" onclick="Joomla.isChecked(this.checked);">' +
+        '</td>' +
+        '<td class="d-none d-lg-table-cell">' + article.id + '</td>' +
         '<th scope="row" class="has-context"><div><strong>' + article.title + '</strong></div></th>' +
         '<td class="d-none d-md-table-cell">' + article.category + '</td>' +
         '<td class="d-none d-md-table-cell text-center"><span class="badge ' + severityClass + '">' + severityText + '</span></td>' +
@@ -1129,6 +1210,14 @@ function fixWithAI() {
         alias: document.getElementById('seo-alias').value
     };
     
+    // Store in bulk changes if in bulk mode
+    if (isBulkAiProcessing && currentArticleData) {
+        var articleId = currentArticleData.id;
+        if (bulkAiChanges[articleId]) {
+            bulkAiChanges[articleId].originalValues = window.originalValues;
+        }
+    }
+    
     window.aiOptimizedValues = {};
     
     // Disable button and show loading
@@ -1178,6 +1267,14 @@ function fixWithAI() {
             if (data.success && data.field_value) {
                 // Store optimized value for preview
                 window.aiOptimizedValues[fieldType] = data.field_value;
+                
+                // Store in bulk changes if in bulk mode
+                if (isBulkAiProcessing && currentArticleData) {
+                    var articleId = currentArticleData.id;
+                    if (bulkAiChanges[articleId]) {
+                        bulkAiChanges[articleId].aiValues[fieldType] = data.field_value;
+                    }
+                }
                 
                 // Remplir le champ correspondant (temporairement)
                 var fieldElement = document.getElementById('seo-' + fieldType);
@@ -1283,7 +1380,12 @@ function showAIPreview() {
 
 // Accepter les modifications IA
 function acceptAIChanges() {
-    // Values are already in fields, just hide preview
+    if (isBulkAiProcessing) {
+        acceptBulkAIChanges();
+        return;
+    }
+    
+    // Original single article logic
     document.getElementById('ai-preview-section').style.display = 'none';
     aiPreviewState = 'accepted';
     updateSaveButtonState();
@@ -1306,8 +1408,50 @@ function acceptAIChanges() {
     }, 5000);
 }
 
+// Bulk accept AI changes
+function acceptBulkAIChanges() {
+    var articleId = currentArticleData.id;
+    var storedChange = bulkAiChanges[articleId];
+    
+    // Store the accepted changes
+    storedChange.accepted = true;
+    storedChange.finalValues = {
+        title: document.getElementById('seo-title').value,
+        metadesc: document.getElementById('seo-metadesc').value,
+        metakey: document.getElementById('seo-metakey').value,
+        alias: document.getElementById('seo-alias').value
+    };
+    
+    // Hide preview
+    document.getElementById('ai-preview-section').style.display = 'none';
+    aiPreviewState = 'accepted';
+    updateBulkSaveButtonState();
+    updateFieldCounters();
+    
+    // Show confirmation
+    showNotification('Modifications acceptées pour "' + currentArticleData.title + '"', 'success');
+    
+    // In editing phase, auto-navigate to next article
+    if (bulkProcessingPhase === 'editing') {
+        setTimeout(function() {
+            if (currentBulkArticleIndex < bulkAiArticles.length - 1) {
+                navigateBulkArticle(1);
+            } else {
+                // All articles processed, switch to review phase
+                startBulkReviewPhase();
+            }
+        }, 1000);
+    }
+}
+
 // Rejeter les modifications IA
 function rejectAIChanges() {
+    if (isBulkAiProcessing) {
+        rejectBulkAIChanges();
+        return;
+    }
+    
+    // Original single article logic
     // Restaurer les valeurs originales
     Object.keys(window.originalValues).forEach(function(fieldType) {
         var fieldElement = document.getElementById('seo-' + fieldType);
@@ -1339,8 +1483,57 @@ function rejectAIChanges() {
     }, 5000);
 }
 
+// Bulk reject AI changes
+function rejectBulkAIChanges() {
+    var articleId = currentArticleData.id;
+    var storedChange = bulkAiChanges[articleId];
+    
+    // Restore original values
+    Object.keys(window.originalValues).forEach(function(fieldType) {
+        var fieldElement = document.getElementById('seo-' + fieldType);
+        if (fieldElement) {
+            fieldElement.value = window.originalValues[fieldType];
+        }
+    });
+    
+    // Store the rejected changes (keeping original values)
+    storedChange.accepted = true; // Still mark as processed
+    storedChange.finalValues = {
+        title: window.originalValues.title,
+        metadesc: window.originalValues.metadesc,
+        metakey: window.originalValues.metakey,
+        alias: window.originalValues.alias
+    };
+    
+    // Hide preview
+    document.getElementById('ai-preview-section').style.display = 'none';
+    aiPreviewState = 'rejected';
+    updateBulkSaveButtonState();
+    updateFieldCounters();
+    
+    // Show confirmation
+    showNotification('Modifications IA rejetées pour "' + currentArticleData.title + '" - valeurs originales conservées', 'info');
+    
+    // In editing phase, auto-navigate to next article
+    if (bulkProcessingPhase === 'editing') {
+        setTimeout(function() {
+            if (currentBulkArticleIndex < bulkAiArticles.length - 1) {
+                navigateBulkArticle(1);
+            } else {
+                // All articles processed, switch to review phase
+                startBulkReviewPhase();
+            }
+        }, 1000);
+    }
+}
+
 // Update Save button state
 function updateSaveButtonState() {
+    if (isBulkAiProcessing) {
+        updateBulkSaveButtonState();
+        return;
+    }
+    
     var saveBtn = document.getElementById('saveSeoBtn');
     
     if (aiPreviewState === 'pending') {
@@ -1358,8 +1551,62 @@ function updateSaveButtonState() {
     }
 }
 
+// Update Bulk Save button state
+function updateBulkSaveButtonState() {
+    var saveBtn = document.getElementById('saveSeoBtn');
+    
+    if (bulkProcessingPhase === 'editing') {
+        if (aiPreviewState === 'pending') {
+            // En attente d'acceptation/refus des modifications IA
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="icon-warning me-2"></i>Acceptez ou annulez les modifications IA';
+            saveBtn.className = 'btn btn-warning px-4';
+            saveBtn.title = 'Vous devez accepter ou annuler les modifications IA avant de continuer';
+        } else {
+            // In editing phase, show next/continue button
+            var isLastArticle = currentBulkArticleIndex === bulkAiArticles.length - 1;
+            saveBtn.disabled = false;
+            if (isLastArticle) {
+                saveBtn.innerHTML = '<i class="icon-arrow-right me-2"></i>Terminer l\'édition';
+                saveBtn.className = 'btn btn-success px-4';
+                saveBtn.title = 'Terminer la phase d\'édition et passer à la révision';
+            } else {
+                saveBtn.innerHTML = '<i class="icon-arrow-right me-2"></i>Article suivant';
+                saveBtn.className = 'btn btn-primary px-4';
+                saveBtn.title = 'Passer à l\'article suivant';
+            }
+        }
+    } else if (bulkProcessingPhase === 'reviewing') {
+        // In review phase, show final save button
+        var processedCount = 0;
+        Object.keys(bulkAiChanges).forEach(function(articleId) {
+            if (bulkAiChanges[articleId].accepted) {
+                processedCount++;
+            }
+        });
+        
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="icon-checkmark me-2"></i>Sauvegarder tous les articles (' + processedCount + ')';
+        saveBtn.className = 'btn btn-success px-4';
+        saveBtn.title = 'Sauvegarder définitivement tous les articles modifiés';
+    }
+}
+
 // Sauvegarder les corrections SEO
 function saveSeoFixes() {
+    if (isBulkAiProcessing) {
+        if (bulkProcessingPhase === 'editing') {
+            handleBulkEditingNavigation();
+        } else if (bulkProcessingPhase === 'reviewing') {
+            saveBulkSeoFixes();
+        }
+    } else {
+        saveSingleSeoFixes();
+    }
+}
+
+// Single article save function
+function saveSingleSeoFixes() {
     // Check if we can save
     if (aiPreviewState === 'pending') {
         showNotification('You must first accept or cancel AI changes before saving.', 'warning');
@@ -1368,8 +1615,6 @@ function saveSeoFixes() {
     
     var form = document.getElementById('seoFixForm');
     var formData = new FormData(form);
-    
-    // Note: AI content optimization is disabled to avoid issues
     
     fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_fix.php', {
         method: 'POST',
@@ -1398,6 +1643,17 @@ function saveSeoFixes() {
         console.error('Erreur:', error);
         showNotification('Save error: ' + error.message, 'error');
     });
+}
+
+// Handle navigation in editing phase
+function handleBulkEditingNavigation() {
+    if (currentBulkArticleIndex < bulkAiArticles.length - 1) {
+        // Go to next article
+        navigateBulkArticle(1);
+    } else {
+        // All articles processed, switch to review phase
+        startBulkReviewPhase();
+    }
 }
 
 // Update single article after correction
@@ -1452,6 +1708,701 @@ function updateSingleArticle(articleId) {
     .catch(error => {
         console.error('Erreur:', error);
     });
+}
+
+// Bulk AI Fix functions
+function startBulkAiFix() {
+    // Get selected checkboxes
+    var checkboxes = document.querySelectorAll('input[name="cid[]"]:checked');
+    if (checkboxes.length === 0) {
+        showNotification('Please select at least one article', 'warning');
+        return;
+    }
+    
+    // Get article IDs and data
+    bulkAiArticles = [];
+    for (var i = 0; i < checkboxes.length; i++) {
+        var articleId = checkboxes[i].value;
+        // Find article data in filtered results
+        for (var j = 0; j < filteredResults.length; j++) {
+            if (filteredResults[j].id == articleId) {
+                bulkAiArticles.push(filteredResults[j]);
+                break;
+            }
+        }
+    }
+    
+    if (bulkAiArticles.length === 0) {
+        showNotification('No valid articles found for selected items', 'error');
+        return;
+    }
+    
+    // Initialize bulk processing
+    currentBulkArticleIndex = 0;
+    bulkAiResults = {};
+    bulkAiChanges = {};
+    isBulkAiProcessing = true;
+    bulkProcessingPhase = 'editing';
+    
+    // Initialize change storage for each article
+    for (var i = 0; i < bulkAiArticles.length; i++) {
+        bulkAiChanges[bulkAiArticles[i].id] = {
+            accepted: false,
+            originalValues: {},
+            aiValues: {},
+            finalValues: {}
+        };
+    }
+    
+    showNotification('Starting bulk AI fix for ' + bulkAiArticles.length + ' articles...', 'info');
+    
+    // Open modal with first article
+    openBulkSeoModal();
+}
+
+function openBulkSeoModal() {
+    if (currentBulkArticleIndex >= bulkAiArticles.length) {
+        // All articles processed, switch to review phase
+        if (bulkProcessingPhase === 'editing') {
+            startBulkReviewPhase();
+        } else {
+            finishBulkAiFix();
+        }
+        return;
+    }
+    
+    var article = bulkAiArticles[currentBulkArticleIndex];
+    currentArticleData = article;
+    
+    // Load stored changes if they exist
+    var storedChange = bulkAiChanges[article.id];
+    if (storedChange && storedChange.accepted) {
+        // Restore previously accepted changes
+        aiPreviewState = 'accepted';
+        window.originalValues = storedChange.originalValues;
+        window.aiOptimizedValues = storedChange.aiValues;
+    } else {
+        // Reset AI preview state
+        aiPreviewState = null;
+        window.originalValues = {};
+        window.aiOptimizedValues = {};
+    }
+    
+    document.getElementById('ai-preview-section').style.display = 'none';
+    updateBulkSaveButtonState();
+    
+    // Update modal title to show progress and phase
+    var modalTitle = document.getElementById('seoFixModalLabel');
+    var phaseText = bulkProcessingPhase === 'editing' ? 'Édition' : 'Révision finale';
+    modalTitle.innerHTML = '<i class="icon-cog text-primary me-2"></i>' +
+        '<?php echo Text::_('COM_JOOMLAHITS_SEO_FIX_MODAL_TITLE'); ?> - ' + phaseText + ' - Article ' +
+        (currentBulkArticleIndex + 1) + '/' + bulkAiArticles.length;
+    
+    // Fill form
+    document.getElementById('seo-article-id').value = article.id;
+    document.getElementById('seo-title').value = article.title;
+    document.getElementById('seo-metadesc').value = article.metadesc || '';
+    document.getElementById('seo-metakey').value = article.metakey || '';
+    document.getElementById('seo-alias').value = article.alias || '';
+    document.getElementById('seo-content').value = article.content || '';
+    
+    // Update counters
+    updateFieldCounters();
+    
+    // Display issues
+    var issuesList = document.getElementById('issues-details');
+    issuesList.innerHTML = '';
+    for (var j = 0; j < article.issues.length; j++) {
+        var li = document.createElement('li');
+        li.textContent = article.issues[j].message;
+        issuesList.appendChild(li);
+    }
+    
+    // Add bulk progress info with navigation arrows
+    var bulkInfo = document.createElement('div');
+    bulkInfo.id = 'bulk-progress-info';
+    bulkInfo.className = 'alert alert-info mb-3';
+    
+    var prevDisabled = currentBulkArticleIndex === 0 ? 'disabled' : '';
+    var nextDisabled = currentBulkArticleIndex === bulkAiArticles.length - 1 ? 'disabled' : '';
+    
+    bulkInfo.innerHTML = '<div class="d-flex justify-content-between align-items-center">' +
+        '<div>' +
+            '<i class="icon-info me-2"></i><strong>Correction groupée (' + phaseText + ') :</strong><br>' +
+            'Article ' + (currentBulkArticleIndex + 1) + ' sur ' + bulkAiArticles.length + ' - "' + article.title + '"' +
+        '</div>' +
+        '<div class="btn-group" role="group">' +
+            '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="navigateBulkArticle(-1)" ' + prevDisabled + '>' +
+                '<i class="icon-arrow-left"></i> Précédent' +
+            '</button>' +
+            '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="navigateBulkArticle(1)" ' + nextDisabled + '>' +
+                'Suivant <i class="icon-arrow-right"></i>' +
+            '</button>' +
+        '</div>' +
+    '</div>';
+    
+    var form = document.getElementById('seoFixForm');
+    var existingInfo = document.getElementById('bulk-progress-info');
+    if (existingInfo) {
+        existingInfo.remove();
+    }
+    form.insertBefore(bulkInfo, form.firstChild);
+    
+    // Automatically start AI fix for this article only if not already processed and in editing phase
+    if (bulkProcessingPhase === 'editing' && (!storedChange || !storedChange.accepted)) {
+        setTimeout(function() {
+            fixWithAI();
+        }, 500);
+    } else if (storedChange && storedChange.accepted) {
+        // Restore the preview if changes were already accepted
+        restoreAcceptedChanges(storedChange);
+    }
+    
+    // Open modal
+    if (!seoModal) {
+        seoModal = new bootstrap.Modal(document.getElementById('seoFixModal'));
+    }
+    seoModal.show();
+}
+
+// Navigation functions
+function navigateBulkArticle(direction) {
+    var newIndex = currentBulkArticleIndex + direction;
+    if (newIndex < 0 || newIndex >= bulkAiArticles.length) {
+        return;
+    }
+    currentBulkArticleIndex = newIndex;
+    openBulkSeoModal();
+}
+
+// Restore accepted changes function
+function restoreAcceptedChanges(storedChange) {
+    // Fill form with final values
+    document.getElementById('seo-title').value = storedChange.finalValues.title || storedChange.originalValues.title;
+    document.getElementById('seo-metadesc').value = storedChange.finalValues.metadesc || storedChange.originalValues.metadesc;
+    document.getElementById('seo-metakey').value = storedChange.finalValues.metakey || storedChange.originalValues.metakey;
+    document.getElementById('seo-alias').value = storedChange.finalValues.alias || storedChange.originalValues.alias;
+    
+    updateFieldCounters();
+    
+    // Show preview if AI changes were accepted
+    if (Object.keys(storedChange.aiValues).length > 0) {
+        showAIPreview();
+        // Set as accepted
+        aiPreviewState = 'accepted';
+        updateBulkSaveButtonState();
+    }
+}
+
+// Start review phase
+function startBulkReviewPhase() {
+    bulkProcessingPhase = 'reviewing';
+    currentBulkArticleIndex = 0;
+    
+    showNotification('Phase d\'édition terminée. Vous pouvez maintenant réviser tous les articles avant la sauvegarde finale.', 'info');
+    
+    // Reopen first article in review mode
+    openBulkSeoModal();
+}
+
+function finishBulkAiFix() {
+    isBulkAiProcessing = false;
+    
+    // Close modal
+    if (seoModal) {
+        seoModal.hide();
+    }
+    
+    // Show summary
+    var processedCount = Object.keys(bulkAiResults).length;
+    var successCount = 0;
+    var errorCount = 0;
+    
+    Object.keys(bulkAiResults).forEach(function(articleId) {
+        if (bulkAiResults[articleId].success) {
+            successCount++;
+        } else {
+            errorCount++;
+        }
+    });
+    
+    var message = 'Bulk AI fix completed: ' + successCount + ' successful, ' + errorCount + ' errors out of ' + processedCount + ' articles processed';
+    showNotification(message, successCount > 0 ? 'success' : 'warning');
+    
+    // Refresh the analysis to show updated results
+    setTimeout(function() {
+        startAnalysis();
+    }, 2000);
+}
+
+// Main save function router
+
+function saveBulkSeoFixes() {
+    var totalToSave = 0;
+    Object.keys(bulkAiChanges).forEach(function(articleId) {
+        if (bulkAiChanges[articleId].accepted) {
+            totalToSave++;
+        }
+    });
+    
+    showNotification('Sauvegarde de ' + totalToSave + ' articles en cours...', 'info');
+    
+    var savePromises = [];
+    var resultsToSave = [];
+    
+    // Prepare all articles to save
+    Object.keys(bulkAiChanges).forEach(function(articleId) {
+        var change = bulkAiChanges[articleId];
+        if (change.accepted) {
+            resultsToSave.push({
+                articleId: articleId,
+                changes: change.finalValues,
+                title: bulkAiArticles.find(function(article) { return article.id == articleId; }).title
+            });
+        }
+    });
+    
+    if (resultsToSave.length === 0) {
+        showNotification('Aucun article à sauvegarder', 'warning');
+        return;
+    }
+    
+    var currentSaveIndex = 0;
+    var successCount = 0;
+    var errorCount = 0;
+    
+    function saveNextArticle() {
+        if (currentSaveIndex >= resultsToSave.length) {
+            // All articles processed
+            finishBulkSave(successCount, errorCount);
+            return;
+        }
+        
+        var articleToSave = resultsToSave[currentSaveIndex];
+        
+        // Create FormData for this article
+        var formData = new FormData();
+        formData.append('article_id', articleToSave.articleId);
+        formData.append('title', articleToSave.changes.title);
+        formData.append('metadesc', articleToSave.changes.metadesc);
+        formData.append('metakey', articleToSave.changes.metakey);
+        formData.append('alias', articleToSave.changes.alias);
+        
+        fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_fix.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            return response.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    throw new Error('Server returned invalid JSON: ' + text);
+                }
+            });
+        })
+        .then(data => {
+            if (data.success) {
+                successCount++;
+                console.log('Article "' + articleToSave.title + '" sauvegardé avec succès');
+            } else {
+                errorCount++;
+                console.error('Erreur pour "' + articleToSave.title + '": ' + data.message);
+            }
+            
+            currentSaveIndex++;
+            setTimeout(saveNextArticle, 500); // Small delay between saves
+        })
+        .catch(error => {
+            errorCount++;
+            console.error('Erreur de sauvegarde pour "' + articleToSave.title + '": ' + error.message);
+            
+            currentSaveIndex++;
+            setTimeout(saveNextArticle, 500);
+        });
+    }
+    
+    // Start saving
+    saveNextArticle();
+}
+
+function finishBulkSave(successCount, errorCount) {
+    var totalCount = successCount + errorCount;
+    var message;
+    
+    if (errorCount === 0) {
+        message = 'Correction IA groupée : ' + successCount + ' articles sauvegardés avec succès';
+        showNotification(message, 'success');
+    } else if (successCount === 0) {
+        message = 'Correction IA groupée : Échec de la sauvegarde de tous les articles (' + errorCount + ' erreurs)';
+        showNotification(message, 'error');
+    } else {
+        message = 'Correction IA groupée : ' + successCount + ' articles sauvegardés, ' + errorCount + ' erreurs sur ' + totalCount;
+        showNotification(message, 'warning');
+    }
+    
+    // Close modal and reset
+    if (seoModal) {
+        seoModal.hide();
+    }
+    
+    isBulkAiProcessing = false;
+    bulkProcessingPhase = 'editing';
+    
+    // Refresh analysis to show updated results
+    setTimeout(function() {
+        startAnalysis();
+    }, 2000);
+}
+
+// Force AI Functions
+function startForceAiFix() {
+    // Get selected checkboxes
+    var checkboxes = document.querySelectorAll('input[name="cid[]"]:checked');
+    if (checkboxes.length === 0) {
+        showNotification('Please select at least one article', 'warning');
+        return;
+    }
+    
+    // Get article IDs and data
+    forceAiArticles = [];
+    for (var i = 0; i < checkboxes.length; i++) {
+        var articleId = checkboxes[i].value;
+        // Find article data in filtered results
+        for (var j = 0; j < filteredResults.length; j++) {
+            if (filteredResults[j].id == articleId) {
+                forceAiArticles.push(filteredResults[j]);
+                break;
+            }
+        }
+    }
+    
+    if (forceAiArticles.length === 0) {
+        showNotification('No valid articles found for selected items', 'error');
+        return;
+    }
+    
+    // Initialize force processing
+    currentForceAiIndex = 0;
+    forceAiChanges = {};
+    isForceAiProcessing = true;
+    forceAiCancelled = false;
+    
+    // Hide other sections and show force AI section
+    document.getElementById('results-section').style.display = 'none';
+    document.getElementById('no-issues-section').style.display = 'none';
+    document.getElementById('force-ai-section').style.display = 'block';
+    document.getElementById('force-ai-results-section').style.display = 'none';
+    
+    showNotification('Starting Force AI processing for ' + forceAiArticles.length + ' articles...', 'info');
+    
+    // Start processing
+    processNextForceAiArticle();
+}
+
+function processNextForceAiArticle() {
+    if (forceAiCancelled || currentForceAiIndex >= forceAiArticles.length) {
+        finishForceAiProcessing();
+        return;
+    }
+    
+    var article = forceAiArticles[currentForceAiIndex];
+    var progressBar = document.getElementById('force-ai-progress-bar');
+    var currentStatus = document.getElementById('force-current-status');
+    var resultsLog = document.getElementById('force-results-log');
+    
+    // Update progress
+    var progress = Math.round((currentForceAiIndex / forceAiArticles.length) * 100);
+    progressBar.style.width = progress + '%';
+    progressBar.setAttribute('aria-valuenow', progress);
+    currentStatus.textContent = 'Processing "' + article.title + '" (' + (currentForceAiIndex + 1) + '/' + forceAiArticles.length + ')';
+    
+    // Initialize storage for this article
+    forceAiChanges[article.id] = {
+        title: article.title,
+        originalValues: {
+            title: article.title,
+            metadesc: article.metadesc || '',
+            metakey: article.metakey || '',
+            alias: article.alias || ''
+        },
+        aiValues: {},
+        fieldsProcessed: 0,
+        totalFields: 4
+    };
+    
+    // Process all fields for this article
+    processAllFieldsForArticle(article);
+}
+
+function processAllFieldsForArticle(article) {
+    var fields = ['title', 'metadesc', 'metakey', 'alias'];
+    var currentFieldIndex = 0;
+    var articleData = forceAiChanges[article.id];
+    
+    function processNextField() {
+        if (forceAiCancelled) {
+            return;
+        }
+        
+        if (currentFieldIndex >= fields.length) {
+            // All fields processed for this article
+            currentForceAiIndex++;
+            setTimeout(processNextForceAiArticle, 300);
+            return;
+        }
+        
+        var fieldType = fields[currentFieldIndex];
+        var resultsLog = document.getElementById('force-results-log');
+        
+        fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_ai_seo_fix.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'article_id=' + encodeURIComponent(article.id) + '&field_type=' + encodeURIComponent(fieldType)
+        })
+        .then(response => {
+            return response.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    throw new Error('Server returned invalid JSON: ' + text);
+                }
+            });
+        })
+        .then(data => {
+            if (data.success && data.field_value) {
+                articleData.aiValues[fieldType] = data.field_value;
+                resultsLog.innerHTML += '<div class="text-success">' +
+                    '<i class="icon-checkmark"></i> ' + article.title + ' - ' + fieldType + ' processed' +
+                '</div>';
+            } else {
+                resultsLog.innerHTML += '<div class="text-warning">' +
+                    '<i class="icon-warning"></i> ' + article.title + ' - ' + fieldType + ' failed: ' + (data.message || 'Unknown error') +
+                '</div>';
+            }
+            
+            articleData.fieldsProcessed++;
+            resultsLog.scrollTop = resultsLog.scrollHeight;
+            
+            currentFieldIndex++;
+            setTimeout(processNextField, 200); // Short delay between field processing
+        })
+        .catch(error => {
+            console.error('Error processing field:', error);
+            resultsLog.innerHTML += '<div class="text-danger">' +
+                '<i class="icon-warning"></i> ' + article.title + ' - ' + fieldType + ' error: ' + error.message +
+            '</div>';
+            resultsLog.scrollTop = resultsLog.scrollHeight;
+            
+            articleData.fieldsProcessed++;
+            currentFieldIndex++;
+            setTimeout(processNextField, 200);
+        });
+    }
+    
+    processNextField();
+}
+
+function finishForceAiProcessing() {
+    var progressBar = document.getElementById('force-ai-progress-bar');
+    var currentStatus = document.getElementById('force-current-status');
+    var cancelBtn = document.getElementById('cancelForceAi');
+    
+    progressBar.style.width = '100%';
+    progressBar.setAttribute('aria-valuenow', '100');
+    
+    if (forceAiCancelled) {
+        currentStatus.textContent = 'Processing cancelled';
+        setTimeout(function() {
+            resetForceAiUI();
+        }, 2000);
+    } else {
+        currentStatus.textContent = 'Processing completed - ' + Object.keys(forceAiChanges).length + ' articles processed';
+        cancelBtn.disabled = true;
+        
+        // Show results section after delay
+        setTimeout(function() {
+            showForceAiResults();
+        }, 1500);
+    }
+    
+    isForceAiProcessing = false;
+}
+
+function showForceAiResults() {
+    document.getElementById('force-ai-section').style.display = 'none';
+    document.getElementById('force-ai-results-section').style.display = 'block';
+    
+    // Generate summary
+    var summary = generateForceAiSummary();
+    document.getElementById('force-ai-summary').innerHTML = summary;
+}
+
+function generateForceAiSummary() {
+    var totalArticles = Object.keys(forceAiChanges).length;
+    var totalChanges = 0;
+    var summaryHtml = '<h5>Résumé des modifications IA :</h5>';
+    summaryHtml += '<div class="row">';
+    
+    Object.keys(forceAiChanges).forEach(function(articleId) {
+        var articleData = forceAiChanges[articleId];
+        var changesCount = Object.keys(articleData.aiValues).length;
+        totalChanges += changesCount;
+        
+        summaryHtml += '<div class="col-md-6 mb-2">';
+        summaryHtml += '<div class="card">';
+        summaryHtml += '<div class="card-body py-2">';
+        summaryHtml += '<h6 class="card-title mb-1">' + articleData.title + '</h6>';
+        summaryHtml += '<small class="text-muted">' + changesCount + ' champs modifiés</small>';
+        summaryHtml += '</div>';
+        summaryHtml += '</div>';
+        summaryHtml += '</div>';
+    });
+    
+    summaryHtml += '</div>';
+    summaryHtml += '<div class="alert alert-info mt-3">';
+    summaryHtml += '<strong>' + totalArticles + ' articles traités</strong> avec un total de <strong>' + totalChanges + ' modifications</strong>';
+    summaryHtml += '</div>';
+    
+    return summaryHtml;
+}
+
+function cancelForceAi() {
+    forceAiCancelled = true;
+    document.getElementById('force-current-status').textContent = 'Cancelling...';
+    document.getElementById('cancelForceAi').disabled = true;
+}
+
+function cancelForceAiChanges() {
+    if (confirm('<?php echo Text::_('COM_JOOMLAHITS_FORCE_AI_CONFIRM_CANCEL'); ?>')) {
+        resetForceAiUI();
+        showNotification('Force AI changes cancelled', 'info');
+    }
+}
+
+function saveForceAiChanges() {
+    var totalToSave = 0;
+    Object.keys(forceAiChanges).forEach(function(articleId) {
+        if (Object.keys(forceAiChanges[articleId].aiValues).length > 0) {
+            totalToSave++;
+        }
+    });
+    
+    showNotification('Sauvegarde de ' + totalToSave + ' articles en cours...', 'info');
+    
+    var articlesToSave = [];
+    Object.keys(forceAiChanges).forEach(function(articleId) {
+        var articleData = forceAiChanges[articleId];
+        if (Object.keys(articleData.aiValues).length > 0) {
+            articlesToSave.push({
+                articleId: articleId,
+                title: articleData.title,
+                changes: {
+                    title: articleData.aiValues.title || articleData.originalValues.title,
+                    metadesc: articleData.aiValues.metadesc || articleData.originalValues.metadesc,
+                    metakey: articleData.aiValues.metakey || articleData.originalValues.metakey,
+                    alias: articleData.aiValues.alias || articleData.originalValues.alias
+                }
+            });
+        }
+    });
+    
+    if (articlesToSave.length === 0) {
+        showNotification('No changes to save', 'warning');
+        return;
+    }
+    
+    saveForceAiArticlesSequentially(articlesToSave);
+}
+
+function saveForceAiArticlesSequentially(articlesToSave) {
+    var currentSaveIndex = 0;
+    var successCount = 0;
+    var errorCount = 0;
+    
+    function saveNextArticle() {
+        if (currentSaveIndex >= articlesToSave.length) {
+            // All articles saved
+            var message;
+            if (errorCount === 0) {
+                message = 'Force IA : ' + successCount + ' articles sauvegardés avec succès';
+                showNotification(message, 'success');
+            } else if (successCount === 0) {
+                message = 'Force IA : Échec de la sauvegarde de tous les articles (' + errorCount + ' erreurs)';
+                showNotification(message, 'error');
+            } else {
+                message = 'Force IA : ' + successCount + ' articles sauvegardés, ' + errorCount + ' erreurs';
+                showNotification(message, 'warning');
+            }
+            
+            resetForceAiUI();
+            
+            // Refresh analysis
+            setTimeout(function() {
+                startAnalysis();
+            }, 2000);
+            return;
+        }
+        
+        var articleToSave = articlesToSave[currentSaveIndex];
+        
+        var formData = new FormData();
+        formData.append('article_id', articleToSave.articleId);
+        formData.append('title', articleToSave.changes.title);
+        formData.append('metadesc', articleToSave.changes.metadesc);
+        formData.append('metakey', articleToSave.changes.metakey);
+        formData.append('alias', articleToSave.changes.alias);
+        
+        fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_fix.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            return response.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    throw new Error('Server returned invalid JSON: ' + text);
+                }
+            });
+        })
+        .then(data => {
+            if (data.success) {
+                successCount++;
+                console.log('Article "' + articleToSave.title + '" saved successfully');
+            } else {
+                errorCount++;
+                console.error('Error saving "' + articleToSave.title + '": ' + data.message);
+            }
+            
+            currentSaveIndex++;
+            setTimeout(saveNextArticle, 300);
+        })
+        .catch(error => {
+            errorCount++;
+            console.error('Save error for "' + articleToSave.title + '": ' + error.message);
+            
+            currentSaveIndex++;
+            setTimeout(saveNextArticle, 300);
+        });
+    }
+    
+    saveNextArticle();
+}
+
+function resetForceAiUI() {
+    document.getElementById('force-ai-section').style.display = 'none';
+    document.getElementById('force-ai-results-section').style.display = 'none';
+    document.getElementById('results-section').style.display = 'block';
+    
+    // Reset variables
+    forceAiArticles = [];
+    currentForceAiIndex = 0;
+    forceAiChanges = {};
+    isForceAiProcessing = false;
+    forceAiCancelled = false;
 }
 
 document.addEventListener('DOMContentLoaded', function() {

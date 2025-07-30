@@ -17,6 +17,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
+use Joomla\CMS\Toolbar\Button\DropdownButton;
 use Joomla\CMS\Component\ComponentHelper;
 
 /**
@@ -99,7 +100,33 @@ class HtmlView extends BaseHtmlView
     {
         ToolbarHelper::title(Text::_('COM_JOOMLAHITS_SEOANALYSIS_PAGE_TITLE'), 'search');
 
-        $user = Factory::getUser();
+        $user = Factory::getApplication()->getIdentity();
+        $toolbar = $this->getDocument()->getToolbar();
+        
+        // Add Actions dropdown button
+        /** @var DropdownButton $dropdown */
+        $dropdown = $toolbar->dropdownButton('status-group')
+            ->text('JTOOLBAR_CHANGE_STATUS')
+            ->toggleSplit(false)
+            ->icon('icon-ellipsis-h')
+            ->buttonClass('btn btn-action')
+            ->listCheck(true);
+
+        $childBar = $dropdown->getChildToolbar();
+
+        // Bulk AI Fix
+        $childBar->standardButton('ai-fix', 'COM_JOOMLAHITS_BULK_AI_FIX')
+            ->icon('icon-wand')
+            ->listCheck(true)
+            ->onclick('startBulkAiFix(); return false;');
+
+        // Force AI Fix
+        $childBar->standardButton('force-ai-fix', 'COM_JOOMLAHITS_FORCE_AI_FIX')
+            ->icon('icon-lightning')
+            ->listCheck(true)
+            ->onclick('startForceAiFix(); return false;');
+
+        // Add preferences button
         if ($user->authorise('core.admin', 'com_joomlahits')) {
             ToolbarHelper::preferences('com_joomlahits');
         }
