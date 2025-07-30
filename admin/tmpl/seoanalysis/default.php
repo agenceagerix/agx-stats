@@ -291,10 +291,10 @@ $listDirn = 'ASC';
                     <div id="ai-preview-section" class="card mt-3 border-warning" style="display: none;">
                         <div class="card-header bg-warning text-dark">
                             <h6 class="card-title mb-0">
-                                <i class="icon-eye me-2"></i>Prévisualisation des modifications IA
+                                <i class="icon-eye me-2"></i><?php echo Text::_('COM_JOOMLAHITS_AI_PREVISUALISATION'); ?>
                             </h6>
                             <small class="d-block mt-1">
-                                <i class="icon-warning me-1"></i><strong>Action requise :</strong> Acceptez ou annulez ces modifications pour pouvoir enregistrer
+                                <i class="icon-warning me-1"></i><strong><?php echo Text::_('COM_JOOMLAHITS_AI_ACTION_REQUIRED'); ?></strong> <?php echo Text::_('COM_JOOMLAHITS_AI_ACTION_REQUIRED_DESC'); ?>
                             </small>
                         </div>
                         <div class="card-body">
@@ -303,13 +303,13 @@ $listDirn = 'ASC';
                             </div>
                             <div class="mt-3 text-center">
                                 <div class="alert alert-info mb-3">
-                                    <i class="icon-info me-2"></i>Vous devez choisir une action avant de pouvoir enregistrer vos modifications.
+                                    <i class="icon-info me-2"></i><?php echo Text::_('COM_JOOMLAHITS_AI_CHOOSE_ACTION'); ?>
                                 </div>
                                 <button type="button" class="btn btn-success me-2" onclick="acceptAIChanges()">
-                                    <i class="icon-checkmark me-1"></i>Accepter les modifications
+                                    <i class="icon-checkmark me-1"></i><?php echo Text::_('COM_JOOMLAHITS_AI_ACCEPT_CHANGES'); ?>
                                 </button>
                                 <button type="button" class="btn btn-danger" onclick="rejectAIChanges()">
-                                    <i class="icon-times me-1"></i>Annuler les modifications
+                                    <i class="icon-times me-1"></i><?php echo Text::_('COM_JOOMLAHITS_AI_REJECT_CHANGES'); ?>
                                 </button>
                             </div>
                         </div>
@@ -321,7 +321,7 @@ $listDirn = 'ASC';
                     <i class="icon-times me-2"></i><?php echo Text::_('COM_JOOMLAHITS_CANCEL'); ?>
                 </button>
                 <button type="button" class="btn btn-warning px-4 me-2" onclick="fixWithAI()" id="aiFixBtn">
-                    <i class="icon-wand me-2"></i>Corriger avec IA
+                    <i class="icon-wand me-2"></i><?php echo Text::_('COM_JOOMLAHITS_AI_FIX_WITH_AI'); ?>
                 </button>
                 <button type="button" class="btn btn-primary px-4" onclick="saveSeoFixes()" id="saveSeoBtn">
                     <i class="icon-checkmark me-2"></i><?php echo Text::_('COM_JOOMLAHITS_SAVE_CHANGES'); ?>
@@ -390,9 +390,84 @@ $listDirn = 'ASC';
     background: #555;
 }
 
+/* Simple notification animations */
+@keyframes fadeInRight {
+    from {
+        opacity: 0;
+        transform: translateX(300px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeOutRight {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(300px);
+    }
+}
+
+#joomla-notification-container .alert {
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
 </style>
 
 <script>
+// Simple notification system using Joomla
+function showNotification(message, type) {
+    // Create notification container if it doesn't exist
+    var container = document.getElementById('joomla-notification-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'joomla-notification-container';
+        container.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+        document.body.appendChild(container);
+    }
+    
+    // Create notification
+    var notification = document.createElement('div');
+    var alertClass = 'alert-info';
+    var iconClass = 'icon-info';
+    
+    if (type === 'success') {
+        alertClass = 'alert-success';
+        iconClass = 'icon-checkmark';
+    } else if (type === 'error') {
+        alertClass = 'alert-danger';
+        iconClass = 'icon-warning';
+    } else if (type === 'warning') {
+        alertClass = 'alert-warning';
+        iconClass = 'icon-warning';
+    }
+    
+    notification.className = 'alert ' + alertClass + ' alert-dismissible';
+    notification.style.cssText = 'margin-bottom: 10px; animation: fadeInRight 0.5s ease;';
+    notification.innerHTML = '<i class="' + iconClass + '"></i> ' + message + 
+                           '<button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>';
+    
+    container.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(function() {
+        if (notification.parentNode) {
+            notification.style.animation = 'fadeOutRight 0.5s ease';
+            setTimeout(function() {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 500);
+        }
+    }, 5000);
+}
+
 // Global variables
 var analysisResults = [];
 var filteredResults = [];
@@ -413,9 +488,7 @@ var articlesList = [];
 var currentArticleIndex = 0;
 
 // Main startup function
-function startAnalysis() {
-    console.log('Starting analysis...');
-    
+function startAnalysis() {    
     var btn = document.getElementById('startAnalysisBtn');
     var loadingSection = document.getElementById('loading-section');
     var resultsSection = document.getElementById('results-section');
@@ -480,13 +553,13 @@ function getArticlesList() {
                 finishAnalysis();
             }
         } else {
-            alert('Error retrieving articles: ' + data.message);
+            showNotification('Error retrieving articles: ' + data.message, 'error');
             resetAnalysisUI();
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error retrieving articles: ' + error.message);
+        showNotification('Error retrieving articles: ' + error.message, 'error');
         resetAnalysisUI();
     });
 }
@@ -1041,7 +1114,7 @@ function addIssue(list, message, severity) {
 // Fix with AI
 function fixWithAI() {
     if (!currentArticleData) {
-        alert('Aucun article sélectionné');
+        showNotification('No article selected', 'warning');
         return;
     }
     
@@ -1289,7 +1362,7 @@ function updateSaveButtonState() {
 function saveSeoFixes() {
     // Check if we can save
     if (aiPreviewState === 'pending') {
-        alert('Vous devez d\'abord accepter ou annuler les modifications IA avant de pouvoir enregistrer.');
+        showNotification('You must first accept or cancel AI changes before saving.', 'warning');
         return;
     }
     
@@ -1313,17 +1386,17 @@ function saveSeoFixes() {
     })
     .then(data => {
         if (data.success) {
-            alert('<?php echo Text::_('COM_JOOMLAHITS_SEO_FIX_SUCCESS'); ?>');
+            showNotification('SEO fixes have been saved successfully', 'success');
             seoModal.hide();
             // Relancer l'analyse pour cet article
             updateSingleArticle(currentArticleData.id);
         } else {
-            alert('Erreur: ' + data.message);
+            showNotification('Error: ' + data.message, 'error');
         }
     })
     .catch(error => {
         console.error('Erreur:', error);
-        alert('Erreur lors de la sauvegarde: ' + error.message);
+        showNotification('Save error: ' + error.message, 'error');
     });
 }
 
@@ -1382,7 +1455,6 @@ function updateSingleArticle(articleId) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('SEO Analysis page loaded');
     
     var startBtn = document.getElementById('startAnalysisBtn');
     if (startBtn) {
