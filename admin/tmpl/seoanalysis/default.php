@@ -314,20 +314,6 @@ $listDirn = 'ASC';
                         </div>
                     </div>
                     
-                    <!-- URL Alias Section -->
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <label for="seo-alias" class="form-label"><i class="icon-link text-primary me-2"></i><?php echo Text::_('COM_JOOMLAHITS_ALIAS'); ?></label>
-                            <input type="text" class="form-control" id="seo-alias" name="alias" oninput="updateFieldCounters()">
-                            <div class="d-flex justify-content-between align-items-center mt-2">
-                                <div class="form-text mb-0">
-                                    <span class="badge bg-secondary me-2"><span id="alias-counter">0</span> <?php echo Text::_('COM_JOOMLAHITS_CHARACTERS'); ?></span>
-                                    <span class="text-muted"><?php echo Text::_('COM_JOOMLAHITS_SEO_ALIAS_HELP'); ?></span>
-                                </div>
-                                <span id="alias-status"></span>
-                            </div>
-                        </div>
-                    </div>
                     
                     <!-- Content Section -->
                     <div class="card mb-3">
@@ -861,8 +847,7 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
         window.originalValues = {
             title: document.getElementById('seo-title').value,
             metadesc: document.getElementById('seo-metadesc').value,
-            metakey: document.getElementById('seo-metakey').value,
-            alias: document.getElementById('seo-alias').value
+            metakey: document.getElementById('seo-metakey').value
         };
         
         // Store in bulk changes if in bulk mode
@@ -1119,22 +1104,6 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
         metadescStatus.innerHTML = '<span class="text-success"><i class="icon-checkmark"></i> <?php echo Text::_('COM_JOOMLAHITS_SEO_OPTIMAL'); ?></span>';
     }
     
-    // Alias
-    var alias = document.getElementById('seo-alias');
-    var aliasLength = alias.value.length;
-    var aliasCounter = document.getElementById('alias-counter');
-    var aliasStatus = document.getElementById('alias-status');
-    
-    aliasCounter.textContent = aliasLength;
-    
-    if (aliasLength > 70) {
-        aliasStatus.innerHTML = '<span class="text-warning"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_URL_TOO_LONG'); ?></span>';
-    } else if (aliasLength > 0) {
-        aliasStatus.innerHTML = '<span class="text-success"><i class="icon-checkmark"></i> <?php echo Text::_('COM_JOOMLAHITS_SEO_OPTIMAL'); ?></span>';
-    } else {
-        aliasStatus.innerHTML = '';
-    }
-    
     // Content
     var content = document.getElementById('seo-content');
     var contentText = content.value;
@@ -1192,12 +1161,6 @@ function updateIssuesList() {
         hasIssues = true;
     }
     
-    // Check alias
-    var aliasLength = document.getElementById('seo-alias').value.length;
-    if (aliasLength > 70) {
-        addIssue(issuesList, '<?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_URL_TOO_LONG'); ?> (' + aliasLength + ' <?php echo Text::_('COM_JOOMLAHITS_CHARACTERS'); ?>)', 'warning');
-        hasIssues = true;
-    }
     
     // Check content
     var contentText = document.getElementById('seo-content').value;
@@ -1298,7 +1261,6 @@ function openBulkSeoModal() {
     document.getElementById('seo-title').value = article.title;
     document.getElementById('seo-metadesc').value = article.metadesc || '';
     document.getElementById('seo-metakey').value = article.metakey || '';
-    document.getElementById('seo-alias').value = article.alias || '';
     document.getElementById('seo-content').value = article.content || '';
     
     // Update counters

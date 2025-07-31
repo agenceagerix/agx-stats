@@ -82,12 +82,11 @@ function processNextForceAiArticle() {
         originalValues: {
             title: article.title,
             metadesc: article.metadesc || '',
-            metakey: article.metakey || '',
-            alias: article.alias || ''
+            metakey: article.metakey || ''
         },
         aiValues: {},
         fieldsProcessed: 0,
-        totalFields: 4
+        totalFields: 3
     };
     
     // Process all fields for this article
@@ -197,8 +196,7 @@ function saveForceAiChanges() {
                 changes: {
                     title: articleData.aiValues.title || articleData.originalValues.title,
                     metadesc: articleData.aiValues.metadesc || articleData.originalValues.metadesc,
-                    metakey: articleData.aiValues.metakey || articleData.originalValues.metakey,
-                    alias: articleData.aiValues.alias || articleData.originalValues.alias
+                    metakey: articleData.aiValues.metakey || articleData.originalValues.metakey
                 }
             });
         }

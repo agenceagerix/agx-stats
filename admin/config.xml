@@ -3,6 +3,16 @@
     <help key="JoomlaHits:_Options"/>
     <inlinehelp button="show"/>
     
+    <!-- Include CSS and JS for better API key management -->
+    <fieldset name="assets" hidden="true">
+        <field name="config_css" type="spacer" 
+               label="&lt;link rel='stylesheet' href='components/com_joomlahits/admin/config.css'&gt;"
+               description="API Key styling" />
+        <field name="config_js" type="spacer" 
+               label="&lt;script src='components/com_joomlahits/admin/config.js'&gt;&lt;/script&gt;"
+               description="API Key functionality" />
+    </fieldset>
+    
     <fieldset 
         name="general" 
         label="COM_JOOMLAHITS_CONFIG_GENERAL_LABEL" 
@@ -97,18 +107,59 @@
     </fieldset>
 
     <fieldset 
-        name="mistral_ai" 
-        label="COM_JOOMLAHITS_CONFIG_MISTRAL_LABEL" 
-        description="COM_JOOMLAHITS_CONFIG_MISTRAL_DESC">
+        name="ai_provider" 
+        label="COM_JOOMLAHITS_CONFIG_AI_PROVIDER_LABEL" 
+        description="COM_JOOMLAHITS_CONFIG_AI_PROVIDER_DESC">
+        
+        <field
+            name="ai_provider"
+            type="list"
+            label="COM_JOOMLAHITS_CONFIG_AI_PROVIDER_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_AI_PROVIDER_DESC"
+            default="mistral">
+            <option value="mistral">Mistral AI</option>
+            <option value="openai">OpenAI</option>
+        </field>
         
         <field
             name="mistral_api_key"
-            type="password"
+            type="textarea"
             label="COM_JOOMLAHITS_CONFIG_MISTRAL_API_KEY_LABEL"
             description="COM_JOOMLAHITS_CONFIG_MISTRAL_API_KEY_DESC"
-            size="50"
+            rows="3"
+            cols="80"
             filter="raw"
-            autocomplete="off"/>
+            autocomplete="off"
+            class="monospace-field"
+            style="font-family: monospace; letter-spacing: 1px;"
+            showon="ai_provider:mistral"/>
+        
+        <field
+            name="openai_api_key"
+            type="textarea"
+            label="COM_JOOMLAHITS_CONFIG_OPENAI_API_KEY_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_OPENAI_API_KEY_DESC"
+            rows="3"
+            cols="80"
+            filter="raw"
+            autocomplete="off"
+            class="monospace-field"
+            style="font-family: monospace; letter-spacing: 1px;"
+            showon="ai_provider:openai"/>
+        
+        <field
+            name="openai_model"
+            type="list"
+            label="COM_JOOMLAHITS_CONFIG_OPENAI_MODEL_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_OPENAI_MODEL_DESC"
+            default="gpt-4o-mini"
+            showon="ai_provider:openai">
+            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+            <option value="gpt-4o-mini">GPT-4o Mini</option>
+            <option value="gpt-4o">GPT-4o</option>
+            <option value="gpt-4.1">GPT-4.1</option>
+            <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
+        </field>
         
          <field
             name="mistral_prompt"
@@ -118,7 +169,8 @@
             rows="6"
             cols="80"
             filter="raw"
-            default="Generate a compelling SEO meta description of exactly 185 characters or less for this article. The meta description should be engaging, include relevant keywords, and encourage clicks. Do not include quotes or special formatting. Just return the meta description text.&#10;&#10;Article Title: {title}&#10;Article Introduction: {introtext}"/>
+            default="Generate a compelling SEO meta description of exactly 185 characters or less for this article. The meta description should be engaging, include relevant keywords, and encourage clicks. Do not include quotes or special formatting. Just return the meta description text.&#10;&#10;Article Title: {title}&#10;Article Introduction: {introtext}"
+            showon="ai_provider:mistral"/>
         
         <field
             name="ai_prompt_title"
@@ -150,15 +202,7 @@
             filter="raw"
             default="COM_JOOMLAHITS_DEFAULT_AI_PROMPT_METAKEY"/>
         
-        <field
-            name="ai_prompt_alias"
-            type="textarea"
-            label="COM_JOOMLAHITS_CONFIG_AI_PROMPT_ALIAS_LABEL"
-            description="COM_JOOMLAHITS_CONFIG_AI_PROMPT_ALIAS_DESC"
-            rows="6"
-            cols="80"
-            filter="raw"
-            default="COM_JOOMLAHITS_DEFAULT_AI_PROMPT_ALIAS"/>
+
     </fieldset>
 
     <fieldset 
@@ -217,8 +261,6 @@
             <option value="missing_h1">COM_JOOMLAHITS_CONFIG_SEO_ISSUE_H1_MISSING</option>
             <option value="missing_alt_tags">COM_JOOMLAHITS_CONFIG_SEO_ISSUE_ALT_MISSING</option>
             <option value="content_too_short">COM_JOOMLAHITS_CONFIG_SEO_ISSUE_CONTENT_SHORT</option>
-            <option value="url_too_short">COM_JOOMLAHITS_CONFIG_SEO_ISSUE_URL_SHORT</option>
-            <option value="url_too_long">COM_JOOMLAHITS_CONFIG_SEO_ISSUE_URL_LONG</option>
         </field>
 
         <field
@@ -276,27 +318,6 @@
             step="50"
             filter="integer"/>
 
-        <field
-            name="seo_min_url_length"
-            type="number"
-            label="COM_JOOMLAHITS_CONFIG_SEO_MIN_URL_LENGTH_LABEL"
-            description="COM_JOOMLAHITS_CONFIG_SEO_MIN_URL_LENGTH_DESC"
-            default="5"
-            min="1"
-            max="20"
-            step="1"
-            filter="integer"/>
-
-        <field
-            name="seo_max_url_length"
-            type="number"
-            label="COM_JOOMLAHITS_CONFIG_SEO_MAX_URL_LENGTH_LABEL"
-            description="COM_JOOMLAHITS_CONFIG_SEO_MAX_URL_LENGTH_DESC"
-            default="50"
-            min="30"
-            max="100"
-            step="5"
-            filter="integer"/>
 
     </fieldset>
 

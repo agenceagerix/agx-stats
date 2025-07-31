@@ -59,9 +59,7 @@ $selectedIssues = [
     'meta_desc_too_long',
     'missing_h1',
     'missing_alt_tags',
-    'content_too_short',
-    'url_too_short',
-    'url_too_long'
+    'content_too_short'
 ];
 $minTitleLength = 30;
 $maxTitleLength = 60;
@@ -119,9 +117,7 @@ try {
                     'meta_desc_too_long',
                     'missing_h1',
                     'missing_alt_tags',
-                    'content_too_short',
-                    'url_too_short',
-                    'url_too_long'
+                    'content_too_short'
                 ];
             }
             $minTitleLength = isset($paramsData['seo_min_title_length']) ? intval($paramsData['seo_min_title_length']) : 30;
@@ -344,8 +340,7 @@ function analyzeArticles($articles, $selectedIssues, $minTitleLength, $maxTitleL
             'title_issues' => 0,
             'meta_description_issues' => 0,
             'content_issues' => 0,
-            'image_issues' => 0,
-            'url_issues' => 0
+            'image_issues' => 0
         ]
     ];
 
@@ -503,26 +498,6 @@ function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, 
         }
     }
 
-    // 5. URL Analysis
-    $urlLength = strlen($article->alias);
-    if ($urlLength < $minUrlLength && in_array('url_too_short', $selectedIssues)) {
-        $issues[] = [
-            'type' => 'url_too_short',
-            'message' => "URL alias too short ({$urlLength} characters, recommended: {$minUrlLength}-{$maxUrlLength})",
-            'severity' => 'warning',
-            'icon' => 'link'
-        ];
-        $categories[] = 'url';
-        if ($maxSeverity !== 'critical') $maxSeverity = 'warning';
-    } elseif ($urlLength > $maxUrlLength && in_array('url_too_long', $selectedIssues)) {
-        $issues[] = [
-            'type' => 'url_too_long',
-            'message' => "URL alias too long ({$urlLength} characters, recommended: {$minUrlLength}-{$maxUrlLength})",
-            'severity' => 'info',
-            'icon' => 'link'
-        ];
-        $categories[] = 'url';
-    }
 
     // 6. Missing meta keywords (optional check)
     if (empty($article->metakey) && in_array('meta_keywords_missing', $selectedIssues)) {

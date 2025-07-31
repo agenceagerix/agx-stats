@@ -89,8 +89,10 @@ try {
         exit;
     }
     
-    // Retrieve Mistral AI API key from component configuration
-    // Access extension parameters directly from database
+    // Load AI provider configuration
+    require_once __DIR__ . '/ai_provider.php';
+    
+    // Retrieve component configuration
     $extensionQuery = $db->prepare("
         SELECT params 
         FROM " . $config->dbprefix . "extensions 
@@ -99,18 +101,19 @@ try {
     $extensionQuery->execute();
     $extension = $extensionQuery->fetch();
     
-    // Parse component parameters and extract API key
-    $apiKey = getenv('MISTRAL_API_KEY');
-    if (!$apiKey && $extension && !empty($extension->params)) {
+    // Parse component parameters
+    $params = [];
+    if ($extension && !empty($extension->params)) {
         $params = json_decode($extension->params, true);
-        $apiKey = $params['mistral_api_key'] ?? '';
     }
     
-    // Validate API key is configured
-    if (empty($apiKey)) {
+    // Initialize AI provider
+    try {
+        $aiProvider = new AIProvider($params);
+    } catch (Exception $e) {
         echo json_encode([
             'success' => false,
-            'message' => 'Mistral API key not configured (set MISTRAL_API_KEY env var or component parameter)'
+            'message' => 'AI provider error: ' . $e->getMessage()
         ]);
         exit;
     }
@@ -147,108 +150,28 @@ try {
     // Replace placeholders with actual content
     $prompt = str_replace(['{title}', '{introtext}', '{language}'], [$cleanTitle, $cleanIntrotext, $article->language ?: 'en-GB'], $customPrompt);
     
-    // Prepare Mistral AI API request
-    $url = 'https://api.mistral.ai/v1/chat/completions';
-    
     // Validate prompt content before sending to API
     if (empty($prompt) || mb_strlen($prompt, 'UTF-8') < 10) {
         echo json_encode(['success' => false, 'message' => 'Invalid prompt content for article "' . $article->title . '"']);
         exit;
     }
     
-    // Create JSON payload for API request
-    $payload = json_encode([
-        'model' => 'mistral-small-latest',
-        'messages' => [
-            ['role' => 'user', 'content' => $prompt]
-        ],
-        'max_tokens' => 200,
-        'temperature' => 0.7
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    
-    // Initialize cURL for API communication
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json; charset=utf-8',
-        'Authorization: Bearer ' . $apiKey
-    ]);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HEADER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    curl_setopt($ch, CURLOPT_ENCODING, '');
-    
-    // Execute API request and get response information
-    $fullResponse = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-    $curlError = curl_error($ch);
-    curl_close($ch);
-    
-    // Check for cURL connection errors
-    if ($curlError) {
-        echo json_encode(['success' => false, 'message' => 'Connection error: ' . $curlError]);
-        exit;
-    }
-    
-    // Separate HTTP headers from response body
-    $response = substr($fullResponse, $headerSize);
-    
-    // Validate HTTP response code
-    if ($httpCode !== 200) {
-        // Log detailed error information for debugging
-        $errorDetails = '';
-        if ($httpCode === 422) {
-            $errorDetails = ' - Invalid request data. Check article content for special characters or encoding issues.';
-        } elseif ($httpCode === 401) {
-            $errorDetails = ' - Invalid API key.';
-        } elseif ($httpCode === 429) {
-            $errorDetails = ' - Rate limit exceeded. Please try again later.';
-        }
-        
+    // Generate content using AI provider
+    try {
+        $generatedMetaDesc = $aiProvider->generateContent($prompt);
+    } catch (Exception $e) {
         echo json_encode([
-            'success' => false, 
-            'message' => 'Mistral API error: HTTP ' . $httpCode . $errorDetails,
+            'success' => false,
+            'message' => 'AI generation error: ' . $e->getMessage(),
             'debug_info' => [
                 'article_id' => $articleId,
                 'title' => $article->title,
                 'clean_introtext_length' => mb_strlen($cleanIntrotext, 'UTF-8'),
-                'payload_size' => mb_strlen($payload, 'UTF-8')
+                'ai_provider' => $aiProvider->getProvider()
             ]
         ]);
         exit;
     }
-    
-    // Clean response and remove BOM if present
-    $response = trim($response);
-    $response = preg_replace('/^\xEF\xBB\xBF/', '', $response);
-    
-    // Parse JSON response from API
-    $result = json_decode($response, true);
-    
-    // Validate JSON parsing was successful
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        echo json_encode(['success' => false, 'message' => 'Invalid API response']);
-        exit;
-    }
-    
-    // Check for API error responses
-    if (isset($result['error'])) {
-        echo json_encode(['success' => false, 'message' => 'Mistral error: ' . $result['error']['message']]);
-        exit;
-    }
-    
-    // Validate expected response structure
-    if (!isset($result['choices'][0]['message']['content'])) {
-        echo json_encode(['success' => false, 'message' => 'Unexpected response structure']);
-        exit;
-    }
-    
-    // Extract generated meta description from API response
-    $generatedMetaDesc = trim($result['choices'][0]['message']['content']);
     
     // Ensure meta description doesn't exceed 185 character limit
     if (strlen($generatedMetaDesc) > 185) {
@@ -274,10 +197,11 @@ try {
     // Return success response with generated meta description
     echo json_encode([
         'success' => true,
-        'message' => 'Meta description generated successfully for "' . $article->title . '"',
+        'message' => 'Meta description generated successfully by ' . $aiProvider->getProvider() . ' for "' . $article->title . '"',
         'article_id' => $articleId,
         'title' => $article->title,
-        'metadesc' => $generatedMetaDesc
+        'metadesc' => $generatedMetaDesc,
+        'ai_provider' => $aiProvider->getProvider()
     ], JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {

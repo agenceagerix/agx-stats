@@ -53,8 +53,7 @@ function acceptBulkAIChanges() {
     storedChange.finalValues = {
         title: document.getElementById('seo-title').value,
         metadesc: document.getElementById('seo-metadesc').value,
-        metakey: document.getElementById('seo-metakey').value,
-        alias: document.getElementById('seo-alias').value
+        metakey: document.getElementById('seo-metakey').value
     };
     
     // Hide preview
@@ -140,8 +139,7 @@ function rejectBulkAIChanges() {
     storedChange.finalValues = {
         title: window.originalValues.title,
         metadesc: window.originalValues.metadesc,
-        metakey: window.originalValues.metakey,
-        alias: window.originalValues.alias
+        metakey: window.originalValues.metakey
     };
     
     // Hide preview

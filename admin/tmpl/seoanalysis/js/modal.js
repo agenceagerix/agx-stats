@@ -36,7 +36,6 @@ function openSeoModal(articleId) {
     document.getElementById('seo-title').value = article.title;
     document.getElementById('seo-metadesc').value = article.metadesc || '';
     document.getElementById('seo-metakey').value = article.metakey || '';
-    document.getElementById('seo-alias').value = article.alias || '';
     document.getElementById('seo-content').value = article.content || '';
     
     // Update counters
@@ -93,8 +92,7 @@ function getFieldLabel(fieldType) {
     var labels = {
         'title': 'Title',
         'metadesc': 'Meta desc',
-        'metakey': 'Keywords',
-        'alias': 'URL'
+        'metakey': 'Keywords'
     };
     return labels[fieldType] || fieldType;
 }
@@ -110,8 +108,7 @@ function showAIPreview() {
     var fieldLabels = {
         'title': 'Title',
         'metadesc': 'Meta Description',
-        'metakey': 'Keywords',
-        'alias': 'URL Alias'
+        'metakey': 'Keywords'
     };
     
     Object.keys(window.originalValues).forEach(function(fieldType) {

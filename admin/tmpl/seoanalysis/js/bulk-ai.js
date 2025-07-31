@@ -81,7 +81,6 @@ function restoreAcceptedChanges(storedChange) {
     document.getElementById('seo-title').value = storedChange.finalValues.title || storedChange.originalValues.title;
     document.getElementById('seo-metadesc').value = storedChange.finalValues.metadesc || storedChange.originalValues.metadesc;
     document.getElementById('seo-metakey').value = storedChange.finalValues.metakey || storedChange.originalValues.metakey;
-    document.getElementById('seo-alias').value = storedChange.finalValues.alias || storedChange.originalValues.alias;
     
     updateFieldCounters();
     

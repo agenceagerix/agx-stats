@@ -41,7 +41,7 @@ if (!$articleId) {
     exit;
 }
 
-if (!$fieldType || !in_array($fieldType, ['title', 'metadesc', 'metakey', 'alias'])) {
+if (!$fieldType || !in_array($fieldType, ['title', 'metadesc', 'metakey'])) {
     echo json_encode(['success' => false, 'message' => 'Invalid field type']);
     exit;
 }
@@ -97,7 +97,10 @@ try {
         exit;
     }
     
-    // Retrieve Mistral AI API key from component configuration
+    // Load AI provider configuration
+    require_once __DIR__ . '/ai_provider.php';
+    
+    // Retrieve component configuration
     $extensionQuery = $db->prepare("
         SELECT `params`
         FROM " . $config->dbprefix . "extensions 
@@ -106,13 +109,12 @@ try {
     $extensionQuery->execute();
     $extension = $extensionQuery->fetch();
     
-    // Parse component parameters and extract API key and SEO settings
-    $apiKey = getenv('MISTRAL_API_KEY');
+    // Parse component parameters
+    $params = [];
     $promptTemplates = [];
     
-    if (!$apiKey && $extension && !empty($extension->params)) {
+    if ($extension && !empty($extension->params)) {
         $params = json_decode($extension->params, true);
-        $apiKey = $params['mistral_api_key'] ?? '';
         
         // Load SEO parameters
         $minTitleLength = isset($params['seo_min_title_length']) ? intval($params['seo_min_title_length']) : 30;
@@ -127,14 +129,15 @@ try {
         $promptTemplates['title'] = $params['ai_prompt_title'] ?? '';
         $promptTemplates['metadesc'] = $params['ai_prompt_metadesc'] ?? '';
         $promptTemplates['metakey'] = $params['ai_prompt_metakey'] ?? '';
-        $promptTemplates['alias'] = $params['ai_prompt_alias'] ?? '';
     }
     
-    // Validate API key is configured
-    if (empty($apiKey)) {
+    // Initialize AI provider
+    try {
+        $aiProvider = new AIProvider($params);
+    } catch (Exception $e) {
         echo json_encode([
             'success' => false,
-            'message' => 'Mistral API key not configured (set MISTRAL_API_KEY env var or component parameter)'
+            'message' => 'AI provider error: ' . $e->getMessage()
         ]);
         exit;
     }
@@ -161,95 +164,16 @@ try {
     // Create field-specific prompt with SEO parameters
     $prompt = generateFieldPrompt($fieldType, $cleanTitle, $cleanContent, $article, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minUrlLength, $maxUrlLength, $minContentLength, $promptTemplates);
     
-    // Prepare Mistral AI API request
-    $url = 'https://api.mistral.ai/v1/chat/completions';
-    
-    // Create JSON payload for API request
-    $payload = json_encode([
-        'model' => 'mistral-small-latest',
-        'messages' => [
-            ['role' => 'user', 'content' => $prompt]
-        ],
-        'max_tokens' => 1000,
-        'temperature' => 0.7
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    
-    // Initialize cURL for API communication
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json; charset=utf-8',
-        'Authorization: Bearer ' . $apiKey
-    ]);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HEADER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 45);
-    curl_setopt($ch, CURLOPT_ENCODING, '');
-    
-    // Execute API request and get response information
-    $fullResponse = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-    $curlError = curl_error($ch);
-    curl_close($ch);
-    
-    // Check for cURL connection errors
-    if ($curlError) {
-        echo json_encode(['success' => false, 'message' => 'Connection error: ' . $curlError]);
-        exit;
-    }
-    
-    // Separate HTTP headers from response body
-    $response = substr($fullResponse, $headerSize);
-    
-    // Validate HTTP response code
-    if ($httpCode !== 200) {
-        $errorDetails = '';
-        if ($httpCode === 422) {
-            $errorDetails = ' - Invalid request data.';
-        } elseif ($httpCode === 401) {
-            $errorDetails = ' - Invalid API key.';
-        } elseif ($httpCode === 429) {
-            $errorDetails = ' - Rate limit exceeded. Please try again later.';
-        }
-        
+    // Generate content using AI provider
+    try {
+        $generatedContent = $aiProvider->generateContent($prompt);
+    } catch (Exception $e) {
         echo json_encode([
-            'success' => false, 
-            'message' => 'Mistral API error: HTTP ' . $httpCode . $errorDetails
+            'success' => false,
+            'message' => 'AI generation error: ' . $e->getMessage()
         ]);
         exit;
     }
-    
-    // Clean response and remove BOM if present
-    $response = trim($response);
-    $response = preg_replace('/^\xEF\xBB\xBF/', '', $response);
-    
-    // Parse JSON response from API
-    $result = json_decode($response, true);
-    
-    // Validate JSON parsing was successful
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        echo json_encode(['success' => false, 'message' => 'Invalid API response']);
-        exit;
-    }
-    
-    // Check for API error responses
-    if (isset($result['error'])) {
-        echo json_encode(['success' => false, 'message' => 'Mistral error: ' . $result['error']['message']]);
-        exit;
-    }
-    
-    // Validate expected response structure
-    if (!isset($result['choices'][0]['message']['content'])) {
-        echo json_encode(['success' => false, 'message' => 'Unexpected response structure']);
-        exit;
-    }
-    
-    // Extract generated SEO data from API response
-    $generatedContent = trim($result['choices'][0]['message']['content']);
     
     // Remove potential code block markers
     $generatedContent = preg_replace('/^```json\s*/', '', $generatedContent);
@@ -265,10 +189,11 @@ try {
     
     echo json_encode([
         'success' => true,
-        'message' => ucfirst($fieldType) . ' optimisé avec succès',
+        'message' => ucfirst($fieldType) . ' optimisé avec succès par ' . $aiProvider->getProvider(),
         'article_id' => $articleId,
         'field_type' => $fieldType,
-        'field_value' => $cleanedValue
+        'field_value' => $cleanedValue,
+        'ai_provider' => $aiProvider->getProvider()
     ], JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {
@@ -307,13 +232,7 @@ function generateFieldPrompt($fieldType, $title, $content, $article, $minTitleLe
                      "Réponds UNIQUEMENT avec la liste de mots-clés, sans guillemets ni explication.\n\n" .
                      "Titre : {title}\n" .
                      "Contenu : {content}\n" .
-                     "Langue : {language}",
-                     
-        'alias' => "Tu es un expert SEO. Génère UNIQUEMENT un alias URL optimisé pour cet article. " .
-                   "Règles strictes : entre {minUrlLength}-{maxUrlLength} caractères, lettres minuscules, tirets uniquement, SEO-friendly. " .
-                   "Réponds UNIQUEMENT avec l'alias URL, sans guillemets ni explication.\n\n" .
-                   "Titre : {title}\n" .
-                   "Langue : {language}"
+                     "Langue : {language}"
     ];
     
     // Get the prompt template (use default if not configured)
@@ -351,13 +270,6 @@ function cleanFieldValue($fieldType, $value, $maxTitleLength, $maxMetaLength, $m
             
         case 'metakey':
             return trim($value);
-            
-        case 'alias':
-            $alias = strtolower(trim($value));
-            $alias = preg_replace('/[^a-z0-9\-]/', '-', $alias);
-            $alias = preg_replace('/-+/', '-', $alias);
-            $alias = trim($alias, '-');
-            return mb_substr($alias, 0, $maxUrlLength, 'UTF-8');
             
         default:
             return trim($value);
