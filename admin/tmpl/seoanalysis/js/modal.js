@@ -91,9 +91,9 @@ function addIssue(list, message, severity) {
  */
 function getFieldLabel(fieldType) {
     var labels = {
-        'title': 'Titre',
+        'title': 'Title',
         'metadesc': 'Meta desc',
-        'metakey': 'Mots-clés',
+        'metakey': 'Keywords',
         'alias': 'URL'
     };
     return labels[fieldType] || fieldType;
@@ -108,10 +108,10 @@ function showAIPreview() {
     
     var html = '';
     var fieldLabels = {
-        'title': 'Titre',
+        'title': 'Title',
         'metadesc': 'Meta Description',
-        'metakey': 'Mots-clés',
-        'alias': 'Alias URL'
+        'metakey': 'Keywords',
+        'alias': 'URL Alias'
     };
     
     Object.keys(window.originalValues).forEach(function(fieldType) {
@@ -126,17 +126,17 @@ function showAIPreview() {
             html += '<div class="col-md-6">';
             html += '<div class="card border-danger">';
             html += '<div class="card-header py-2">';
-            html += '<small class="text-danger fw-bold"><i class="icon-times me-1"></i>AVANT</small>';
+            html += '<small class="text-danger fw-bold"><i class="icon-times me-1"></i>BEFORE</small>';
             html += '</div>';
             html += '<div class="card-body py-2">';
-            html += '<small class="text-muted">' + (original || '<em>Vide</em>') + '</small>';
+            html += '<small class="text-muted">' + (original || '<em>Empty</em>') + '</small>';
             html += '</div>';
             html += '</div>';
             html += '</div>';
             html += '<div class="col-md-6">';
             html += '<div class="card border-success">';
             html += '<div class="card-header py-2">';
-            html += '<small class="text-success fw-bold"><i class="icon-checkmark me-1"></i>APRÈS</small>';
+            html += '<small class="text-success fw-bold"><i class="icon-checkmark me-1"></i>AFTER</small>';
             html += '</div>';
             html += '<div class="card-body py-2">';
             html += '<small class="text-dark fw-bold">' + optimized + '</small>';
@@ -149,7 +149,7 @@ function showAIPreview() {
     
     if (html === '') {
         html = '<div class="text-center text-muted py-3">';
-        html += '<i class="icon-info me-2"></i>Aucune modification n\'a été apportée par l\'IA.';
+        html += '<i class="icon-info me-2"></i>No modifications were made by AI.';
         html += '</div>';
     }
     

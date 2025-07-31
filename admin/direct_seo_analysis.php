@@ -174,7 +174,7 @@ try {
         $article = $stmt->fetch();
         
         if (!$article) {
-            echo json_encode(['success' => false, 'message' => 'Article non trouvé']);
+            echo json_encode(['success' => false, 'message' => 'Article not found']);
             exit;
         }
         
@@ -189,13 +189,13 @@ try {
                 'metadesc' => $article->metadesc,
                 'metakey' => $article->metakey,
                 'content' => trim($article->introtext . ' ' . $article->fulltext),
-                'category' => $article->category_title ?: 'Sans catégorie',
-                'language' => $article->language ?: 'fr-FR',
+                'category' => $article->category_title ?: 'No category',
+                'language' => $article->language ?: 'en-GB',
                 'hits' => $article->hits,
                 'issues' => $articleIssues['issues'],
                 'severity' => $articleIssues['severity']
             ],
-            'message' => 'Article "' . $article->title . '" analysé'
+            'message' => 'Article "' . $article->title . '" analyzed'
         ], JSON_UNESCAPED_UNICODE);
         
     } elseif (isset($_POST['get_articles_list'])) {
@@ -249,7 +249,7 @@ try {
         echo json_encode([
             'success' => true,
             'data' => $articlesList,
-            'message' => count($articlesList) . ' articles trouvés'
+            'message' => count($articlesList) . ' articles found'
         ], JSON_UNESCAPED_UNICODE);
         
     } else {
@@ -320,16 +320,16 @@ try {
         echo json_encode([
             'success' => true,
             'data' => $results,
-            'message' => 'Analyse SEO terminée avec succès'
+            'message' => 'SEO analysis completed successfully'
         ], JSON_UNESCAPED_UNICODE);
     }
     
 } catch (Exception $e) {
     // Handle general exceptions
-    echo json_encode(['success' => false, 'message' => 'Erreur lors de l\'analyse SEO: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Error during SEO analysis: ' . $e->getMessage()]);
 } catch (Error $e) {
     // Handle fatal errors
-    echo json_encode(['success' => false, 'message' => 'Erreur fatale: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Fatal error: ' . $e->getMessage()]);
 }
 
 /**
@@ -356,8 +356,8 @@ function analyzeArticles($articles, $selectedIssues, $minTitleLength, $maxTitleL
             $results['issues'][] = [
                 'id' => $article->id,
                 'title' => $article->title,
-                'category' => $article->category_title ?: 'Sans catégorie',
-                'language' => $article->language ?: 'fr-FR',
+                'category' => $article->category_title ?: 'No category',
+                'language' => $article->language ?: 'en-GB',
                 'hits' => $article->hits,
                 'issues' => $articleIssues['issues'],
                 'severity' => $articleIssues['severity']
@@ -400,7 +400,7 @@ function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, 
     if (empty($article->title) && in_array('title_missing', $selectedIssues)) {
         $issues[] = [
             'type' => 'title_missing',
-            'message' => 'Titre manquant',
+            'message' => 'Missing title',
             'severity' => 'critical',
             'icon' => 'exclamation-triangle'
         ];
@@ -409,7 +409,7 @@ function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, 
     } elseif ($titleLength < $minTitleLength && in_array('title_too_short', $selectedIssues)) {
         $issues[] = [
             'type' => 'title_too_short',
-            'message' => "Titre trop court ({$titleLength} caractères, recommandé: {$minTitleLength}-{$maxTitleLength})",
+            'message' => "Title too short ({$titleLength} characters, recommended: {$minTitleLength}-{$maxTitleLength})",
             'severity' => 'warning',
             'icon' => 'warning'
         ];
@@ -418,7 +418,7 @@ function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, 
     } elseif ($titleLength > $maxTitleLength && in_array('title_too_long', $selectedIssues)) {
         $issues[] = [
             'type' => 'title_too_long',
-            'message' => "Titre trop long ({$titleLength} caractères, recommandé: {$minTitleLength}-{$maxTitleLength})",
+            'message' => "Title too long ({$titleLength} characters, recommended: {$minTitleLength}-{$maxTitleLength})",
             'severity' => 'warning',
             'icon' => 'warning'
         ];
@@ -433,7 +433,7 @@ function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, 
     if ((empty($metaDesc) || $metaDescLength === 0) && in_array('meta_desc_missing', $selectedIssues)) {
         $issues[] = [
             'type' => 'meta_desc_missing',
-            'message' => 'Méta-description manquante',
+            'message' => 'Missing meta description',
             'severity' => 'critical',
             'icon' => 'exclamation-triangle'
         ];
@@ -442,7 +442,7 @@ function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, 
     } elseif ($metaDescLength < $minMetaLength && in_array('meta_desc_too_short', $selectedIssues)) {
         $issues[] = [
             'type' => 'meta_desc_too_short',
-            'message' => "Méta-description trop courte ({$metaDescLength} caractères, recommandé: {$minMetaLength}-{$maxMetaLength})",
+            'message' => "Meta description too short ({$metaDescLength} characters, recommended: {$minMetaLength}-{$maxMetaLength})",
             'severity' => 'warning',
             'icon' => 'warning'
         ];
@@ -451,7 +451,7 @@ function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, 
     } elseif ($metaDescLength > $maxMetaLength && in_array('meta_desc_too_long', $selectedIssues)) {
         $issues[] = [
             'type' => 'meta_desc_too_long',
-            'message' => "Méta-description trop longue ({$metaDescLength} caractères, recommandé: {$minMetaLength}-{$maxMetaLength})",
+            'message' => "Meta description too long ({$metaDescLength} characters, recommended: {$minMetaLength}-{$maxMetaLength})",
             'severity' => 'warning',
             'icon' => 'warning'
         ];
@@ -466,7 +466,7 @@ function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, 
     if ($contentLength < $minContentLength && in_array('content_too_short', $selectedIssues)) {
         $issues[] = [
             'type' => 'content_too_short',
-            'message' => "Contenu trop court ({$contentLength} caractères, recommandé: {$minContentLength}+)",
+            'message' => "Content too short ({$contentLength} characters, recommended: {$minContentLength}+)",
             'severity' => 'info',
             'icon' => 'info'
         ];
@@ -477,7 +477,7 @@ function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, 
     if (stripos($content, '<h1') === false && in_array('missing_h1', $selectedIssues)) {
         $issues[] = [
             'type' => 'missing_h1',
-            'message' => 'Balise H1 manquante dans le contenu',
+            'message' => 'Missing H1 tag in content',
             'severity' => 'warning',
             'icon' => 'warning'
         ];
@@ -494,7 +494,7 @@ function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, 
             $missingAlt = $imageCount - $altCount;
             $issues[] = [
                 'type' => 'missing_alt_tags',
-                'message' => "{$missingAlt} image(s) sans attribut alt sur {$imageCount} total",
+                'message' => "{$missingAlt} image(s) without alt attribute out of {$imageCount} total",
                 'severity' => 'warning',
                 'icon' => 'image'
             ];
@@ -508,7 +508,7 @@ function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, 
     if ($urlLength < $minUrlLength && in_array('url_too_short', $selectedIssues)) {
         $issues[] = [
             'type' => 'url_too_short',
-            'message' => "Alias d'URL trop court ({$urlLength} caractères, recommandé: {$minUrlLength}-{$maxUrlLength})",
+            'message' => "URL alias too short ({$urlLength} characters, recommended: {$minUrlLength}-{$maxUrlLength})",
             'severity' => 'warning',
             'icon' => 'link'
         ];
@@ -517,7 +517,7 @@ function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, 
     } elseif ($urlLength > $maxUrlLength && in_array('url_too_long', $selectedIssues)) {
         $issues[] = [
             'type' => 'url_too_long',
-            'message' => "Alias d'URL trop long ({$urlLength} caractères, recommandé: {$minUrlLength}-{$maxUrlLength})",
+            'message' => "URL alias too long ({$urlLength} characters, recommended: {$minUrlLength}-{$maxUrlLength})",
             'severity' => 'info',
             'icon' => 'link'
         ];
@@ -528,7 +528,7 @@ function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, 
     if (empty($article->metakey) && in_array('meta_keywords_missing', $selectedIssues)) {
         $issues[] = [
             'type' => 'meta_keywords_missing',
-            'message' => 'Mots-clés meta manquants',
+            'message' => 'Missing meta keywords',
             'severity' => 'info',
             'icon' => 'tag'
         ];

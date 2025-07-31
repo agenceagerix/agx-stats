@@ -141,7 +141,7 @@ function showForceAiResults() {
 function generateForceAiSummary() {
     var totalArticles = Object.keys(forceAiChanges).length;
     var totalChanges = 0;
-    var summaryHtml = '<h5>Résumé des modifications IA :</h5>';
+    var summaryHtml = '<h5>AI modifications summary:</h5>';
     summaryHtml += '<div class="row">';
     
     Object.keys(forceAiChanges).forEach(function(articleId) {
@@ -153,7 +153,7 @@ function generateForceAiSummary() {
         summaryHtml += '<div class="card">';
         summaryHtml += '<div class="card-body py-2">';
         summaryHtml += '<h6 class="card-title mb-1">' + articleData.title + '</h6>';
-        summaryHtml += '<small class="text-muted">' + changesCount + ' champs modifiés</small>';
+        summaryHtml += '<small class="text-muted">' + changesCount + ' fields modified</small>';
         summaryHtml += '</div>';
         summaryHtml += '</div>';
         summaryHtml += '</div>';
@@ -161,7 +161,7 @@ function generateForceAiSummary() {
     
     summaryHtml += '</div>';
     summaryHtml += '<div class="alert alert-info mt-3">';
-    summaryHtml += '<strong>' + totalArticles + ' articles traités</strong> avec un total de <strong>' + totalChanges + ' modifications</strong>';
+    summaryHtml += '<strong>' + totalArticles + ' articles processed</strong> with a total of <strong>' + totalChanges + ' modifications</strong>';
     summaryHtml += '</div>';
     
     return summaryHtml;
@@ -185,7 +185,7 @@ function saveForceAiChanges() {
         }
     });
     
-    showNotification('Sauvegarde de ' + totalToSave + ' articles en cours...', 'info');
+    showNotification('Saving ' + totalToSave + ' articles...', 'info');
     
     var articlesToSave = [];
     Object.keys(forceAiChanges).forEach(function(articleId) {

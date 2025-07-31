@@ -101,7 +101,7 @@ function startBulkReviewPhase() {
     bulkProcessingPhase = 'reviewing';
     currentBulkArticleIndex = 0;
     
-    showNotification('Phase d\'édition terminée. Vous pouvez maintenant réviser tous les articles avant la sauvegarde finale.', 'info');
+    showNotification('Editing phase completed. You can now review all articles before final save.', 'info');
     
     // Reopen first article in review mode
     openBulkSeoModal();
@@ -145,13 +145,13 @@ function finishBulkSave(successCount, errorCount) {
     var message;
     
     if (errorCount === 0) {
-        message = 'Correction IA groupée : ' + successCount + ' articles sauvegardés avec succès';
+        message = 'Bulk AI fix: ' + successCount + ' articles saved successfully';
         showNotification(message, 'success');
     } else if (successCount === 0) {
-        message = 'Correction IA groupée : Échec de la sauvegarde de tous les articles (' + errorCount + ' erreurs)';
+        message = 'Bulk AI fix: Failed to save all articles (' + errorCount + ' errors)';
         showNotification(message, 'error');
     } else {
-        message = 'Correction IA groupée : ' + successCount + ' articles sauvegardés, ' + errorCount + ' erreurs sur ' + totalCount;
+        message = 'Bulk AI fix: ' + successCount + ' articles saved, ' + errorCount + ' errors out of ' + totalCount;
         showNotification(message, 'warning');
     }
     

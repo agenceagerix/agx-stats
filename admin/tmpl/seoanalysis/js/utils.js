@@ -27,7 +27,7 @@ function acceptAIChanges() {
     // Afficher un message de confirmation
     var alertDiv = document.createElement('div');
     alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
-    alertDiv.innerHTML = '<i class="icon-checkmark me-2"></i>Modifications IA acceptées ! Vous pouvez maintenant sauvegarder.' +
+    alertDiv.innerHTML = '<i class="icon-checkmark me-2"></i>AI modifications accepted! You can now save.' +
                         '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
     
     var form = document.getElementById('seoFixForm');
@@ -64,7 +64,7 @@ function acceptBulkAIChanges() {
     updateFieldCounters();
     
     // Show confirmation
-    showNotification('Modifications acceptées pour "' + currentArticleData.title + '"', 'success');
+    showNotification('Modifications accepted for "' + currentArticleData.title + '"', 'success');
     
     // In editing phase, auto-navigate to next article
     if (bulkProcessingPhase === 'editing') {
@@ -106,7 +106,7 @@ function rejectAIChanges() {
     // Afficher un message de confirmation
     var alertDiv = document.createElement('div');
     alertDiv.className = 'alert alert-info alert-dismissible fade show mt-3';
-    alertDiv.innerHTML = '<i class="icon-info me-2"></i>Modifications IA annulées. Les valeurs originales ont été restaurées.' +
+    alertDiv.innerHTML = '<i class="icon-info me-2"></i>AI modifications cancelled. Original values have been restored.' +
                         '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
     
     var form = document.getElementById('seoFixForm');
@@ -151,7 +151,7 @@ function rejectBulkAIChanges() {
     updateFieldCounters();
     
     // Show confirmation
-    showNotification('Modifications IA rejetées pour "' + currentArticleData.title + '" - valeurs originales conservées', 'info');
+    showNotification('AI modifications rejected for "' + currentArticleData.title + '" - original values kept', 'info');
     
     // In editing phase, auto-navigate to next article
     if (bulkProcessingPhase === 'editing') {
@@ -177,21 +177,21 @@ function updateBulkSaveButtonState() {
         if (aiPreviewState === 'pending') {
             // En attente d'acceptation/refus des modifications IA
             saveBtn.disabled = true;
-            saveBtn.innerHTML = '<i class="icon-warning me-2"></i>Acceptez ou annulez les modifications IA';
+            saveBtn.innerHTML = '<i class="icon-warning me-2"></i>Accept or cancel AI modifications';
             saveBtn.className = 'btn btn-warning px-4';
-            saveBtn.title = 'Vous devez accepter ou annuler les modifications IA avant de continuer';
+            saveBtn.title = 'You must accept or cancel AI modifications before continuing';
         } else {
             // In editing phase, show next/continue button
             var isLastArticle = currentBulkArticleIndex === bulkAiArticles.length - 1;
             saveBtn.disabled = false;
             if (isLastArticle) {
-                saveBtn.innerHTML = '<i class="icon-arrow-right me-2"></i>Terminer l\'édition';
+                saveBtn.innerHTML = '<i class="icon-arrow-right me-2"></i>Finish editing';
                 saveBtn.className = 'btn btn-success px-4';
-                saveBtn.title = 'Terminer la phase d\'édition et passer à la révision';
+                saveBtn.title = 'Finish editing phase and move to review';
             } else {
-                saveBtn.innerHTML = '<i class="icon-arrow-right me-2"></i>Article suivant';
+                saveBtn.innerHTML = '<i class="icon-arrow-right me-2"></i>Next article';
                 saveBtn.className = 'btn btn-primary px-4';
-                saveBtn.title = 'Passer à l\'article suivant';
+                saveBtn.title = 'Go to next article';
             }
         }
     } else if (bulkProcessingPhase === 'reviewing') {
@@ -204,9 +204,9 @@ function updateBulkSaveButtonState() {
         });
         
         saveBtn.disabled = false;
-        saveBtn.innerHTML = '<i class="icon-checkmark me-2"></i>Sauvegarder tous les articles (' + processedCount + ')';
+        saveBtn.innerHTML = '<i class="icon-checkmark me-2"></i>Save all articles (' + processedCount + ')';
         saveBtn.className = 'btn btn-success px-4';
-        saveBtn.title = 'Sauvegarder définitivement tous les articles modifiés';
+        saveBtn.title = 'Save all modified articles permanently';
     }
 }
 

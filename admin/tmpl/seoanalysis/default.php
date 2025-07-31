@@ -597,7 +597,7 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
             }
         });
         
-        showNotification('Sauvegarde de ' + totalToSave + ' articles en cours...', 'info');
+        showNotification('Saving ' + totalToSave + ' articles in progress...', 'info');
         
         var savePromises = [];
         var resultsToSave = [];
@@ -615,7 +615,7 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
         });
         
         if (resultsToSave.length === 0) {
-            showNotification('Aucun article à sauvegarder', 'warning');
+            showNotification('No articles to save', 'warning');
             return;
         }
         
@@ -666,7 +666,7 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
             })
             .catch(error => {
                 errorCount++;
-                console.error('Erreur de sauvegarde pour "' + articleToSave.title + '": ' + error.message);
+                console.error('Save error for "' + articleToSave.title + '": ' + error.message);
                 
                 currentSaveIndex++;
                 setTimeout(saveNextArticle, 500);
@@ -686,13 +686,13 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
                 // All articles saved
                 var message;
                 if (errorCount === 0) {
-                    message = 'Force IA : ' + successCount + ' articles sauvegardés avec succès';
+                    message = 'Force AI: ' + successCount + ' articles saved successfully';
                     showNotification(message, 'success');
                 } else if (successCount === 0) {
-                    message = 'Force IA : Échec de la sauvegarde de tous les articles (' + errorCount + ' erreurs)';
+                    message = 'Force AI: Failed to save all articles (' + errorCount + ' errors)';
                     showNotification(message, 'error');
                 } else {
-                    message = 'Force IA : ' + successCount + ' articles sauvegardés, ' + errorCount + ' erreurs';
+                    message = 'Force AI: ' + successCount + ' articles saved, ' + errorCount + ' errors';
                     showNotification(message, 'warning');
                 }
                 
@@ -1235,9 +1235,9 @@ function updateSaveButtonState() {
     if (aiPreviewState === 'pending') {
         // En attente d'acceptation/refus des modifications IA
         saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="icon-warning me-2"></i>Acceptez ou annulez les modifications IA';
+        saveBtn.innerHTML = '<i class="icon-warning me-2"></i>' + '<?php echo Text::_('COM_JOOMLAHITS_AI_ACCEPT_OR_CANCEL'); ?>';
         saveBtn.className = 'btn btn-warning px-4';
-        saveBtn.title = 'Vous devez accepter ou annuler les modifications IA avant de pouvoir enregistrer';
+        saveBtn.title = '<?php echo Text::_('COM_JOOMLAHITS_AI_ACCEPT_OR_CANCEL_BEFORE_SAVE'); ?>';
     } else {
         // Normal or after acceptance/rejection
         saveBtn.disabled = false;
@@ -1280,7 +1280,7 @@ function openBulkSeoModal() {
     
     // Update modal title to show progress and phase
     var modalTitle = document.getElementById('seoFixModalLabel');
-    var phaseText = bulkProcessingPhase === 'editing' ? 'Édition' : 'Révision finale';
+    var phaseText = bulkProcessingPhase === 'editing' ? 'Editing' : 'Final review';
     modalTitle.innerHTML = '<i class="icon-cog text-primary me-2"></i>' +
         '<?php echo Text::_('COM_JOOMLAHITS_SEO_FIX_MODAL_TITLE'); ?> - ' + phaseText + ' - Article ' +
         (currentBulkArticleIndex + 1) + '/' + bulkAiArticles.length;
@@ -1315,15 +1315,15 @@ function openBulkSeoModal() {
     
     bulkInfo.innerHTML = '<div class="d-flex justify-content-between align-items-center">' +
         '<div>' +
-            '<i class="icon-info me-2"></i><strong>Correction groupée (' + phaseText + ') :</strong><br>' +
+            '<i class="icon-info me-2"></i><strong>Bulk fix (' + phaseText + '):</strong><br>' +
             'Article ' + (currentBulkArticleIndex + 1) + ' sur ' + bulkAiArticles.length + ' - "' + article.title + '"' +
         '</div>' +
         '<div class="btn-group" role="group">' +
             '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="navigateBulkArticle(-1)" ' + prevDisabled + '>' +
-                '<i class="icon-arrow-left"></i> Précédent' +
+                '<i class="icon-arrow-left"></i> Previous' +
             '</button>' +
             '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="navigateBulkArticle(1)" ' + nextDisabled + '>' +
-                'Suivant <i class="icon-arrow-right"></i>' +
+                'Next <i class="icon-arrow-right"></i>' +
             '</button>' +
         '</div>' +
     '</div>';

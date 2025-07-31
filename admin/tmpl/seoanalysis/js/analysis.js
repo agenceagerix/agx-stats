@@ -97,7 +97,7 @@ function finishAnalysis() {
 function resetAnalysisUI() {
     var btn = document.getElementById('startAnalysisBtn');
     btn.disabled = false;
-    btn.innerHTML = '<i class="icon-search"></i> <span>Lancer l analyse complète</span>';
+    btn.innerHTML = '<i class="icon-search"></i> <span>Start complete analysis</span>';
 }
 
 /**
