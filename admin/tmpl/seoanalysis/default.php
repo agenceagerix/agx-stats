@@ -505,6 +505,14 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
             resetAnalysisUI();
         });
     }
+    /**
+     * Reset analysis UI
+     */
+    function resetAnalysisUI() {
+        var btn = document.getElementById('startAnalysisBtn');
+        btn.disabled = false;
+        btn.innerHTML = '<?php echo Text::_('COM_JOOMLAHITS_START_FULL_ANALYSIS'); ?>';
+    }
 
     function analyzeNextArticle() {
         if (isAnalysisCancelled || currentArticleIndex >= articlesList.length) {

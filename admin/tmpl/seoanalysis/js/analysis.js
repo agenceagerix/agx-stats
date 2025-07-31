@@ -92,15 +92,6 @@ function finishAnalysis() {
 }
 
 /**
- * Reset analysis UI
- */
-function resetAnalysisUI() {
-    var btn = document.getElementById('startAnalysisBtn');
-    btn.disabled = false;
-    btn.innerHTML = '<i class="icon-search"></i> <span>Start complete analysis</span>';
-}
-
-/**
  * Cancel analysis
  */
 function cancelAnalysis() {
