@@ -111,11 +111,12 @@ function showAIPreview() {
         'metakey': 'Keywords'
     };
     
-    Object.keys(window.originalValues).forEach(function(fieldType) {
+    Object.keys(window.aiOptimizedValues).forEach(function(fieldType) {
         var original = window.originalValues[fieldType];
         var optimized = window.aiOptimizedValues[fieldType];
         
-        if (original !== optimized) {
+        // Only show fields that were actually modified
+        if (optimized !== undefined && original !== optimized) {
             html += '<div class="row mb-3">';
             html += '<div class="col-12">';
             html += '<h6 class="fw-bold text-primary">' + fieldLabels[fieldType] + '</h6>';

@@ -123,15 +123,11 @@
         
         <field
             name="mistral_api_key"
-            type="textarea"
+            type="password"
             label="COM_JOOMLAHITS_CONFIG_MISTRAL_API_KEY_LABEL"
             description="COM_JOOMLAHITS_CONFIG_MISTRAL_API_KEY_DESC"
-            rows="3"
-            cols="80"
             filter="raw"
             autocomplete="off"
-            class="monospace-field"
-            style="font-family: monospace; letter-spacing: 1px;"
             showon="ai_provider:mistral"/>
         
         <field
@@ -258,6 +254,7 @@
             <option value="meta_desc_missing">COM_JOOMLAHITS_CONFIG_SEO_ISSUE_META_MISSING</option>
             <option value="meta_desc_too_short">COM_JOOMLAHITS_CONFIG_SEO_ISSUE_META_SHORT</option>
             <option value="meta_desc_too_long">COM_JOOMLAHITS_CONFIG_SEO_ISSUE_META_LONG</option>
+            <option value="meta_keywords_missing">COM_JOOMLAHITS_CONFIG_SEO_ISSUE_METAKEY_MISSING</option>
             <option value="missing_h1">COM_JOOMLAHITS_CONFIG_SEO_ISSUE_H1_MISSING</option>
             <option value="missing_alt_tags">COM_JOOMLAHITS_CONFIG_SEO_ISSUE_ALT_MISSING</option>
             <option value="content_too_short">COM_JOOMLAHITS_CONFIG_SEO_ISSUE_CONTENT_SHORT</option>

@@ -307,9 +307,12 @@ $listDirn = 'ASC';
                     <div class="card mb-3">
                         <div class="card-body">
                             <label for="seo-metakey" class="form-label"><i class="icon-tags-2 text-primary me-2"></i><?php echo Text::_('COM_JOOMLAHITS_CHECKSEO_META_KEYWORDS'); ?></label>
-                            <input type="text" class="form-control" id="seo-metakey" name="metakey" placeholder="<?php echo Text::_('COM_JOOMLAHITS_SEO_METAKEY_HELP'); ?>">
-                            <div class="form-text mt-2">
-                                <small class="text-muted"><?php echo Text::_('COM_JOOMLAHITS_SEO_METAKEY_HELP'); ?></small>
+                            <input type="text" class="form-control" id="seo-metakey" name="metakey" placeholder="<?php echo Text::_('COM_JOOMLAHITS_SEO_METAKEY_HELP'); ?>" oninput="updateFieldCounters()">
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <div class="form-text mb-0">
+                                    <small class="text-muted"><?php echo Text::_('COM_JOOMLAHITS_SEO_METAKEY_HELP'); ?></small>
+                                </div>
+                                <span id="metakey-status"></span>
                             </div>
                         </div>
                     </div>
@@ -832,6 +835,42 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
             console.error('Erreur:', error);
         });
     }
+    /**
+     * Get field label for display
+     */
+    function getFieldLabel(fieldType) {
+        var labels = {
+            'title': 'Title',
+            'metadesc': 'Meta desc',
+            'metakey': 'Keywords'
+        };
+        return labels[fieldType] || fieldType;
+    }
+    
+    /**
+     * Check if a field has issues based on current article data
+     */
+    function fieldHasIssues(fieldType, article) {
+        if (!article || !article.issues) return false;
+        
+        var issueTypes = {
+            'title': ['title_missing', 'title_too_short', 'title_too_long'],
+            'metadesc': ['meta_desc_missing', 'meta_desc_too_short', 'meta_desc_too_long'],
+            'metakey': ['meta_keywords_missing']
+        };
+        
+        var fieldIssues = issueTypes[fieldType] || [];
+        
+        // Check if any of the field's issue types are present in the article's issues
+        for (var i = 0; i < article.issues.length; i++) {
+            if (fieldIssues.includes(article.issues[i].type)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
     function fixWithAI() {
         if (!currentArticleData) {
             showNotification('No article selected', 'warning');
@@ -873,16 +912,26 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
                 aiBtn.innerHTML = originalText;
                 updateFieldCounters();
                 
-                // Show preview
-                showAIPreview();
-                
-                // Set state to "pending"
-                aiPreviewState = 'pending';
-                updateSaveButtonState();
+                // Show preview only if we have optimized values
+                if (Object.keys(window.aiOptimizedValues).length > 0) {
+                    showAIPreview();
+                    // Set state to "pending"
+                    aiPreviewState = 'pending';
+                    updateSaveButtonState();
+                } else {
+                    showNotification('Tous les champs sont déjà optimaux !', 'success');
+                }
                 return;
             }
             
             var fieldType = fields[currentFieldIndex];
+            
+            // Check if this field has issues
+            if (!fieldHasIssues(fieldType, currentArticleData)) {
+                currentFieldIndex++;
+                processNextField();
+                return;
+            }
             aiBtn.innerHTML = '<i class="icon-refresh icon-spin me-2"></i>IA: ' + getFieldLabel(fieldType) + '...';
             
             fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_ai_seo_fix.php', {
@@ -959,6 +1008,19 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
             
             var fieldType = fields[currentFieldIndex];
             var resultsLog = document.getElementById('force-results-log');
+            
+            // Check if this field has issues
+            if (!fieldHasIssues(fieldType, article)) {
+                console.log('Force AI: Field ' + fieldType + ' is already optimal for article "' + article.title + '", skipping...');
+                resultsLog.innerHTML += '<div class="text-info">' +
+                    '<i class="icon-info"></i> ' + article.title + ' - ' + fieldType + ' already optimal' +
+                '</div>';
+                
+                articleData.fieldsProcessed++;
+                currentFieldIndex++;
+                setTimeout(processNextField, 100);
+                return;
+            }
             
             fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_ai_seo_fix.php', {
                 method: 'POST',
@@ -1100,6 +1162,22 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
         metadescStatus.innerHTML = '<span class="text-warning"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_META_DESC_TOO_LONG'); ?></span>';
     } else {
         metadescStatus.innerHTML = '<span class="text-success"><i class="icon-checkmark"></i> <?php echo Text::_('COM_JOOMLAHITS_SEO_OPTIMAL'); ?></span>';
+    }
+    
+    // Meta Keywords
+    var metakey = document.getElementById('seo-metakey');
+    var metakeyValue = metakey.value.trim();
+    var metakeyStatus = document.getElementById('metakey-status');
+    
+    if (metakeyValue === '') {
+        metakeyStatus.innerHTML = '<span class="text-warning"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEO_METAKEY_MISSING'); ?></span>';
+    } else {
+        var keywords = metakeyValue.split(',').filter(function(k) { return k.trim(); });
+        if (keywords.length < 3) {
+            metakeyStatus.innerHTML = '<span class="text-warning"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEO_METAKEY_TOO_FEW'); ?></span>';
+        } else {
+            metakeyStatus.innerHTML = '<span class="text-success"><i class="icon-checkmark"></i> <?php echo Text::_('COM_JOOMLAHITS_SEO_OPTIMAL'); ?></span>';
+        }
     }
     
     // Content

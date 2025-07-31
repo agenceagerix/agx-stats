@@ -57,6 +57,7 @@ $selectedIssues = [
     'meta_desc_missing',
     'meta_desc_too_short',
     'meta_desc_too_long',
+    'meta_keywords_missing',
     'missing_h1',
     'missing_alt_tags',
     'content_too_short'
@@ -115,6 +116,7 @@ try {
                     'meta_desc_missing',
                     'meta_desc_too_short',
                     'meta_desc_too_long',
+                    'meta_keywords_missing',
                     'missing_h1',
                     'missing_alt_tags',
                     'content_too_short'
