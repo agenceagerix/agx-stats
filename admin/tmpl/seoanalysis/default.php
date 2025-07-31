@@ -632,7 +632,6 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
             formData.append('title', articleToSave.changes.title);
             formData.append('metadesc', articleToSave.changes.metadesc);
             formData.append('metakey', articleToSave.changes.metakey);
-            formData.append('alias', articleToSave.changes.alias);
             
             fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_fix.php', {
                 method: 'POST',
@@ -706,7 +705,6 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
             formData.append('title', articleToSave.changes.title);
             formData.append('metadesc', articleToSave.changes.metadesc);
             formData.append('metakey', articleToSave.changes.metakey);
-            formData.append('alias', articleToSave.changes.alias);
             
             fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_fix.php', {
                 method: 'POST',
@@ -864,8 +862,8 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
         aiBtn.disabled = true;
         aiBtn.innerHTML = '<i class="icon-refresh icon-spin me-2"></i>IA en cours...';
         
-        // List of fields to process (content disabled as AI too unpredictable)
-        var fields = ['title', 'metadesc', 'metakey', 'alias'];
+        // List of fields to process (content disabled as AI too unpredictable, alias removed)
+        var fields = ['title', 'metadesc', 'metakey'];
         var currentFieldIndex = 0;
         
         function processNextField() {
@@ -943,7 +941,7 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
     }
 
     function processAllFieldsForArticle(article) {
-        var fields = ['title', 'metadesc', 'metakey', 'alias'];
+        var fields = ['title', 'metadesc', 'metakey'];
         var currentFieldIndex = 0;
         var articleData = forceAiChanges[article.id];
         
