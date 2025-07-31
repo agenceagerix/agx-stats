@@ -15,7 +15,6 @@
         <files folder="admin">
             <filename>access.xml</filename>
             <filename>config.xml</filename>
-            <filename>direct_ai_metadesc.php</filename>
             <filename>direct_seo_analysis.php</filename>
             <filename>direct_seo_fix.php</filename>
             <filename>direct_ai_seo_fix.php</filename>
@@ -39,7 +38,7 @@
                 alt="JoomlaHits/Articles">COM_JOOMLAHITS_ARTICLES</menu>
             <menu link="option=com_joomlahits&amp;view=dashboard" view="dashboard" img="class:chart"
                 alt="JoomlaHits/Dashboard">COM_JOOMLAHITS_DASHBOARD_MENU</menu>
-            <menu link="option=com_joomlahits&amp;view=checkseo" view="checkseo" img="class:search"
+            <menu link="option=com_joomlahits&amp;view=seoanalysis" view="checkseo" img="class:search"
                 alt="JoomlaHits/CheckSeo">COM_JOOMLAHITS_CHECKSEO_MENU</menu>
         </submenu>
     </administration>

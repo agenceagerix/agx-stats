@@ -1011,7 +1011,6 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
             
             // Check if this field has issues
             if (!fieldHasIssues(fieldType, article)) {
-                console.log('Force AI: Field ' + fieldType + ' is already optimal for article "' + article.title + '", skipping...');
                 resultsLog.innerHTML += '<div class="text-info">' +
                     '<i class="icon-info"></i> ' + article.title + ' - ' + fieldType + ' already optimal' +
                 '</div>';

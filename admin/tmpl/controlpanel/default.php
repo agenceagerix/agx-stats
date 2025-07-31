@@ -79,7 +79,7 @@ use Joomla\CMS\Language\Text;
                             </div>
                             <h4 class="card-title"><?php echo Text::_('COM_JOOMLAHITS_CHECKSEO_PAGE_TITLE'); ?></h4>
                             <p class="card-text"><?php echo Text::_('COM_JOOMLAHITS_CHECKSEO_PAGE_DESCRIPTION'); ?></p>
-                            <a href="<?php echo Route::_('index.php?option=com_joomlahits&view=checkseo'); ?>" class="btn btn-primary btn-lg">
+                            <a href="<?php echo Route::_('index.php?option=com_joomlahits&view=seoanalysis'); ?>" class="btn btn-primary btn-lg">
                                 <i class="icon-search"></i> <?php echo Text::_('COM_JOOMLAHITS_GO_TO_CHECKSEO'); ?>
                             </a>
                         </div>
