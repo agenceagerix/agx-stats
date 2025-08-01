@@ -13,11 +13,7 @@ namespace Joomla\Component\JoomlaHits\Administrator\Controller;
 
 defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\BaseController;
-use Joomla\CMS\Response\JsonResponse;
-use Joomla\CMS\Language\Text;
-use Joomla\CMS\Router\Route;
 
 /**
  * SEO Analysis controller.

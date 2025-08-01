@@ -1279,54 +1279,132 @@ function openBulkSeoModal() {
         '<?php echo Text::_('COM_JOOMLAHITS_SEO_FIX_MODAL_TITLE'); ?> - ' + phaseText + ' - Article ' +
         (currentBulkArticleIndex + 1) + '/' + bulkAiArticles.length;
     
-    // Fill form
+    // Show loading state first
     document.getElementById('seo-article-id').value = article.id;
-    document.getElementById('seo-title').value = article.title;
-    document.getElementById('seo-metadesc').value = article.metadesc || '';
-    document.getElementById('seo-metakey').value = article.metakey || '';
-    document.getElementById('seo-content').value = article.content || '';
+    document.getElementById('seo-title').value = 'Loading...';
+    document.getElementById('seo-metadesc').value = 'Loading...';
+    document.getElementById('seo-metakey').value = 'Loading...';
+    document.getElementById('seo-content').value = 'Loading...';
     
-    // Update counters
-    updateFieldCounters();
-    
-    // Display issues
-    var issuesList = document.getElementById('issues-details');
-    issuesList.innerHTML = '';
-    for (var j = 0; j < article.issues.length; j++) {
-        var li = document.createElement('li');
-        li.textContent = article.issues[j].message;
-        issuesList.appendChild(li);
+    // Open modal first
+    if (!seoModal) {
+        seoModal = new bootstrap.Modal(document.getElementById('seoFixModal'));
     }
+    seoModal.show();
     
-    // Add bulk progress info with navigation arrows
-    var bulkInfo = document.createElement('div');
-    bulkInfo.id = 'bulk-progress-info';
-    bulkInfo.className = 'alert alert-info mb-3';
+    // Fetch complete article data with all fields
+    fetch(window.JOOMLA_ADMIN_URL + '/components/com_joomlahits/direct_seo_analysis.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'article_id=' + encodeURIComponent(article.id)
+    })
+    .then(response => {
+        return response.text().then(text => {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                throw new Error('Server returned invalid JSON: ' + text);
+            }
+        });
+    })
+    .then(data => {
+        if (data.success && data.data) {
+            var fullArticle = data.data;
+            
+            // Update currentArticleData with complete data
+            currentArticleData = {
+                id: fullArticle.id,
+                title: fullArticle.title,
+                alias: fullArticle.alias,
+                metadesc: fullArticle.metadesc,
+                metakey: fullArticle.metakey,
+                content: fullArticle.content,
+                category: fullArticle.category,
+                language: fullArticle.language,
+                hits: fullArticle.hits,
+                issues: article.issues // Keep original issues from analysis
+            };
+            
+            // Fill form with complete data
+            document.getElementById('seo-title').value = fullArticle.title || '';
+            document.getElementById('seo-metadesc').value = fullArticle.metadesc || '';
+            document.getElementById('seo-metakey').value = fullArticle.metakey || '';
+            document.getElementById('seo-content').value = fullArticle.content || '';
+            
+            // Update counters
+            updateFieldCounters();
+            
+            // Display issues and bulk info after data is loaded
+            displayBulkModalContent();
+        } else {
+            showNotification('Error loading article details: ' + (data.message || 'Unknown error'), 'error');
+            // Fallback to basic data
+            document.getElementById('seo-title').value = article.title || '';
+            document.getElementById('seo-metadesc').value = article.metadesc || '';
+            document.getElementById('seo-metakey').value = article.metakey || '';
+            document.getElementById('seo-content').value = article.content || '';
+            updateFieldCounters();
+            
+            // Display issues and bulk info even with fallback data
+            displayBulkModalContent();
+        }
+    })
+    .catch(error => {
+        console.error('Error loading article:', error);
+        showNotification('Error loading article details: ' + error.message, 'error');
+        // Fallback to basic data
+        document.getElementById('seo-title').value = article.title || '';
+        document.getElementById('seo-metadesc').value = article.metadesc || '';
+        document.getElementById('seo-metakey').value = article.metakey || '';
+        document.getElementById('seo-content').value = article.content || '';
+        updateFieldCounters();
+        
+        // Display issues and bulk info even with error
+        displayBulkModalContent();
+    });
     
-    var prevDisabled = currentBulkArticleIndex === 0 ? 'disabled' : '';
-    var nextDisabled = currentBulkArticleIndex === bulkAiArticles.length - 1 ? 'disabled' : '';
-    
-    bulkInfo.innerHTML = '<div class="d-flex justify-content-between align-items-center">' +
-        '<div>' +
-            '<i class="icon-info me-2"></i><strong>Bulk fix (' + phaseText + '):</strong><br>' +
-            'Article ' + (currentBulkArticleIndex + 1) + ' sur ' + bulkAiArticles.length + ' - "' + article.title + '"' +
-        '</div>' +
-        '<div class="btn-group" role="group">' +
-            '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="navigateBulkArticle(-1)" ' + prevDisabled + '>' +
-                '<i class="icon-arrow-left"></i> Previous' +
-            '</button>' +
-            '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="navigateBulkArticle(1)" ' + nextDisabled + '>' +
-                'Next <i class="icon-arrow-right"></i>' +
-            '</button>' +
-        '</div>' +
-    '</div>';
-    
-    var form = document.getElementById('seoFixForm');
-    var existingInfo = document.getElementById('bulk-progress-info');
-    if (existingInfo) {
-        existingInfo.remove();
+    function displayBulkModalContent() {
+        // Display issues
+        var issuesList = document.getElementById('issues-details');
+        issuesList.innerHTML = '';
+        for (var j = 0; j < article.issues.length; j++) {
+            var li = document.createElement('li');
+            li.textContent = article.issues[j].message;
+            issuesList.appendChild(li);
+        }
+        
+        // Add bulk progress info with navigation arrows
+        var bulkInfo = document.createElement('div');
+        bulkInfo.id = 'bulk-progress-info';
+        bulkInfo.className = 'alert alert-info mb-3';
+        
+        var prevDisabled = currentBulkArticleIndex === 0 ? 'disabled' : '';
+        var nextDisabled = currentBulkArticleIndex === bulkAiArticles.length - 1 ? 'disabled' : '';
+        
+        bulkInfo.innerHTML = '<div class="d-flex justify-content-between align-items-center">' +
+            '<div>' +
+                '<i class="icon-info me-2"></i><strong>Bulk fix (' + phaseText + '):</strong><br>' +
+                'Article ' + (currentBulkArticleIndex + 1) + ' sur ' + bulkAiArticles.length + ' - "' + article.title + '"' +
+            '</div>' +
+            '<div class="btn-group" role="group">' +
+                '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="navigateBulkArticle(-1)" ' + prevDisabled + '>' +
+                    '<i class="icon-arrow-left"></i> Previous' +
+                '</button>' +
+                '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="navigateBulkArticle(1)" ' + nextDisabled + '>' +
+                    'Next <i class="icon-arrow-right"></i>' +
+                '</button>' +
+            '</div>' +
+        '</div>';
+        
+        var form = document.getElementById('seoFixForm');
+        var existingInfo = document.getElementById('bulk-progress-info');
+        if (existingInfo) {
+            existingInfo.remove();
+        }
+        form.insertBefore(bulkInfo, form.firstChild);
     }
-    form.insertBefore(bulkInfo, form.firstChild);
     
     // Automatically start AI fix for this article only if not already processed and in editing phase
     if (bulkProcessingPhase === 'editing' && (!storedChange || !storedChange.accepted)) {

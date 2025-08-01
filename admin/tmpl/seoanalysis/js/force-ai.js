@@ -76,21 +76,71 @@ function processNextForceAiArticle() {
     progressBar.setAttribute('aria-valuenow', progress);
     currentStatus.textContent = 'Processing "' + article.title + '" (' + (currentForceAiIndex + 1) + '/' + forceAiArticles.length + ')';
     
-    // Initialize storage for this article
+    // Initialize storage for this article with loading placeholders
     forceAiChanges[article.id] = {
         title: article.title,
         originalValues: {
-            title: article.title,
-            metadesc: article.metadesc || '',
-            metakey: article.metakey || ''
+            title: 'Loading...',
+            metadesc: 'Loading...',
+            metakey: 'Loading...'
         },
         aiValues: {},
         fieldsProcessed: 0,
         totalFields: 3
     };
     
-    // Process all fields for this article
-    processAllFieldsForArticle(article);
+    // First, fetch complete article data to get accurate original values
+    fetch(window.JOOMLA_ADMIN_URL + '/components/com_joomlahits/direct_seo_analysis.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'article_id=' + encodeURIComponent(article.id)
+    })
+    .then(response => {
+        return response.text().then(text => {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                throw new Error('Server returned invalid JSON: ' + text);
+            }
+        });
+    })
+    .then(data => {
+        if (data.success && data.data) {
+            var fullArticle = data.data;
+            
+            // Update with complete original values
+            forceAiChanges[article.id].originalValues = {
+                title: fullArticle.title || '',
+                metadesc: fullArticle.metadesc || '',
+                metakey: fullArticle.metakey || ''
+            };
+            
+            // Now process all fields for this article with complete data
+            processAllFieldsForArticle(article);
+        } else {
+            // Fallback to basic data if fetch fails
+            forceAiChanges[article.id].originalValues = {
+                title: article.title || '',
+                metadesc: article.metadesc || '',
+                metakey: article.metakey || ''
+            };
+            
+            processAllFieldsForArticle(article);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading complete article data for Force AI:', error);
+        // Fallback to basic data if fetch fails
+        forceAiChanges[article.id].originalValues = {
+            title: article.title || '',
+            metadesc: article.metadesc || '',
+            metakey: article.metakey || ''
+        };
+        
+        processAllFieldsForArticle(article);
+    });
 }
 
 /**
