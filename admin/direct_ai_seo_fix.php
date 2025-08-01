@@ -142,6 +142,26 @@ try {
         exit;
     }
     
+    // Check if we should skip metakey field based on existing content
+    if ($fieldType === 'metakey' && !empty($article->metakey)) {
+        // Count the number of keywords (separated by commas)
+        $keywords = array_filter(array_map('trim', explode(',', $article->metakey)));
+        $keywordCount = count($keywords);
+        
+        // If we have 3 or more keywords, consider it optimal and skip
+        if ($keywordCount >= 3) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Meta keywords already optimal (' . $keywordCount . ' keywords)',
+                'article_id' => $articleId,
+                'field_type' => $fieldType,
+                'field_value' => $article->metakey,
+                'skipped' => true
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+    }
+    
     // Clean and prepare article content for AI processing
     $cleanTitle = trim(html_entity_decode($article->title, ENT_QUOTES, 'UTF-8'));
     $cleanContent = strip_tags($article->introtext . ' ' . $article->fulltext);

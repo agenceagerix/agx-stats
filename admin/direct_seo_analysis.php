@@ -501,15 +501,29 @@ function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, 
     }
 
 
-    // 6. Missing meta keywords (optional check)
-    if (empty($article->metakey) && in_array('meta_keywords_missing', $selectedIssues)) {
-        $issues[] = [
-            'type' => 'meta_keywords_missing',
-            'message' => 'Missing meta keywords',
-            'severity' => 'info',
-            'icon' => 'tag'
-        ];
-        $categories[] = 'meta_description';
+    // 6. Missing or insufficient meta keywords (optional check)
+    if (in_array('meta_keywords_missing', $selectedIssues)) {
+        if (empty($article->metakey)) {
+            $issues[] = [
+                'type' => 'meta_keywords_missing',
+                'message' => 'Missing meta keywords',
+                'severity' => 'info',
+                'icon' => 'tag'
+            ];
+            $categories[] = 'meta_description';
+        } else {
+            // Check if keywords are too few
+            $keywords = array_filter(array_map('trim', explode(',', $article->metakey)));
+            if (count($keywords) < 3) {
+                $issues[] = [
+                    'type' => 'meta_keywords_too_few',
+                    'message' => 'Meta keywords are too few (less than 3)',
+                    'severity' => 'info',
+                    'icon' => 'tag'
+                ];
+                $categories[] = 'meta_description';
+            }
+        }
     }
 
     return [

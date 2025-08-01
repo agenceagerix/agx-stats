@@ -77,17 +77,6 @@ try {
         $fields[] = '`metakey` = :metakey';
     }
     
-    // Alias
-    if (isset($_POST['alias']) && !empty($_POST['alias'])) {
-        // Clean alias - remove accents and special characters
-        $alias = $_POST['alias'];
-        $alias = strtolower($alias);
-        $alias = preg_replace('/[^a-z0-9\-]/', '-', $alias);
-        $alias = preg_replace('/-+/', '-', $alias);
-        $alias = trim($alias, '-');
-        $fields[] = '`alias` = :alias';
-    }
-    
     // Note: Content fields (introtext/fulltext) are not modified to preserve original structure
     
     // Update article if there are fields to update
@@ -108,10 +97,6 @@ try {
         
         if (isset($_POST['metakey'])) {
             $stmt->bindParam(':metakey', $_POST['metakey'], PDO::PARAM_STR);
-        }
-        
-        if (isset($_POST['alias']) && !empty($_POST['alias']) && isset($alias)) {
-            $stmt->bindParam(':alias', $alias, PDO::PARAM_STR);
         }
         
         // Note: Content binding removed to preserve introtext/fulltext separation

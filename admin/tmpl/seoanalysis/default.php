@@ -129,7 +129,7 @@ $listDirn = 'ASC';
                                             <option value="content_too_short"><?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_CONTENT_TOO_SHORT'); ?></option>
                                             <option value="missing_h1"><?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_MISSING_H1'); ?></option>
                                             <option value="missing_alt_tags"><?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_MISSING_ALT_TAGS'); ?></option>
-                                            <option value="url_too_long"><?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_URL_TOO_LONG'); ?></option>
+                                            <option value="meta_keywords_too_few"><?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_META_KEYWORDS_FEW'); ?></option>
                                             <option value="meta_keywords_missing"><?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_META_KEYWORDS_MISSING'); ?></option>
                                         </select>
                                     </div>
@@ -856,7 +856,7 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
         var issueTypes = {
             'title': ['title_missing', 'title_too_short', 'title_too_long'],
             'metadesc': ['meta_desc_missing', 'meta_desc_too_short', 'meta_desc_too_long'],
-            'metakey': ['meta_keywords_missing']
+            'metakey': ['meta_keywords_missing', 'meta_keywords_too_few']
         };
         
         var fieldIssues = issueTypes[fieldType] || [];
@@ -951,25 +951,30 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
                 });
             })
             .then(data => {
-                if (data.success && data.field_value) {
-                    // Store optimized value for preview
-                    window.aiOptimizedValues[fieldType] = data.field_value;
-                    
-                    // Store in bulk changes if in bulk mode
-                    if (isBulkAiProcessing && currentArticleData) {
-                        var articleId = currentArticleData.id;
-                        if (bulkAiChanges[articleId]) {
-                            bulkAiChanges[articleId].aiValues[fieldType] = data.field_value;
+                if (data.success) {
+                    if (data.skipped) {
+                        // Field was skipped (metakey already sufficient)
+                        console.log('Field ' + fieldType + ' skipped: ' + data.message);
+                    } else if (data.field_value) {
+                        // Store optimized value for preview
+                        window.aiOptimizedValues[fieldType] = data.field_value;
+                        
+                        // Store in bulk changes if in bulk mode
+                        if (isBulkAiProcessing && currentArticleData) {
+                            var articleId = currentArticleData.id;
+                            if (bulkAiChanges[articleId]) {
+                                bulkAiChanges[articleId].aiValues[fieldType] = data.field_value;
+                            }
+                        }
+                        
+                        // Remplir le champ correspondant (temporairement)
+                        var fieldElement = document.getElementById('seo-' + fieldType);
+                        if (fieldElement) {
+                            fieldElement.value = data.field_value;
                         }
                     }
-                    
-                    // Remplir le champ correspondant (temporairement)
-                    var fieldElement = document.getElementById('seo-' + fieldType);
-                    if (fieldElement) {
-                        fieldElement.value = data.field_value;
-                    }
                 } else {
-                    console.error('Erreur pour le champ ' + fieldType + ':', data.message);
+                    console.error('Error for ' + fieldType + ':', data.message);
                 }
                 
                 // Passer au champ suivant
@@ -1038,11 +1043,18 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
                 });
             })
             .then(data => {
-                if (data.success && data.field_value) {
-                    articleData.aiValues[fieldType] = data.field_value;
-                    resultsLog.innerHTML += '<div class="text-success">' +
-                        '<i class="icon-checkmark"></i> ' + article.title + ' - ' + fieldType + ' processed' +
-                    '</div>';
+                if (data.success) {
+                    if (data.skipped) {
+                        // Field was skipped (metakey already sufficient)
+                        resultsLog.innerHTML += '<div class="text-info">' +
+                            '<i class="icon-info"></i> ' + article.title + ' - ' + fieldType + ' skipped: ' + (data.message || 'Already optimal') +
+                        '</div>';
+                    } else if (data.field_value) {
+                        articleData.aiValues[fieldType] = data.field_value;
+                        resultsLog.innerHTML += '<div class="text-success">' +
+                            '<i class="icon-checkmark"></i> ' + article.title + ' - ' + fieldType + ' processed' +
+                        '</div>';
+                    }
                 } else {
                     resultsLog.innerHTML += '<div class="text-warning">' +
                         '<i class="icon-warning"></i> ' + article.title + ' - ' + fieldType + ' failed: ' + (data.message || 'Unknown error') +
