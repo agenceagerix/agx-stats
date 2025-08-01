@@ -74,7 +74,7 @@ function processNextForceAiArticle() {
     var progress = Math.round((currentForceAiIndex / forceAiArticles.length) * 100);
     progressBar.style.width = progress + '%';
     progressBar.setAttribute('aria-valuenow', progress);
-    currentStatus.textContent = 'Processing "' + article.title + '" (' + (currentForceAiIndex + 1) + '/' + forceAiArticles.length + ')';
+    currentStatus.textContent = window.JOOMLA_LANG.processingArticle + ' "' + article.title + '" (' + (currentForceAiIndex + 1) + '/' + forceAiArticles.length + ')';
     
     // Initialize storage for this article with loading placeholders
     forceAiChanges[article.id] = {
@@ -155,12 +155,12 @@ function finishForceAiProcessing() {
     progressBar.setAttribute('aria-valuenow', '100');
     
     if (forceAiCancelled) {
-        currentStatus.textContent = 'Processing cancelled';
+        currentStatus.textContent = window.JOOMLA_LANG.processingCancelled;
         setTimeout(function() {
             resetForceAiUI();
         }, 2000);
     } else {
-        currentStatus.textContent = 'Processing completed - ' + Object.keys(forceAiChanges).length + ' articles processed';
+        currentStatus.textContent = window.JOOMLA_LANG.processingCompleted + ' - ' + Object.keys(forceAiChanges).length + ' articles processed';
         cancelBtn.disabled = true;
         
         // Show results section after delay

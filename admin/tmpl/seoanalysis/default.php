@@ -430,6 +430,16 @@ window.JOOMLA_LANG_STATS = {
     withIssues: <?php echo json_encode(Text::_('COM_JOOMLAHITS_SEOANALYSIS_STATS_WITH_ISSUES')); ?>,
     perfect: <?php echo json_encode(Text::_('COM_JOOMLAHITS_SEOANALYSIS_STATS_PERFECT')); ?>
 };
+
+// Set global language variables for JavaScript (need to refactor this later)
+window.JOOMLA_LANG = {
+    analysisInProgress: <?php echo json_encode(Text::_('COM_JOOMLAHITS_ANALYSIS_IN_PROGRESS')); ?>,
+    processingArticle: <?php echo json_encode(Text::_('COM_JOOMLAHITS_PROCESSING_ARTICLE')); ?>,
+    processingCancelled: <?php echo json_encode(Text::_('COM_JOOMLAHITS_PROCESSING_CANCELLED')); ?>,
+    processingCompleted: <?php echo json_encode(Text::_('COM_JOOMLAHITS_PROCESSING_COMPLETED')); ?>,
+    finish: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FINISH')); ?>,
+    aiProcessing: <?php echo json_encode(Text::_('COM_JOOMLAHITS_AI_PROCESSING')); ?>
+};
     function createTableRow(article, index) {
         var tr = document.createElement('tr');
         tr.className = 'row' + (index % 2);
@@ -1215,10 +1225,16 @@ function openBulkSeoModal() {
     
     // Update modal title to show progress and phase
     var modalTitle = document.getElementById('seoFixModalLabel');
-    var phaseText = bulkProcessingPhase === 'editing' ? 'Editing' : 'Final review';
+    var phaseText = bulkProcessingPhase === 'editing' ? 'Editing IA' : 'Editing IA';
+    var articleProgress = 'Article ' + (currentBulkArticleIndex + 1) + '/' + bulkAiArticles.length;
+    
+    // If in review phase and at the end, show "Finish" in bold green
+    if (bulkProcessingPhase === 'reviewing') {
+        articleProgress += ' <strong class="text-success">' + window.JOOMLA_LANG.finish + '</strong>';
+    }
+    
     modalTitle.innerHTML = '<i class="icon-cog text-primary me-2"></i>' +
-        '<?php echo Text::_('COM_JOOMLAHITS_SEO_FIX_MODAL_TITLE'); ?> - ' + phaseText + ' - Article ' +
-        (currentBulkArticleIndex + 1) + '/' + bulkAiArticles.length;
+        '<?php echo Text::_('COM_JOOMLAHITS_SEO_FIX_MODAL_TITLE'); ?> - ' + phaseText + ' - ' + articleProgress;
     
     // Show loading state first
     document.getElementById('seo-article-id').value = article.id;

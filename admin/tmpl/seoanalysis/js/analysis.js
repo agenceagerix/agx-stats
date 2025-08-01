@@ -20,7 +20,7 @@ function startAnalysis() {
     
     // Disable button and show loading
     btn.disabled = true;
-    btn.innerHTML = '<i class="icon-refresh icon-spin"></i> <span>Analyse en cours...</span>';
+    btn.innerHTML = '<i class="icon-refresh icon-spin"></i> <span>' + window.JOOMLA_LANG.analysisInProgress + '</span>';
     
     loadingSection.style.display = 'block';
     resultsSection.style.display = 'none';
