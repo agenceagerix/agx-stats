@@ -175,7 +175,6 @@ function updateBulkSaveButtonState() {
         if (aiPreviewState === 'pending') {
             // En attente d'acceptation/refus des modifications IA
             saveBtn.disabled = true;
-            saveBtn.innerHTML = '<i class="icon-warning me-2"></i>Accept or cancel AI modifications';
             saveBtn.className = 'btn btn-warning px-4';
             saveBtn.title = 'You must accept or cancel AI modifications before continuing';
         } else {
@@ -183,11 +182,9 @@ function updateBulkSaveButtonState() {
             var isLastArticle = currentBulkArticleIndex === bulkAiArticles.length - 1;
             saveBtn.disabled = false;
             if (isLastArticle) {
-                saveBtn.innerHTML = '<i class="icon-arrow-right me-2"></i>Finish editing';
                 saveBtn.className = 'btn btn-success px-4';
                 saveBtn.title = 'Finish editing phase and move to review';
             } else {
-                saveBtn.innerHTML = '<i class="icon-arrow-right me-2"></i>Next article';
                 saveBtn.className = 'btn btn-primary px-4';
                 saveBtn.title = 'Go to next article';
             }
@@ -258,4 +255,40 @@ function updateSortingIcons(column, direction) {
         icon.setAttribute('aria-hidden', 'true');
         currentLink.appendChild(icon);
     }
+}
+
+/**
+ * Get field label for display
+ */
+function getFieldLabel(fieldType) {
+    var labels = {
+        'title': 'Title',
+        'metadesc': 'Meta desc',
+        'metakey': 'Keywords'
+    };
+    return labels[fieldType] || fieldType;
+}
+
+/**
+ * Check if a field has issues based on current article data
+ */
+function fieldHasIssues(fieldType, article) {
+    if (!article || !article.issues) return false;
+    
+    var issueTypes = {
+        'title': ['title_missing', 'title_too_short', 'title_too_long'],
+        'metadesc': ['meta_desc_missing', 'meta_desc_too_short', 'meta_desc_too_long'],
+        'metakey': ['meta_keywords_missing', 'meta_keywords_too_few']
+    };
+    
+    var fieldIssues = issueTypes[fieldType] || [];
+    
+    // Check if any of the field's issue types are present in the article's issues
+    for (var i = 0; i < article.issues.length; i++) {
+        if (fieldIssues.includes(article.issues[i].type)) {
+            return true;
+        }
+    }
+    
+    return false;
 }

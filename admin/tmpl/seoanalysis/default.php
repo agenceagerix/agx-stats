@@ -481,10 +481,6 @@ window.JOOMLA_LANG_STATS = {
         return tr;
     }
 
-        // Joomla sorting function
-    if (typeof Joomla === 'undefined') {
-        window.Joomla = {};
-    }
     function getArticlesList() {
         document.getElementById('current-analysis-status').textContent = 'Starting analysis...';
         
@@ -785,41 +781,6 @@ window.JOOMLA_LANG_STATS = {
             console.error('Erreur:', error);
         });
     }
-    /**
-     * Get field label for display
-     */
-    function getFieldLabel(fieldType) {
-        var labels = {
-            'title': 'Title',
-            'metadesc': 'Meta desc',
-            'metakey': 'Keywords'
-        };
-        return labels[fieldType] || fieldType;
-    }
-    
-    /**
-     * Check if a field has issues based on current article data
-     */
-    function fieldHasIssues(fieldType, article) {
-        if (!article || !article.issues) return false;
-        
-        var issueTypes = {
-            'title': ['title_missing', 'title_too_short', 'title_too_long'],
-            'metadesc': ['meta_desc_missing', 'meta_desc_too_short', 'meta_desc_too_long'],
-            'metakey': ['meta_keywords_missing', 'meta_keywords_too_few']
-        };
-        
-        var fieldIssues = issueTypes[fieldType] || [];
-        
-        // Check if any of the field's issue types are present in the article's issues
-        for (var i = 0; i < article.issues.length; i++) {
-            if (fieldIssues.includes(article.issues[i].type)) {
-                return true;
-            }
-        }
-        
-        return false;
-    }
     
     function fixWithAI() {
         if (!currentArticleData) {
@@ -1033,62 +994,6 @@ window.JOOMLA_LANG_STATS = {
         processNextField();
     }
 
-    Joomla.tableOrdering = function(column, direction, task) {
-        var form = document.getElementById('adminForm');
-        if (!form) {
-            // Create temporary form for sorting
-            form = document.createElement('form');
-            form.id = 'adminForm';
-            form.method = 'post';
-            document.body.appendChild(form);
-        }
-        
-        // Sort results locally
-        if (currentSort.column === column) {
-            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-        } else {
-            currentSort.column = column;
-            currentSort.direction = direction.toLowerCase();
-        }
-        
-        filteredResults.sort(function(a, b) {
-            var aValue, bValue;
-            
-            switch(column) {
-                case 'id':
-                    aValue = parseInt(a.id);
-                    bValue = parseInt(b.id);
-                    break;
-                case 'title':
-                    aValue = a.title.toLowerCase();
-                    bValue = b.title.toLowerCase();
-                    break;
-                case 'category':
-                    aValue = a.category.toLowerCase();
-                    bValue = b.category.toLowerCase();
-                    break;
-                case 'severity':
-                    var severityOrder = {'critical': 0, 'warning': 1, 'info': 2};
-                    aValue = severityOrder[a.severity];
-                    bValue = severityOrder[b.severity];
-                    break;
-            }
-            
-            if (currentSort.direction === 'asc') {
-                if (aValue < bValue) return -1;
-                if (aValue > bValue) return 1;
-                return 0;
-            } else {
-                if (aValue < bValue) return 1;
-                if (aValue > bValue) return -1;
-                return 0;
-            }
-        });
-        
-        populateTable(filteredResults);
-        updateSortingIcons(column, currentSort.direction);
-        return false;
-    };
     function updateFieldCounters() {
     // Title
     var title = document.getElementById('seo-title');

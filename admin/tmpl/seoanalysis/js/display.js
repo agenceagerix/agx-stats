@@ -138,3 +138,72 @@ function initializeCheckboxHandlers() {
         }
     }
 }
+
+/**
+ * Joomla table ordering function for local sorting
+ *
+ * @param {string} column    Column to sort by
+ * @param {string} direction Sort direction (ASC/DESC)  
+ * @param {string} task      Task (unused in our implementation)
+ * @returns {boolean}        Always returns false
+ */
+if (typeof Joomla === 'undefined') {
+    window.Joomla = {};
+}
+
+Joomla.tableOrdering = function(column, direction, task) {
+    var form = document.getElementById('adminForm');
+    if (!form) {
+        // Create temporary form for sorting
+        form = document.createElement('form');
+        form.id = 'adminForm';
+        form.method = 'post';
+        document.body.appendChild(form);
+    }
+    
+    // Sort results locally
+    if (currentSort.column === column) {
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSort.column = column;
+        currentSort.direction = direction.toLowerCase();
+    }
+    
+    filteredResults.sort(function(a, b) {
+        var aValue, bValue;
+        
+        switch(column) {
+            case 'id':
+                aValue = parseInt(a.id);
+                bValue = parseInt(b.id);
+                break;
+            case 'title':
+                aValue = a.title.toLowerCase();
+                bValue = b.title.toLowerCase();
+                break;
+            case 'category':
+                aValue = a.category.toLowerCase();
+                bValue = b.category.toLowerCase();
+                break;
+            case 'severity':
+                var severityOrder = {'critical': 0, 'warning': 1, 'info': 2};
+                aValue = severityOrder[a.severity];
+                bValue = severityOrder[b.severity];
+                break;
+        }
+        
+        if (currentSort.direction === 'asc') {
+            if (aValue < bValue) return -1;
+            if (aValue > bValue) return 1;
+            return 0;
+        } else {
+            if (aValue < bValue) return 1;
+            if (aValue > bValue) return -1;
+            return 0;
+        }
+    });
+    
+    populateTable(filteredResults);
+    updateSortingIcons(column, currentSort.direction);
+    return false;
+};
