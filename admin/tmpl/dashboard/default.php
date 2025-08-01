@@ -73,7 +73,7 @@ $wa->useScript('bootstrap.collapse');
                             <div class="card text-center stats-card h-100">
                                 <div class="card-body">
                                     <h5 class="card-title"><?php echo Text::_('COM_JOOMLAHITS_TOTAL_VIEWS'); ?></h5>
-                                    <p class="card-text display-4 text-info"><?php echo number_format($this->dashboardStats->total_hits); ?></p>
+                                    <p class="card-text display-4 text-info"><?php echo number_format($this->dashboardStats->total_hits ?? 0); ?></p>
                                 </div>
                             </div>
                         </div>
@@ -81,7 +81,7 @@ $wa->useScript('bootstrap.collapse');
                             <div class="card text-center stats-card h-100">
                                 <div class="card-body">
                                     <h5 class="card-title"><?php echo Text::_('COM_JOOMLAHITS_AVERAGE_VIEWS'); ?></h5>
-                                    <p class="card-text display-4 text-warning"><?php echo number_format($this->dashboardStats->average_hits, 1); ?></p>
+                                    <p class="card-text display-4 text-warning"><?php echo number_format($this->dashboardStats->average_hits ?? 0, 1); ?></p>
                                 </div>
                             </div>
                         </div>
@@ -89,7 +89,7 @@ $wa->useScript('bootstrap.collapse');
                             <div class="card text-center stats-card h-100">
                                 <div class="card-body">
                                     <h5 class="card-title"><?php echo Text::_('COM_JOOMLAHITS_MAX_VIEWS'); ?></h5>
-                                    <p class="card-text display-4 text-danger"><?php echo number_format($this->dashboardStats->max_hits); ?></p>
+                                    <p class="card-text display-4 text-danger"><?php echo number_format($this->dashboardStats->max_hits ?? 0); ?></p>
                                 </div>
                             </div>
                         </div>
@@ -140,16 +140,16 @@ $wa->useScript('bootstrap.collapse');
                                         </div>
                                         <div class="col-12 col-md-4 mb-3 mb-md-0">
                                             <h6><?php echo Text::_('COM_JOOMLAHITS_TOTAL_VIEWS'); ?></h6>
-                                            <h4><?php echo number_format($this->periodComparison->current_period->total_hits); ?></h4>
+                                            <h4><?php echo number_format($this->periodComparison->current_period->total_hits ?? 0); ?></h4>
                                             <small class="<?php echo $this->periodComparison->hits_change >= 0 ? 'text-success' : 'text-danger'; ?>">
-                                                <?php echo $this->periodComparison->hits_change >= 0 ? '+' : ''; ?><?php echo number_format($this->periodComparison->hits_change); ?> 
+                                                <?php echo $this->periodComparison->hits_change >= 0 ? '+' : ''; ?><?php echo number_format($this->periodComparison->hits_change ?? 0); ?> 
                                                 (<?php echo $this->periodComparison->hits_change_percent; ?>%)
                                             </small>
                                         </div>
                                         <div class="col-12 col-md-4">
                                             <h6><?php echo Text::_('COM_JOOMLAHITS_PREVIOUS_MONTH'); ?></h6>
                                             <p><?php echo Text::_('COM_JOOMLAHITS_ARTICLES_CREATED'); ?>: <?php echo $this->periodComparison->previous_period->articles_created; ?></p>
-                                            <p><?php echo Text::_('COM_JOOMLAHITS_VIEWS'); ?>: <?php echo number_format($this->periodComparison->previous_period->total_hits); ?></p>
+                                            <p><?php echo Text::_('COM_JOOMLAHITS_VIEWS'); ?>: <?php echo number_format($this->periodComparison->previous_period->total_hits ?? 0); ?></p>
                                         </div>
                                     </div>
                                 </div>
@@ -258,7 +258,7 @@ $wa->useScript('bootstrap.collapse');
                                                                                 <?php echo $this->escape($article->category_title); ?>
                                                                             </small>
                                                                             <span class="badge bg-info flex-shrink-0">
-                                                                                <i class="icon-eye"></i> <?php echo number_format($article->hits); ?>
+                                                                                <i class="icon-eye"></i> <?php echo number_format($article->hits ?? 0); ?>
                                                                             </span>
                                                                         </div>
                                                                     </div>
@@ -278,7 +278,7 @@ $wa->useScript('bootstrap.collapse');
                                                             <small><?php echo $this->escape($article->category_title); ?></small>
                                                         </td>
                                                         <td class="text-center align-middle d-none d-md-table-cell">
-                                                            <span class="badge bg-info"><?php echo number_format($article->hits); ?></span>
+                                                            <span class="badge bg-info"><?php echo number_format($article->hits ?? 0); ?></span>
                                                         </td>
                                                     </tr>
                                                 <?php endforeach; ?>
@@ -360,9 +360,9 @@ $wa->useScript('bootstrap.collapse');
                                                             <td><?php echo $this->escape($category->category_name); ?></td>
                                                             <td class="text-center"><?php echo $category->article_count; ?></td>
                                                             <td class="text-center">
-                                                                <span class="badge bg-info"><?php echo number_format($category->total_hits); ?></span>
+                                                                <span class="badge bg-info"><?php echo number_format($category->total_hits ?? 0); ?></span>
                                                             </td>
-                                                            <td class="text-center"><?php echo number_format($category->average_hits, 1); ?></td>
+                                                            <td class="text-center"><?php echo number_format($category->average_hits ?? 0, 1); ?></td>
                                                             <td class="text-center">
                                                                 <span class="badge bg-primary"><?php echo $category->hits_percentage; ?>%</span>
                                                             </td>
@@ -426,7 +426,7 @@ $wa->useScript('bootstrap.collapse');
                                                                         </a>
                                                                         <div class="mt-1">
                                                                             <span class="badge bg-info">
-                                                                                <i class="icon-eye"></i> <?php echo number_format($article->hits); ?>
+                                                                                <i class="icon-eye"></i> <?php echo number_format($article->hits ?? 0); ?>
                                                                             </span>
                                                                         </div>
                                                                     </div>
@@ -492,13 +492,13 @@ $wa->useScript('bootstrap.collapse');
                                             <div class="col-12 col-sm-6 col-lg-4 mb-2 mb-lg-0">
                                                 <div class="d-flex align-items-center justify-content-center justify-content-sm-start">
                                                     <span class="text-nowrap"><?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_TOTAL_VIEWS'); ?> : </span>
-                                                    <strong class="text-success ms-2"><?php echo number_format($totalViews); ?></strong>
+                                                    <strong class="text-success ms-2"><?php echo number_format($totalViews ?? 0); ?></strong>
                                                 </div>
                                             </div>
                                             <div class="col-12 col-sm-12 col-lg-4">
                                                 <div class="d-flex align-items-center justify-content-center justify-content-lg-start">
                                                     <span class="text-nowrap"><?php echo Text::_('COM_JOOMLAHITS_MONTHLY_STATS_AVERAGE_VIEWS'); ?> : </span>
-                                                    <strong class="text-info ms-2"><?php echo number_format($avgViews, 1); ?></strong>
+                                                    <strong class="text-info ms-2"><?php echo number_format($avgViews ?? 0, 1); ?></strong>
                                                 </div>
                                             </div>
                                         </div>
@@ -548,14 +548,14 @@ $wa->useScript('bootstrap.collapse');
                                                                     </td>
                                                                     <td class="text-center">
                                                                         <?php if ($monthStat->total_views > 0): ?>
-                                                                            <span class="badge bg-info"><?php echo number_format($monthStat->total_views); ?></span>
+                                                                            <span class="badge bg-info"><?php echo number_format($monthStat->total_views ?? 0); ?></span>
                                                                         <?php else: ?>
                                                                             <span class="text-muted">-</span>
                                                                         <?php endif; ?>
                                                                     </td>
                                                                     <td class="text-center">
                                                                         <?php if ($monthStat->average_views > 0): ?>
-                                                                            <?php echo number_format($monthStat->average_views, 1); ?>
+                                                                            <?php echo number_format($monthStat->average_views ?? 0, 1); ?>
                                                                         <?php else: ?>
                                                                             <span class="text-muted">-</span>
                                                                         <?php endif; ?>
@@ -617,7 +617,7 @@ $wa->useScript('bootstrap.collapse');
                                                             </td>
                                                             <td><?php echo HTMLHelper::_('date', $article->created, 'M d, Y'); ?></td>
                                                             <td class="text-center">
-                                                                <span class="badge bg-secondary"><?php echo number_format($article->hits); ?></span>
+                                                                <span class="badge bg-secondary"><?php echo number_format($article->hits ?? 0); ?></span>
                                                             </td>
                                                         </tr>
                                                     <?php endforeach; ?>
@@ -665,9 +665,9 @@ $wa->useScript('bootstrap.collapse');
                                                                     <td><?php echo $this->escape($language->language_name); ?></td>
                                                                     <td class="text-center"><?php echo $language->article_count; ?></td>
                                                                     <td class="text-center">
-                                                                        <span class="badge bg-secondary"><?php echo number_format($language->total_hits); ?></span>
+                                                                        <span class="badge bg-secondary"><?php echo number_format($language->total_hits ?? 0); ?></span>
                                                                     </td>
-                                                                    <td class="text-center"><?php echo number_format($language->average_hits, 1); ?></td>
+                                                                    <td class="text-center"><?php echo number_format($language->average_hits ?? 0, 1); ?></td>
                                                                 </tr>
                                                             <?php endforeach; ?>
                                                         </tbody>
