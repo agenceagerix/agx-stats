@@ -25,6 +25,7 @@ $wa->useScript('core')
 
 $app = Factory::getApplication();
 $user = $this->getCurrentUser();
+$userId = $user->id;
 $listOrder = 'severity';
 $listDirn = 'ASC';
 ?>
@@ -166,23 +167,35 @@ $listDirn = 'ASC';
                                 <?php echo HTMLHelper::_('grid.checkall'); ?>
                             </th>
                             <th scope="col" class="w-5 d-none d-lg-table-cell">
-                                <a href="#" onclick="Joomla.tableOrdering('id','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>','')">
-                                    ID <?php if ($listOrder == 'id') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
+                                <a href="#" onclick="Joomla.tableOrdering('id','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>',''); return false;" class="js-seo-sort" data-column="id" data-direction="<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>">
+                                    <?php echo Text::_('JGRID_HEADING_ID'); ?>
+                                    <?php if ($listOrder == 'id') : ?>
+                                        <span class="ms-2 icon-<?php echo strtolower($listDirn) == 'asc' ? 'caret-up' : 'caret-down'; ?>" aria-hidden="true"></span>
+                                    <?php endif; ?>
                                 </a>
                             </th>
                             <th scope="col">
-                                <a href="#" onclick="Joomla.tableOrdering('title','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>','')">
-                                    <?php echo Text::_('COM_JOOMLAHITS_TITLE'); ?> <?php if ($listOrder == 'title') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
+                                <a href="#" onclick="Joomla.tableOrdering('title','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>',''); return false;" class="js-seo-sort" data-column="title" data-direction="<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>">
+                                    <?php echo Text::_('COM_JOOMLAHITS_TITLE'); ?>
+                                    <?php if ($listOrder == 'title') : ?>
+                                        <span class="ms-2 icon-<?php echo strtolower($listDirn) == 'asc' ? 'caret-up' : 'caret-down'; ?>" aria-hidden="true"></span>
+                                    <?php endif; ?>
                                 </a>
                             </th>
                             <th scope="col" class="w-15 d-none d-md-table-cell">
-                                <a href="#" onclick="Joomla.tableOrdering('category','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>','')">
-                                    <?php echo Text::_('COM_JOOMLAHITS_CATEGORY'); ?> <?php if ($listOrder == 'category') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
+                                <a href="#" onclick="Joomla.tableOrdering('category','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>',''); return false;" class="js-seo-sort" data-column="category" data-direction="<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>">
+                                    <?php echo Text::_('COM_JOOMLAHITS_CATEGORY'); ?>
+                                    <?php if ($listOrder == 'category') : ?>
+                                        <span class="ms-2 icon-<?php echo strtolower($listDirn) == 'asc' ? 'caret-up' : 'caret-down'; ?>" aria-hidden="true"></span>
+                                    <?php endif; ?>
                                 </a>
                             </th>
                             <th scope="col" class="w-10 d-none d-md-table-cell text-center">
-                                <a href="#" onclick="Joomla.tableOrdering('severity','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>','')">
-                                    <?php echo Text::_('COM_JOOMLAHITS_SEVERITY'); ?> <?php if ($listOrder == 'severity') echo $listDirn == 'ASC' ? '↑' : '↓'; ?>
+                                <a href="#" onclick="Joomla.tableOrdering('severity','<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>',''); return false;" class="js-seo-sort" data-column="severity" data-direction="<?php echo $listDirn == 'ASC' ? 'DESC' : 'ASC'; ?>">
+                                    <?php echo Text::_('COM_JOOMLAHITS_SEVERITY'); ?>
+                                    <?php if ($listOrder == 'severity') : ?>
+                                        <span class="ms-2 icon-<?php echo strtolower($listDirn) == 'asc' ? 'caret-up' : 'caret-down'; ?>" aria-hidden="true"></span>
+                                    <?php endif; ?>
                                 </a>
                             </th>
                             <th scope="col" class="w-35 d-none d-md-table-cell">
@@ -417,8 +430,9 @@ window.JOOMLA_LANG_STATS = {
     withIssues: <?php echo json_encode(Text::_('COM_JOOMLAHITS_SEOANALYSIS_STATS_WITH_ISSUES')); ?>,
     perfect: <?php echo json_encode(Text::_('COM_JOOMLAHITS_SEOANALYSIS_STATS_PERFECT')); ?>
 };
-    function createTableRow(article) {
+    function createTableRow(article, index) {
         var tr = document.createElement('tr');
+        tr.className = 'row' + (index % 2);
         
         var severityClass = {
             'critical': 'bg-danger',
@@ -450,7 +464,7 @@ window.JOOMLA_LANG_STATS = {
         }
         
         tr.innerHTML = '<td class="text-center">' +
-                '<input type="checkbox" id="cb' + i + '" name="cid[]" value="' + article.id + '" onclick="Joomla.isChecked(this.checked);">' +
+                '<input type="checkbox" id="cb' + index + '" name="cid[]" value="' + article.id + '" onclick="Joomla.isChecked(this.checked);">' +
             '</td>' +
             '<td class="d-none d-lg-table-cell">' + article.id + '</td>' +
             '<th scope="row" class="has-context"><div><strong>' + article.title + '</strong></div></th>' +
@@ -1072,6 +1086,7 @@ window.JOOMLA_LANG_STATS = {
         });
         
         populateTable(filteredResults);
+        updateSortingIcons(column, currentSort.direction);
         return false;
     };
     function updateFieldCounters() {
@@ -1436,5 +1451,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (startBtn) {
         startBtn.addEventListener('click', startAnalysis);
     }
+    
+    // Initialize sorting icons for default sort (severity ASC)
+    updateSortingIcons('severity', 'asc');
 });
 </script>

@@ -46,6 +46,14 @@ function displayResults(results) {
     
     document.getElementById('results-section').style.display = 'block';
     populateTable(filteredResults);
+    
+    // Initialize sorting icons for default sort (severity ASC)
+    if (typeof updateSortingIcons === 'function') {
+        updateSortingIcons('severity', 'asc');
+    }
+    
+    // Initialize checkbox handlers after populating the table
+    initializeCheckboxHandlers();
 }
 
 /**
@@ -56,7 +64,7 @@ function populateTable(articles) {
     tbody.innerHTML = '';
     
     for (var i = 0; i < articles.length; i++) {
-        var row = createTableRow(articles[i]);
+        var row = createTableRow(articles[i], i);
         tbody.appendChild(row);
     }
 }
@@ -107,6 +115,9 @@ function applyFilters() {
     }
     
     populateTable(filteredResults);
+    
+    // Re-initialize checkbox handlers after filtering
+    initializeCheckboxHandlers();
 }
 
 /**

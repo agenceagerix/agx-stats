@@ -235,3 +235,27 @@ function handleBulkEditingNavigation() {
         startBulkReviewPhase();
     }
 }
+
+/**
+ * Update sorting icons based on current sort column and direction
+ */
+function updateSortingIcons(column, direction) {
+    // Remove all existing sort icons
+    var sortLinks = document.querySelectorAll('.js-seo-sort');
+    sortLinks.forEach(function(link) {
+        var icon = link.querySelector('span[class*="icon-caret"]');
+        if (icon) {
+            icon.remove();
+        }
+    });
+    
+    // Add icon to the current sorted column
+    var currentLink = document.querySelector('.js-seo-sort[data-column="' + column + '"]');
+    if (currentLink) {
+        var iconClass = direction === 'asc' ? 'icon-caret-up' : 'icon-caret-down';
+        var icon = document.createElement('span');
+        icon.className = 'ms-2 ' + iconClass;
+        icon.setAttribute('aria-hidden', 'true');
+        currentLink.appendChild(icon);
+    }
+}
