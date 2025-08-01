@@ -77,17 +77,23 @@ function navigateBulkArticle(direction) {
  * Restore accepted changes
  */
 function restoreAcceptedChanges(storedChange) {
-    // Fill form with final values
-    document.getElementById('seo-title').value = storedChange.finalValues.title || storedChange.originalValues.title;
-    document.getElementById('seo-metadesc').value = storedChange.finalValues.metadesc || storedChange.originalValues.metadesc;
-    document.getElementById('seo-metakey').value = storedChange.finalValues.metakey || storedChange.originalValues.metakey;
+    // Set up the global values for proper preview display
+    window.originalValues = storedChange.originalValues;
+    window.aiOptimizedValues = storedChange.aiValues;
+    
+    // Fill form with final accepted values (this is now done in openBulkSeoModal)
+    // Form fields are already populated by openBulkSeoModal with correct values
     
     updateFieldCounters();
     
-    // Show preview if AI changes were accepted
+    // Show preview if AI changes were accepted and there are AI values
     if (Object.keys(storedChange.aiValues).length > 0) {
         showAIPreview();
         // Set as accepted
+        aiPreviewState = 'accepted';
+        updateBulkSaveButtonState();
+    } else {
+        // No AI changes, just mark as accepted (rejected case)
         aiPreviewState = 'accepted';
         updateBulkSaveButtonState();
     }
@@ -112,6 +118,12 @@ function finishBulkAiFix() {
     // Close modal
     if (seoModal) {
         seoModal.hide();
+    }
+    
+    // Restore save button visibility for single article mode
+    var saveBtn = document.getElementById('saveSeoBtn');
+    if (saveBtn) {
+        saveBtn.style.display = 'block';
     }
     
     // Show summary
@@ -161,6 +173,12 @@ function finishBulkSave(successCount, errorCount) {
     
     isBulkAiProcessing = false;
     bulkProcessingPhase = 'editing';
+    
+    // Restore save button visibility for single article mode
+    var saveBtn = document.getElementById('saveSeoBtn');
+    if (saveBtn) {
+        saveBtn.style.display = 'block';
+    }
     
     // Refresh analysis to show updated results
     setTimeout(function() {

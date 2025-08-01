@@ -63,8 +63,8 @@ $listDirn = 'ASC';
                             <?php endif; ?>
                             
                             <div class="d-flex justify-content-between align-items-center">
-                                <a href="<?php echo Route::_('index.php?option=com_joomlahits&view=checkseo'); ?>" class="btn btn-secondary">
-                                    <i class="icon-arrow-left"></i> <?php echo Text::_('COM_JOOMLAHITS_BACK_TO_CHECKSEO'); ?>
+                                <a href="<?php echo Route::_('index.php?option=com_joomlahits'); ?>" class="btn btn-secondary">
+                                    <i class="icon-arrow-left"></i> <?php echo Text::_('COM_JOOMLAHITS_BACK_TO_CONTROL_PANEL'); ?>
                                 </a>
                                 <button type="button" class="btn btn-success btn-lg" id="startAnalysisBtn">
                                     <i class="icon-search"></i> <span id="analysisButtonText"><?php echo Text::_('COM_JOOMLAHITS_START_FULL_ANALYSIS'); ?></span>
@@ -788,6 +788,14 @@ window.JOOMLA_LANG_STATS = {
             return;
         }
         
+        // Explicitly hide save button if in bulk editing mode
+        if (isBulkAiProcessing && bulkProcessingPhase === 'editing') {
+            var saveBtn = document.getElementById('saveSeoBtn');
+            if (saveBtn) {
+                saveBtn.style.display = 'none';
+            }
+        }
+        
         var aiBtn = document.getElementById('aiFixBtn');
         var originalText = aiBtn.innerHTML;
         
@@ -828,7 +836,11 @@ window.JOOMLA_LANG_STATS = {
                     showAIPreview();
                     // Set state to "pending"
                     aiPreviewState = 'pending';
-                    updateSaveButtonState();
+                    if (isBulkAiProcessing) {
+                        updateBulkSaveButtonState();
+                    } else {
+                        safeUpdateSaveButtonState();
+                    }
                 } else {
                     showNotification('Tous les champs sont déjà optimaux !', 'success');
                 }
@@ -1145,6 +1157,15 @@ function updateSaveButtonState() {
     }
     
     var saveBtn = document.getElementById('saveSeoBtn');
+    if (!saveBtn) return;
+    
+    // Only show button if not in bulk editing mode
+    if (!isBulkAiProcessing || bulkProcessingPhase !== 'editing') {
+        saveBtn.style.display = 'block';
+    } else {
+        saveBtn.style.display = 'none';
+        return;
+    }
     
     if (aiPreviewState === 'pending') {
         // En attente d'acceptation/refus des modifications IA
@@ -1253,6 +1274,28 @@ function openBulkSeoModal() {
             document.getElementById('seo-metakey').value = fullArticle.metakey || '';
             document.getElementById('seo-content').value = fullArticle.content || '';
             
+            // Store original values for this article
+            window.originalValues = {
+                title: fullArticle.title || '',
+                metadesc: fullArticle.metadesc || '',
+                metakey: fullArticle.metakey || ''
+            };
+            
+            // Apply accepted changes if they exist (after loading original data)
+            var storedChange = bulkAiChanges[article.id];
+            if (storedChange && storedChange.accepted && storedChange.finalValues) {
+                // Apply the accepted values to form fields
+                if (storedChange.finalValues.title !== undefined) {
+                    document.getElementById('seo-title').value = storedChange.finalValues.title;
+                }
+                if (storedChange.finalValues.metadesc !== undefined) {
+                    document.getElementById('seo-metadesc').value = storedChange.finalValues.metadesc;
+                }
+                if (storedChange.finalValues.metakey !== undefined) {
+                    document.getElementById('seo-metakey').value = storedChange.finalValues.metakey;
+                }
+            }
+            
             // Update counters
             updateFieldCounters();
             
@@ -1265,6 +1308,29 @@ function openBulkSeoModal() {
             document.getElementById('seo-metadesc').value = article.metadesc || '';
             document.getElementById('seo-metakey').value = article.metakey || '';
             document.getElementById('seo-content').value = article.content || '';
+            
+            // Store original values for this article (fallback)
+            window.originalValues = {
+                title: article.title || '',
+                metadesc: article.metadesc || '',
+                metakey: article.metakey || ''
+            };
+            
+            // Apply accepted changes if they exist (after loading original data)
+            var storedChange = bulkAiChanges[article.id];
+            if (storedChange && storedChange.accepted && storedChange.finalValues) {
+                // Apply the accepted values to form fields
+                if (storedChange.finalValues.title !== undefined) {
+                    document.getElementById('seo-title').value = storedChange.finalValues.title;
+                }
+                if (storedChange.finalValues.metadesc !== undefined) {
+                    document.getElementById('seo-metadesc').value = storedChange.finalValues.metadesc;
+                }
+                if (storedChange.finalValues.metakey !== undefined) {
+                    document.getElementById('seo-metakey').value = storedChange.finalValues.metakey;
+                }
+            }
+            
             updateFieldCounters();
             
             // Display issues and bulk info even with fallback data
@@ -1276,9 +1342,32 @@ function openBulkSeoModal() {
         showNotification('Error loading article details: ' + error.message, 'error');
         // Fallback to basic data
         document.getElementById('seo-title').value = article.title || '';
-        document.getElementById('seo-metadesc').value = article.metadesc || '';
+        document.getElementById('seo-metadesc').value = article.metadesc || '';  
         document.getElementById('seo-metakey').value = article.metakey || '';
         document.getElementById('seo-content').value = article.content || '';
+        
+        // Store original values for this article (fallback)
+        window.originalValues = {
+            title: article.title || '',
+            metadesc: article.metadesc || '',
+            metakey: article.metakey || ''
+        };
+        
+        // Apply accepted changes if they exist (after loading original data)
+        var storedChange = bulkAiChanges[article.id];
+        if (storedChange && storedChange.accepted && storedChange.finalValues) {
+            // Apply the accepted values to form fields
+            if (storedChange.finalValues.title !== undefined) {
+                document.getElementById('seo-title').value = storedChange.finalValues.title;
+            }
+            if (storedChange.finalValues.metadesc !== undefined) {
+                document.getElementById('seo-metadesc').value = storedChange.finalValues.metadesc;
+            }
+            if (storedChange.finalValues.metakey !== undefined) {
+                document.getElementById('seo-metakey').value = storedChange.finalValues.metakey;
+            }
+        }
+        
         updateFieldCounters();
         
         // Display issues and bulk info even with error
@@ -1303,19 +1392,29 @@ function openBulkSeoModal() {
         var prevDisabled = currentBulkArticleIndex === 0 ? 'disabled' : '';
         var nextDisabled = currentBulkArticleIndex === bulkAiArticles.length - 1 ? 'disabled' : '';
         
-        bulkInfo.innerHTML = '<div class="d-flex justify-content-between align-items-center">' +
-            '<div>' +
-                '<i class="icon-info me-2"></i><strong>Bulk fix (' + phaseText + '):</strong><br>' +
-                'Article ' + (currentBulkArticleIndex + 1) + ' sur ' + bulkAiArticles.length + ' - "' + article.title + '"' +
-            '</div>' +
-            '<div class="btn-group" role="group">' +
+        // Hide navigation buttons during editing phase to enforce linear progression
+        var navigationButtons = '';
+        if (bulkProcessingPhase === 'reviewing') {
+            navigationButtons = '<div class="btn-group" role="group">' +
                 '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="navigateBulkArticle(-1)" ' + prevDisabled + '>' +
                     '<i class="icon-arrow-left"></i> Previous' +
                 '</button>' +
                 '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="navigateBulkArticle(1)" ' + nextDisabled + '>' +
                     'Next <i class="icon-arrow-right"></i>' +
                 '</button>' +
+            '</div>';
+        } else {
+            navigationButtons = '<div class="text-muted">' +
+                '<small><i class="icon-info me-1"></i>Navigation disabled during editing phase</small>' +
+            '</div>';
+        }
+        
+        bulkInfo.innerHTML = '<div class="d-flex justify-content-between align-items-center">' +
+            '<div>' +
+                '<i class="icon-info me-2"></i><strong>Bulk fix (' + phaseText + '):</strong><br>' +
+                'Article ' + (currentBulkArticleIndex + 1) + ' sur ' + bulkAiArticles.length + ' - "' + article.title + '"' +
             '</div>' +
+            navigationButtons +
         '</div>';
         
         var form = document.getElementById('seoFixForm');

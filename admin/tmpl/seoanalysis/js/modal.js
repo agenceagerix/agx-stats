@@ -27,7 +27,7 @@ function openSeoModal(articleId) {
     // Reset AI preview state
     aiPreviewState = null;
     document.getElementById('ai-preview-section').style.display = 'none';
-    updateSaveButtonState();
+    safeUpdateSaveButtonState();
     
     // Show loading state in modal
     document.getElementById('seo-article-id').value = articleId;
