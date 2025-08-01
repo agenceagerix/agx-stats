@@ -26,6 +26,12 @@ function startAnalysis() {
     resultsSection.style.display = 'none';
     noIssuesSection.style.display = 'none';
     
+    // Hide statistics section
+    var statsSection = document.getElementById('analysis-stats');
+    if (statsSection) {
+        statsSection.style.display = 'none';
+    }
+    
     // Reset state
     isAnalysisCancelled = false;
     currentArticleIndex = 0;
@@ -41,7 +47,12 @@ function startAnalysis() {
         }
     };
     
-    // Get articles list
+    // Set progress bar to show processing
+    var progressBar = document.getElementById('analysis-progress-bar');
+    progressBar.style.width = '50%';
+    progressBar.setAttribute('aria-valuenow', '50');
+    
+    // Load all articles directly
     getArticlesList();
 }
 
@@ -76,19 +87,21 @@ function finishAnalysis() {
     
     cancelBtn.disabled = true;
     
-    // Sort results by severity
-    currentAnalysisResults.issues.sort(function(a, b) {
-        var severityOrder = {'critical': 0, 'warning': 1, 'info': 2};
-        return severityOrder[a.severity] - severityOrder[b.severity];
-    });
+    // Results are already sorted from the server, but sort again by severity to be sure
+    if (currentAnalysisResults.issues && currentAnalysisResults.issues.length > 0) {
+        currentAnalysisResults.issues.sort(function(a, b) {
+            var severityOrder = {'critical': 0, 'warning': 1, 'info': 2};
+            return severityOrder[a.severity] - severityOrder[b.severity];
+        });
+    }
     
-    // Display results after delay
+    // Display results after shorter delay since all processing is done
     setTimeout(function() {
         document.getElementById('loading-section').style.display = 'none';
         analysisResults = currentAnalysisResults;
         displayResults(analysisResults);
         resetAnalysisUI();
-    }, 2000);
+    }, 1000);
 }
 
 /**

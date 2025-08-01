@@ -80,18 +80,19 @@ $listDirn = 'ASC';
                 <div class="col-md-12">
                     <div class="card border-info">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
                                 <strong id="progress-title"><?php echo Text::_('COM_JOOMLAHITS_ANALYZING_ARTICLES'); ?></strong>
                                 <button type="button" id="cancelAnalysis" class="btn btn-sm btn-outline-danger" onclick="cancelAnalysis()">
                                     <?php echo Text::_('COM_JOOMLAHITS_CANCEL'); ?>
                                 </button>
                             </div>
-                            <div class="progress mb-2">
+                            <div class="progress mb-3">
                                 <div id="analysis-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" 
                                      role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
-                            <div id="current-analysis-status" class="small"></div>
-                            <div id="analysis-results-log" class="mt-2 small" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px;"></div>
+                            <div id="current-analysis-status" class="text-center text-muted">
+                                <?php echo Text::_('COM_JOOMLAHITS_ANALYZING_ARTICLES'); ?>...
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -139,6 +140,17 @@ $listDirn = 'ASC';
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analysis Statistics -->
+                <div id="analysis-stats" class="row mb-3" style="display: none;">
+                    <div class="col-md-12">
+                        <div class="alert alert-info">
+                            <span class="icon-info" aria-hidden="true"></span>
+                            <strong><?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_RESULTS_SUMMARY'); ?>:</strong>
+                            <span id="analysis-stats-text"></span>
                         </div>
                     </div>
                 </div>
@@ -399,6 +411,12 @@ $listDirn = 'ASC';
 <script>
 // Set global variable for admin URL
 window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
+
+// Set global language variables for statistics
+window.JOOMLA_LANG_STATS = {
+    withIssues: <?php echo json_encode(Text::_('COM_JOOMLAHITS_SEOANALYSIS_STATS_WITH_ISSUES')); ?>,
+    perfect: <?php echo json_encode(Text::_('COM_JOOMLAHITS_SEOANALYSIS_STATS_PERFECT')); ?>
+};
     function createTableRow(article) {
         var tr = document.createElement('tr');
         
@@ -454,12 +472,15 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
         window.Joomla = {};
     }
     function getArticlesList() {
+        document.getElementById('current-analysis-status').textContent = 'Starting analysis...';
+        
+        // Load all articles directly without progressive loading - empty body triggers bulk analysis
         fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_analysis.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
-            body: 'get_articles_list=1'
+            body: ''
         })
         .then(response => {
             return response.text().then(text => {
@@ -472,25 +493,22 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
         })
         .then(data => {
             if (data.success) {
-                articlesList = data.data;
-                currentAnalysisResults.total_articles = articlesList.length;
-                document.getElementById('current-analysis-status').textContent = 
-                    'Analysis started - ' + articlesList.length + ' articles to process';
+                currentAnalysisResults = data.data;
+                articlesList = []; // Not needed anymore since we have complete results
                 
-                // Start analyzing first article
-                if (articlesList.length > 0) {
-                    analyzeNextArticle();
-                } else {
-                    finishAnalysis();
-                }
+                document.getElementById('current-analysis-status').textContent = 
+                    'Analysis completed - ' + currentAnalysisResults.issues.length + ' articles with issues out of ' + currentAnalysisResults.total_articles;
+                
+                // Directly finish analysis since all data is loaded
+                finishAnalysis();
             } else {
-                showNotification('Error retrieving articles: ' + data.message, 'error');
+                showNotification('Error during analysis: ' + data.message, 'error');
                 resetAnalysisUI();
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showNotification('Error retrieving articles: ' + error.message, 'error');
+            showNotification('Error during analysis: ' + error.message, 'error');
             resetAnalysisUI();
         });
     }
@@ -503,88 +521,6 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
         btn.innerHTML = '<?php echo Text::_('COM_JOOMLAHITS_START_FULL_ANALYSIS'); ?>';
     }
 
-    function analyzeNextArticle() {
-        if (isAnalysisCancelled || currentArticleIndex >= articlesList.length) {
-            finishAnalysis();
-            return;
-        }
-        
-        var article = articlesList[currentArticleIndex];
-        var progressBar = document.getElementById('analysis-progress-bar');
-        var currentStatus = document.getElementById('current-analysis-status');
-        var resultsLog = document.getElementById('analysis-results-log');
-        
-        // Update progress
-        var progress = Math.round((currentArticleIndex / articlesList.length) * 100);
-        progressBar.style.width = progress + '%';
-        progressBar.setAttribute('aria-valuenow', progress);
-        currentStatus.textContent = 'Analyzing "' + article.title + '" (' + (currentArticleIndex + 1) + '/' + articlesList.length + ')';
-        
-        // Analyze article
-        fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_analysis.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: 'article_id=' + encodeURIComponent(article.id)
-        })
-        .then(response => {
-            return response.text().then(text => {
-                try {
-                    return JSON.parse(text);
-                } catch (e) {
-                    throw new Error('Server returned invalid JSON: ' + text);
-                }
-            });
-        })
-        .then(data => {
-            if (data.success && data.data.issues && data.data.issues.length > 0) {
-                // Add article with issues
-                currentAnalysisResults.issues.push(data.data);
-                
-                // Update stats
-                for (var i = 0; i < data.data.issues.length; i++) {
-                    var issue = data.data.issues[i];
-                    var category = getIssueCategoryFromType(issue.type);
-                    if (currentAnalysisResults.stats[category + '_issues'] !== undefined) {
-                        currentAnalysisResults.stats[category + '_issues']++;
-                    }
-                }
-                
-                // Log result
-                var severityClass = {
-                    'critical': 'text-danger',
-                    'warning': 'text-warning',
-                    'info': 'text-info'
-                }[data.data.severity];
-                
-                resultsLog.innerHTML += '<div class="' + severityClass + '">' +
-                    '<i class="icon-warning"></i> ' + data.data.issues.length + ' issue(s) found in "' + article.title + '"' +
-                '</div>';
-            } else {
-                // Article without issues
-                resultsLog.innerHTML += '<div class="text-success">' +
-                    '<i class="icon-checkmark"></i> "' + article.title + '" - No issues detected' +
-                '</div>';
-            }
-            resultsLog.scrollTop = resultsLog.scrollHeight;
-            
-            // Move to next article
-            currentArticleIndex++;
-            setTimeout(analyzeNextArticle, 1);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            resultsLog.innerHTML += '<div class="text-danger">' +
-                '<i class="icon-warning"></i> Error analyzing "' + article.title + '": ' + error.message +
-            '</div>';
-            resultsLog.scrollTop = resultsLog.scrollHeight;
-            
-            // Move to next article even on error
-            currentArticleIndex++;
-            setTimeout(analyzeNextArticle, 1);
-        });
-    }
 
     function saveBulkSeoFixes() {
         var totalToSave = 0;
@@ -982,7 +918,7 @@ window.JOOMLA_ADMIN_URL = '<?php echo Uri::root(); ?>administrator';
                 setTimeout(processNextField, 500); // Delay between calls
             })
             .catch(error => {
-                console.error('Erreur pour le champ ' + fieldType + ':', error.message);
+                console.error('Error for ' + fieldType + ':', error.message);
                 
                 // Move to next field even on error
                 currentFieldIndex++;

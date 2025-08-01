@@ -13,7 +13,7 @@
  * Open SEO modal for single article
  */
 function openSeoModal(articleId) {
-    // Find article in results
+    // Find article in results (for issues and basic info)
     var article = null;
     for (var i = 0; i < filteredResults.length; i++) {
         if (filteredResults[i].id == articleId) {
@@ -24,24 +24,19 @@ function openSeoModal(articleId) {
     
     if (!article) return;
     
-    currentArticleData = article;
-    
     // Reset AI preview state
     aiPreviewState = null;
     document.getElementById('ai-preview-section').style.display = 'none';
     updateSaveButtonState();
     
-    // Fill form
-    document.getElementById('seo-article-id').value = article.id;
-    document.getElementById('seo-title').value = article.title;
-    document.getElementById('seo-metadesc').value = article.metadesc || '';
-    document.getElementById('seo-metakey').value = article.metakey || '';
-    document.getElementById('seo-content').value = article.content || '';
+    // Show loading state in modal
+    document.getElementById('seo-article-id').value = articleId;
+    document.getElementById('seo-title').value = 'Loading...';
+    document.getElementById('seo-metadesc').value = 'Loading...';
+    document.getElementById('seo-metakey').value = 'Loading...';
+    document.getElementById('seo-content').value = 'Loading...';
     
-    // Update counters
-    updateFieldCounters();
-    
-    // Display issues
+    // Display issues from the analysis results
     var issuesList = document.getElementById('issues-details');
     issuesList.innerHTML = '';
     for (var j = 0; j < article.issues.length; j++) {
@@ -50,11 +45,63 @@ function openSeoModal(articleId) {
         issuesList.appendChild(li);
     }
     
-    // Open modal
+    // Open modal first
     if (!seoModal) {
         seoModal = new bootstrap.Modal(document.getElementById('seoFixModal'));
     }
     seoModal.show();
+    
+    // Fetch complete article data with all fields
+    fetch(window.JOOMLA_ADMIN_URL + '/components/com_joomlahits/direct_seo_analysis.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'article_id=' + encodeURIComponent(articleId)
+    })
+    .then(response => {
+        return response.text().then(text => {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                throw new Error('Server returned invalid JSON: ' + text);
+            }
+        });
+    })
+    .then(data => {
+        if (data.success && data.data) {
+            var fullArticle = data.data;
+            
+            // Store complete article data
+            currentArticleData = {
+                id: fullArticle.id,
+                title: fullArticle.title,
+                alias: fullArticle.alias,
+                metadesc: fullArticle.metadesc,
+                metakey: fullArticle.metakey,
+                content: fullArticle.content,
+                category: fullArticle.category,
+                language: fullArticle.language,
+                hits: fullArticle.hits,
+                issues: article.issues // Keep original issues from analysis
+            };
+            
+            // Fill form with real data
+            document.getElementById('seo-title').value = fullArticle.title || '';
+            document.getElementById('seo-metadesc').value = fullArticle.metadesc || '';
+            document.getElementById('seo-metakey').value = fullArticle.metakey || '';
+            document.getElementById('seo-content').value = fullArticle.content || '';
+            
+            // Update counters
+            updateFieldCounters();
+        } else {
+            showNotification('Error loading article details: ' + (data.message || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error loading article:', error);
+        showNotification('Error loading article details: ' + error.message, 'error');
+    });
 }
 
 /**

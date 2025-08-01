@@ -13,12 +13,37 @@
  * Display analysis results
  */
 function displayResults(results) {
+    var totalArticles = results.total_articles || 0;
+    var articlesWithIssues = results.issues ? results.issues.length : 0;
+    
     if (!results.issues || results.issues.length === 0) {
+        // Show stats for perfect results using language variable
+        var statsText = window.JOOMLA_LANG_STATS.perfect.replace('%d', totalArticles);
+        document.getElementById('analysis-stats-text').textContent = statsText;
+        document.getElementById('analysis-stats').style.display = 'block';
+        
         document.getElementById('no-issues-section').style.display = 'block';
         return;
     }
     
     filteredResults = results.issues;
+    
+    // Show analysis statistics using language variable
+    var percentage = totalArticles > 0 ? Math.round((articlesWithIssues / totalArticles) * 100 * 10) / 10 : 0;
+    
+    // Replace placeholders in the correct order
+    var statsText = window.JOOMLA_LANG_STATS.withIssues;
+    var replacements = [articlesWithIssues, totalArticles, percentage];
+    var index = 0;
+    
+    // Replace %d and %s placeholders in order
+    statsText = statsText.replace(/%[ds]/g, function() {
+        return replacements[index++];
+    });
+    
+    document.getElementById('analysis-stats-text').textContent = statsText;
+    document.getElementById('analysis-stats').style.display = 'block';
+    
     document.getElementById('results-section').style.display = 'block';
     populateTable(filteredResults);
 }
