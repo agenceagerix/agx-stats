@@ -412,14 +412,14 @@ $listDirn = 'ASC';
 </div>
 
 <!-- Include JavaScript files -->
-<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/variables.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/notifications.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/analysis.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/display.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/modal.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/utils.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/bulk-ai.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/force-ai.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/variables.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/notifications.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/analysis.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/display.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/modal.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/utils.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/bulk-ai.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/force-ai.js'; ?>"></script>
 
 <script>
 // Set global variable for admin URL
