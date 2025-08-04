@@ -165,7 +165,7 @@
             rows="6"
             cols="80"
             filter="raw"
-            default="COM_JOOMLAHITS_DEFAULT_AI_PROMPT_TITLE"/>
+            default="You are an SEO expert. Generate ONLY an SEO-optimized title for this article. Strict rules: between {minTitleLength}-{maxTitleLength} characters, catchy, with main keywords. Reply ONLY with the title, without quotes or explanation. Current title: {title}; Content: {content}; Language: {language}"/>
         
         <field
             name="ai_prompt_metadesc"
@@ -175,7 +175,7 @@
             rows="6"
             cols="80"
             filter="raw"
-            default="COM_JOOMLAHITS_DEFAULT_AI_PROMPT_METADESC"/>
+            default="You are an SEO expert. Generate ONLY an optimized meta description for this article. Strict rules: between {minMetaLength}-{maxMetaLength} characters, click-worthy, summarizes content. Reply ONLY with the meta description, without quotes or explanation. Title: {title} Content: {content} Language: {language}"/>
         
         <field
             name="ai_prompt_metakey"
@@ -185,7 +185,7 @@
             rows="6"
             cols="80"
             filter="raw"
-            default="COM_JOOMLAHITS_DEFAULT_AI_PROMPT_METAKEY"/>
+            default="You are an SEO expert. Generate ONLY meta keywords for this article. Strict rules: 5-8 relevant keywords, separated by commas. Reply ONLY with the keyword list, without quotes or explanation. Title: {title}; Content: {content} Language: {language}"/>
         
     </fieldset>
 
