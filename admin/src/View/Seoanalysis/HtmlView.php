@@ -124,7 +124,7 @@ class HtmlView extends BaseHtmlView
         $childBar->standardButton('force-ai-fix', 'COM_JOOMLAHITS_FORCE_AI_FIX')
             ->icon('icon-lightning')
             ->listCheck(true)
-            ->onclick('startForceAiFix(); return false;');
+            ->onclick('waitForConfirmForceAiFix(); return false;');
 
         // Add preferences button
         if ($user->authorise('core.admin', 'com_joomlahits')) {

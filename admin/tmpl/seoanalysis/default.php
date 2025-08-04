@@ -412,14 +412,14 @@ $listDirn = 'ASC';
 </div>
 
 <!-- Include JavaScript files -->
-<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/variables.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/notifications.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/analysis.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/display.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/modal.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/utils.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/bulk-ai.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/force-ai.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/variables.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/notifications.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/analysis.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/display.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/modal.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/utils.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/bulk-ai.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/force-ai.js'; ?>"></script>
 
 <script>
 // Set global variable for admin URL
@@ -440,6 +440,70 @@ window.JOOMLA_LANG = {
     finish: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FINISH')); ?>,
     aiProcessing: <?php echo json_encode(Text::_('COM_JOOMLAHITS_AI_PROCESSING')); ?>
 };
+
+// Set Force AI warning language variables
+window.JOOMLA_LANG_FORCE_AI = {
+    warningTitle: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_TOKEN_WARNING_TITLE')); ?>,
+    warningMessage: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_TOKEN_WARNING_MESSAGE')); ?>,
+    scriptsNotLoaded: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_SCRIPTS_NOT_LOADED')); ?>,
+    selectArticles: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_SELECT_ARTICLES')); ?>,
+    selectedArticles: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_SELECTED_ARTICLES')); ?>,
+    warningUndone: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_WARNING_UNDONE')); ?>,
+    tokensConsumed: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_TOKENS_CONSUMED')); ?>,
+    proceedButton: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_PROCEED_BUTTON')); ?>,
+    startingProcessing: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_STARTING_PROCESSING')); ?>,
+    noValidArticles: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_NO_VALID_ARTICLES')); ?>,
+    cancelling: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_CANCELLING')); ?>,
+    loading: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_LOADING')); ?>,
+    summaryTitle: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_SUMMARY_TITLE')); ?>,
+    fieldsModified: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_FIELDS_MODIFIED')); ?>,
+    articlesProcessed: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_ARTICLES_PROCESSED')); ?>,
+    withTotal: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_WITH_TOTAL')); ?>,
+    modifications: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_MODIFICATIONS')); ?>,
+    savingArticles: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_SAVING_ARTICLES')); ?>,
+    noChanges: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_NO_CHANGES')); ?>
+};
+
+/**
+ * Wait for all scripts to load and then show confirmation dialog
+ * This function is defined inline to ensure it's available immediately when the button is clicked
+ */
+function waitForConfirmForceAiFix() {
+    // Retry mechanism to ensure all scripts and variables are loaded
+    var maxRetries = 50; // 5 seconds max wait time
+    var retryCount = 0;
+    
+    function tryConfirm() {
+        retryCount++;
+        
+        // Check if all required dependencies are loaded
+        if (typeof confirmForceAiFix !== 'undefined' && 
+            typeof showNotification !== 'undefined' && 
+            typeof window.JOOMLA_LANG_FORCE_AI !== 'undefined' &&
+            window.JOOMLA_LANG_FORCE_AI.warningTitle &&
+            window.JOOMLA_LANG_FORCE_AI.warningMessage) {
+            
+            // All dependencies loaded, show confirmation
+            confirmForceAiFix();
+            return;
+        }
+        
+        // If max retries reached, show fallback warning
+        if (retryCount >= maxRetries) {
+            // Show basic confirmation dialog as fallback
+            var confirmed = confirm('Token Consumption Warning\n\nStarting Force AI processing will automatically consume AI tokens for each selected article. This process will generate optimized content for titles, meta descriptions, and keywords using artificial intelligence.\n\nTokens will be consumed immediately upon starting the process.\n\nDo you want to proceed with Force AI processing?');
+            if (confirmed && typeof startForceAiFix !== 'undefined') {
+                startForceAiFix();
+            }
+            return;
+        }
+        
+        // Retry after 100ms
+        setTimeout(tryConfirm, 100);
+    }
+    
+    tryConfirm();
+}
     function createTableRow(article, index) {
         var tr = document.createElement('tr');
         tr.className = 'row' + (index % 2);
