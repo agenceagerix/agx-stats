@@ -625,9 +625,17 @@ function waitForConfirmForceAiFix() {
         Object.keys(bulkAiChanges).forEach(function(articleId) {
             var change = bulkAiChanges[articleId];
             if (change.accepted) {
+                // Ensure we have valid values - use original values as fallback for undefined fields
+                var safeChanges = {
+                    title: change.finalValues.title !== undefined ? change.finalValues.title : (change.originalValues.title || ''),
+                    metadesc: change.finalValues.metadesc !== undefined ? change.finalValues.metadesc : (change.originalValues.metadesc || ''),
+                    metakey: change.finalValues.metakey !== undefined ? change.finalValues.metakey : (change.originalValues.metakey || ''),
+                    content: change.finalValues.content !== undefined ? change.finalValues.content : (change.originalValues.content || '')
+                };
+                
                 resultsToSave.push({
                     articleId: articleId,
-                    changes: change.finalValues,
+                    changes: safeChanges,
                     title: bulkAiArticles.find(function(article) { return article.id == articleId; }).title
                 });
             }
@@ -654,9 +662,10 @@ function waitForConfirmForceAiFix() {
             // Create FormData for this article
             var formData = new FormData();
             formData.append('article_id', articleToSave.articleId);
-            formData.append('title', articleToSave.changes.title);
-            formData.append('metadesc', articleToSave.changes.metadesc);
-            formData.append('metakey', articleToSave.changes.metakey);
+            formData.append('title', articleToSave.changes.title || '');
+            formData.append('metadesc', articleToSave.changes.metadesc || '');
+            formData.append('metakey', articleToSave.changes.metakey || '');
+            formData.append('content', articleToSave.changes.content || '');
             
             fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_fix.php', {
                 method: 'POST',
@@ -728,6 +737,7 @@ function waitForConfirmForceAiFix() {
             formData.append('title', articleToSave.changes.title);
             formData.append('metadesc', articleToSave.changes.metadesc);
             formData.append('metakey', articleToSave.changes.metakey);
+            formData.append('content', articleToSave.changes.content || '');
             
             fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_fix.php', {
                 method: 'POST',
@@ -949,9 +959,9 @@ function waitForConfirmForceAiFix() {
                         // Simple H1 fix: add H1 tag at the beginning of content if missing
                         var h1Pattern = /<h1[^>]*>/i;
                         if (!h1Pattern.test(currentContent)) {
-                            // Extract a meaningful H1 from the article title or first paragraph
-                            var articleTitle = currentArticleData.title || 'Article Title';
-                            var h1Tag = '<h1>' + articleTitle + '</h1>\n\n';
+                            // Use the current title from the form (which may have been AI-modified)
+                            var currentTitle = document.getElementById('seo-title').value || currentArticleData.title || 'Article Title';
+                            var h1Tag = '<h1>' + currentTitle + '</h1>\n\n';
                             
                             // Add H1 at the beginning of content
                             currentContent = h1Tag + currentContent;
@@ -1169,9 +1179,9 @@ function waitForConfirmForceAiFix() {
                         // Simple H1 fix: add H1 tag at the beginning of content if missing
                         var h1Pattern = /<h1[^>]*>/i;
                         if (!h1Pattern.test(currentContent)) {
-                            // Extract a meaningful H1 from the article title
-                            var articleTitle = article.title || 'Article Title';
-                            var h1Tag = '<h1>' + articleTitle + '</h1>\n\n';
+                            // Use AI-modified title if available, otherwise fall back to original title
+                            var currentTitle = (articleData.aiValues.title !== undefined) ? articleData.aiValues.title : (article.title || 'Article Title');
+                            var h1Tag = '<h1>' + currentTitle + '</h1>\n\n';
                             
                             // Add H1 at the beginning of content
                             currentContent = h1Tag + currentContent;

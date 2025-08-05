@@ -7,3 +7,4 @@ fix Le bulk ai qui est bug la génération s'effectue correctement cependant lor
 
 Check le bon fonctionnement du force AI
 
+Bug aussi dans l'ajout du H1 il prend le titre avant le passage de l'ia donc il faut gérer si le titre doit être modifier alors on attend de le modifier et on récupére cette valeur et on ajoute. si le titre est déjà optimal alors effectivement on garde celui la
