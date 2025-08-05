@@ -414,14 +414,14 @@ $listDirn = 'ASC';
 </div>
 
 <!-- Include JavaScript files -->
-<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/variables.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/notifications.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/analysis.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/display.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/modal.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/utils.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/bulk-ai.js'; ?>"></script>
-<script src="<?php echo Uri::root() . 'administrator/components/com_joomlahits/tmpl/seoanalysis/js/force-ai.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/variables.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/notifications.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/analysis.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/display.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/modal.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/utils.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/bulk-ai.js'; ?>"></script>
+<script src="<?php echo Uri::root() . 'components/com_joomlahits/admin/tmpl/seoanalysis/js/force-ai.js'; ?>"></script>
 
 <script>
 // Set global variable for admin URL
@@ -630,8 +630,34 @@ function waitForConfirmForceAiFix() {
                     title: change.finalValues.title !== undefined ? change.finalValues.title : (change.originalValues.title || ''),
                     metadesc: change.finalValues.metadesc !== undefined ? change.finalValues.metadesc : (change.originalValues.metadesc || ''),
                     metakey: change.finalValues.metakey !== undefined ? change.finalValues.metakey : (change.originalValues.metakey || ''),
-                    content: change.finalValues.content !== undefined ? change.finalValues.content : (change.originalValues.content || '')
                 };
+                
+                // Handle introtext/fulltext or fallback to content
+                if (change.originalValues.introtext !== undefined || change.originalValues.fulltext !== undefined) {
+                    // We have original structure - preserve it
+                    if (change.finalValues.content !== undefined && change.finalValues.content !== change.originalValues.content) {
+                        // Content was modified by AI - need to handle splitting
+                        var modifiedContent = change.finalValues.content;
+                        var readmorePattern = /<hr\s+id\s*=\s*["']system-readmore["'][^>]*>/i;
+                        if (readmorePattern.test(modifiedContent)) {
+                            // Split the modified content
+                            var parts = modifiedContent.split(readmorePattern);
+                            safeChanges.introtext = parts[0].trim();
+                            safeChanges.fulltext = parts[1] ? parts[1].trim() : '';
+                        } else {
+                            // No readmore separator - modified content goes to introtext, preserve original fulltext
+                            safeChanges.introtext = modifiedContent;
+                            safeChanges.fulltext = change.originalValues.fulltext || '';
+                        }
+                    } else {
+                        // Content not modified - use original structure
+                        safeChanges.introtext = change.originalValues.introtext || '';
+                        safeChanges.fulltext = change.originalValues.fulltext || '';
+                    }
+                } else {
+                    // Fallback to old content field
+                    safeChanges.content = change.finalValues.content !== undefined ? change.finalValues.content : (change.originalValues.content || '');
+                }
                 
                 resultsToSave.push({
                     articleId: articleId,
@@ -665,9 +691,17 @@ function waitForConfirmForceAiFix() {
             formData.append('title', articleToSave.changes.title || '');
             formData.append('metadesc', articleToSave.changes.metadesc || '');
             formData.append('metakey', articleToSave.changes.metakey || '');
-            formData.append('content', articleToSave.changes.content || '');
             
-            fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_fix.php', {
+            // Handle introtext/fulltext properly
+            if (articleToSave.changes.introtext !== undefined || articleToSave.changes.fulltext !== undefined) {
+                formData.append('introtext', articleToSave.changes.introtext || '');
+                formData.append('fulltext', articleToSave.changes.fulltext || '');
+            } else {
+                // Fallback for compatibility
+                formData.append('content', articleToSave.changes.content || '');
+            }
+            
+            fetch('<?php echo Uri::root(); ?>components/com_joomlahits/admin/direct_seo_fix.php', {
                 method: 'POST',
                 body: formData
             })
@@ -737,9 +771,17 @@ function waitForConfirmForceAiFix() {
             formData.append('title', articleToSave.changes.title);
             formData.append('metadesc', articleToSave.changes.metadesc);
             formData.append('metakey', articleToSave.changes.metakey);
-            formData.append('content', articleToSave.changes.content || '');
             
-            fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_fix.php', {
+            // Handle introtext/fulltext properly
+            if (articleToSave.changes.introtext !== undefined || articleToSave.changes.fulltext !== undefined) {
+                formData.append('introtext', articleToSave.changes.introtext || '');
+                formData.append('fulltext', articleToSave.changes.fulltext || '');
+            } else {
+                // Fallback for compatibility
+                formData.append('content', articleToSave.changes.content || '');
+            }
+            
+            fetch('<?php echo Uri::root(); ?>components/com_joomlahits/admin/direct_seo_fix.php', {
                 method: 'POST',
                 body: formData
             })
@@ -779,10 +821,47 @@ function waitForConfirmForceAiFix() {
             return;
         }
         
-        var form = document.getElementById('seoFixForm');
-        var formData = new FormData(form);
+
+        var formData = new FormData();
+        formData.append('article_id', currentArticleData.id);
+        formData.append('title', document.getElementById('seo-title').value);
+        formData.append('metadesc', document.getElementById('seo-metadesc').value);
+        formData.append('metakey', document.getElementById('seo-metakey').value);
         
-        fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_seo_fix.php', {
+        // Send separate introtext and fulltext if we have the original structure
+        if (currentArticleData.introtext !== undefined && currentArticleData.fulltext !== undefined) {
+            
+            // If content was modified by AI, we need to handle it properly
+            var currentContent = document.getElementById('seo-content').value;
+            var originalCombined = (currentArticleData.introtext || '') + ' ' + (currentArticleData.fulltext || '');
+            
+            
+            if (currentContent !== originalCombined.trim()) {
+                // Content was modified - check if it has readmore separator
+                var readmorePattern = /<hr\s+id\s*=\s*["']system-readmore["'][^>]*>/i;
+                if (readmorePattern.test(currentContent)) {
+                    // Split the modified content
+                    var parts = currentContent.split(readmorePattern);
+                    var intropart = parts[0].trim();
+                    var fullpart = parts[1] ? parts[1].trim() : '';
+                    formData.append('introtext', intropart);
+                    formData.append('fulltext', fullpart);
+                } else {
+                    // No readmore separator - modified content goes to introtext, preserve original fulltext
+                    formData.append('introtext', currentContent);
+                    formData.append('fulltext', currentArticleData.fulltext || '');
+                }
+            } else {
+                // Content not modified - send original structure
+                formData.append('introtext', currentArticleData.introtext || '');
+                formData.append('fulltext', currentArticleData.fulltext || '');
+            }
+        } else {
+            // Fallback to old method for compatibility
+            formData.append('content', document.getElementById('seo-content').value);
+        }
+        
+        fetch('<?php echo Uri::root(); ?>components/com_joomlahits/admin/direct_seo_fix.php', {
             method: 'POST',
             body: formData
         })
@@ -885,7 +964,9 @@ function waitForConfirmForceAiFix() {
             title: document.getElementById('seo-title').value,
             metadesc: document.getElementById('seo-metadesc').value,
             metakey: document.getElementById('seo-metakey').value,
-            content: document.getElementById('seo-content').value
+            content: document.getElementById('seo-content').value,
+            introtext: currentArticleData.introtext || '',
+            fulltext: currentArticleData.fulltext || ''
         };
         
         // Store in bulk changes if in bulk mode
@@ -1049,7 +1130,6 @@ function waitForConfirmForceAiFix() {
                                     if (!data.complete_success && data.remaining_problematic_count > 0) {
                                         successMessage += ' - ' + data.remaining_problematic_count + ' images still need attention';
                                     }
-                                    console.log(successMessage);
                                 }
                             }
                             
@@ -1617,7 +1697,9 @@ function openBulkSeoModal() {
                 alias: fullArticle.alias,
                 metadesc: fullArticle.metadesc,
                 metakey: fullArticle.metakey,
-                content: fullArticle.content,
+                introtext: fullArticle.introtext,
+                fulltext: fullArticle.fulltext,
+                content: fullArticle.content, // Keep combined for backward compatibility
                 category: fullArticle.category,
                 language: fullArticle.language,
                 hits: fullArticle.hits,
@@ -1634,7 +1716,10 @@ function openBulkSeoModal() {
             window.originalValues = {
                 title: fullArticle.title || '',
                 metadesc: fullArticle.metadesc || '',
-                metakey: fullArticle.metakey || ''
+                metakey: fullArticle.metakey || '',
+                content: fullArticle.content || '',
+                introtext: fullArticle.introtext || '',
+                fulltext: fullArticle.fulltext || ''
             };
             
             // Apply accepted changes if they exist (after loading original data)
@@ -1669,7 +1754,10 @@ function openBulkSeoModal() {
             window.originalValues = {
                 title: article.title || '',
                 metadesc: article.metadesc || '',
-                metakey: article.metakey || ''
+                metakey: article.metakey || '',
+                content: article.content || '',
+                introtext: article.introtext || '',
+                fulltext: article.fulltext || ''
             };
             
             // Apply accepted changes if they exist (after loading original data)
@@ -1705,7 +1793,10 @@ function openBulkSeoModal() {
         window.originalValues = {
             title: article.title || '',
             metadesc: article.metadesc || '',
-            metakey: article.metakey || ''
+            metakey: article.metakey || '',
+            content: article.content || '',
+            introtext: article.introtext || '',
+            fulltext: article.fulltext || ''
         };
         
         // Apply accepted changes if they exist (after loading original data)

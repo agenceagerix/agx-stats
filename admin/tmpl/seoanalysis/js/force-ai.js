@@ -255,7 +255,9 @@ function processNextForceAiArticle() {
                 title: fullArticle.title || '',
                 metadesc: fullArticle.metadesc || '',
                 metakey: fullArticle.metakey || '',
-                content: (fullArticle.introtext || '') + ' ' + (fullArticle.fulltext || '')
+                content: (fullArticle.introtext || '') + ' ' + (fullArticle.fulltext || ''),
+                introtext: fullArticle.introtext || '',
+                fulltext: fullArticle.fulltext || ''
             };
             
             // Now process all fields for this article with complete data
@@ -266,7 +268,9 @@ function processNextForceAiArticle() {
                 title: article.title || '',
                 metadesc: article.metadesc || '',
                 metakey: article.metakey || '',
-                content: '' // We don't have content data in the fallback
+                content: '', // We don't have content data in the fallback
+                introtext: '',
+                fulltext: ''
             };
             
             processAllFieldsForArticle(article);
@@ -279,7 +283,9 @@ function processNextForceAiArticle() {
             title: article.title || '',
             metadesc: article.metadesc || '',
             metakey: article.metakey || '',
-            content: '' // We don't have content data in the error fallback
+            content: '', // We don't have content data in the error fallback
+            introtext: '',
+            fulltext: ''
         };
         
         processAllFieldsForArticle(article);
@@ -390,15 +396,43 @@ function saveForceAiChanges() {
     Object.keys(forceAiChanges).forEach(function(articleId) {
         var articleData = forceAiChanges[articleId];
         if (Object.keys(articleData.aiValues).length > 0) {
+            var changes = {
+                title: articleData.aiValues.title || articleData.originalValues.title,
+                metadesc: articleData.aiValues.metadesc || articleData.originalValues.metadesc,
+                metakey: articleData.aiValues.metakey || articleData.originalValues.metakey
+            };
+            
+            // Handle introtext/fulltext properly
+            if (articleData.originalValues.introtext !== undefined || articleData.originalValues.fulltext !== undefined) {
+                // We have original structure - preserve it
+                if (articleData.aiValues.content !== undefined && articleData.aiValues.content !== articleData.originalValues.content) {
+                    // Content was modified by AI - need to handle splitting
+                    var modifiedContent = articleData.aiValues.content;
+                    var readmorePattern = /<hr\s+id\s*=\s*["']system-readmore["'][^>]*>/i;
+                    if (readmorePattern.test(modifiedContent)) {
+                        // Split the modified content
+                        var parts = modifiedContent.split(readmorePattern);
+                        changes.introtext = parts[0].trim();
+                        changes.fulltext = parts[1] ? parts[1].trim() : '';
+                    } else {
+                        // No readmore separator - modified content goes to introtext, preserve original fulltext
+                        changes.introtext = modifiedContent;
+                        changes.fulltext = articleData.originalValues.fulltext || '';
+                    }
+                } else {
+                    // Content not modified - use original structure
+                    changes.introtext = articleData.originalValues.introtext || '';
+                    changes.fulltext = articleData.originalValues.fulltext || '';
+                }
+            } else {
+                // Fallback to old content field
+                changes.content = articleData.aiValues.content || articleData.originalValues.content;
+            }
+            
             articlesToSave.push({
                 articleId: articleId,
                 title: articleData.title,
-                changes: {
-                    title: articleData.aiValues.title || articleData.originalValues.title,
-                    metadesc: articleData.aiValues.metadesc || articleData.originalValues.metadesc,
-                    metakey: articleData.aiValues.metakey || articleData.originalValues.metakey,
-                    content: articleData.aiValues.content || articleData.originalValues.content
-                }
+                changes: changes
             });
         }
     });

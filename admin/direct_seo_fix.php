@@ -52,6 +52,9 @@ if (!$articleId) {
 }
 
 try {
+    // DEBUG: Log all received POST data
+    error_log("DEBUG: direct_seo_fix.php received POST data for article {$articleId}: " . print_r($_POST, true));
+    
     // Establish direct PDO database connection
     $db = new PDO(
         'mysql:host=' . $config->host . ';dbname=' . $config->db . ';charset=utf8mb4',
@@ -81,20 +84,37 @@ try {
         $fields[] = '`metakey` = :metakey';
     }
     
-    // Content field with introtext/fulltext splitting
-    if (isset($_POST['content'])) {
+    // Handle separate introtext and fulltext fields (new preferred method)
+    if (isset($_POST['introtext']) || isset($_POST['fulltext'])) {
+        error_log("DEBUG: Using separate introtext/fulltext method - introtext present: " . (isset($_POST['introtext']) ? 'yes' : 'no') . ", fulltext present: " . (isset($_POST['fulltext']) ? 'yes' : 'no'));
+        if (isset($_POST['introtext'])) {
+            $fields[] = '`introtext` = :introtext';
+            error_log("DEBUG: Will update introtext with " . strlen($_POST['introtext']) . " characters");
+        }
+        if (isset($_POST['fulltext'])) {
+            $fields[] = '`fulltext` = :fulltext';
+            error_log("DEBUG: Will update fulltext with " . strlen($_POST['fulltext']) . " characters");
+        }
+    }
+    // Fallback: Content field with introtext/fulltext splitting (backward compatibility)
+    elseif (isset($_POST['content'])) {
+        error_log("DEBUG: Using fallback content field method");
         $content = $_POST['content'];
         $readmorePattern = '/<hr\s+id\s*=\s*["\']system-readmore["\'][^>]*>/i';
         
         if (preg_match($readmorePattern, $content)) {
+            error_log("DEBUG: Content has readmore separator, splitting content");
             // Content has a readmore separator - split into introtext and fulltext
             $parts = preg_split($readmorePattern, $content, 2);
             $introtext = trim($parts[0]);
             $fulltext = isset($parts[1]) ? trim($parts[1]) : '';
             
+            error_log("DEBUG: Split content - introtext: " . strlen($introtext) . " chars, fulltext: " . strlen($fulltext) . " chars");
+            
             $fields[] = '`introtext` = :introtext';
             $fields[] = '`fulltext` = :fulltext';
         } else {
+            error_log("DEBUG: No readmore separator found, all content goes to introtext");
             // No readmore separator - put all content in introtext, clear fulltext
             $fields[] = '`introtext` = :introtext';
             $fields[] = '`fulltext` = :fulltext';
@@ -121,8 +141,17 @@ try {
             $stmt->bindParam(':metakey', $_POST['metakey'], PDO::PARAM_STR);
         }
         
-        // Content field binding
-        if (isset($_POST['content'])) {
+        // Handle separate introtext and fulltext field binding (new preferred method)
+        if (isset($_POST['introtext']) || isset($_POST['fulltext'])) {
+            if (isset($_POST['introtext'])) {
+                $stmt->bindParam(':introtext', $_POST['introtext'], PDO::PARAM_STR);
+            }
+            if (isset($_POST['fulltext'])) {
+                $stmt->bindParam(':fulltext', $_POST['fulltext'], PDO::PARAM_STR);
+            }
+        }
+        // Fallback: Content field binding (backward compatibility)
+        elseif (isset($_POST['content'])) {
             $content = $_POST['content'];
             $readmorePattern = '/<hr\s+id\s*=\s*["\']system-readmore["\'][^>]*>/i';
             

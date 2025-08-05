@@ -186,7 +186,9 @@ try {
                 'alias' => $article->alias,
                 'metadesc' => $article->metadesc,
                 'metakey' => $article->metakey,
-                'content' => trim($article->introtext . ' ' . $article->fulltext),
+                'introtext' => $article->introtext,
+                'fulltext' => $article->fulltext,
+                'content' => trim($article->introtext . ' ' . $article->fulltext), // Keep for backward compatibility
                 'category' => $article->category_title ?: 'No category',
                 'language' => $article->language ?: 'en-GB',
                 'hits' => $article->hits,

@@ -87,20 +87,21 @@ function openSeoModal(articleId) {
         if (data.success && data.data) {
             var fullArticle = data.data;
             
-            // Store complete article data
+            // Store complete article data with separate introtext/fulltext
             currentArticleData = {
                 id: fullArticle.id,
                 title: fullArticle.title,
                 alias: fullArticle.alias,
                 metadesc: fullArticle.metadesc,
                 metakey: fullArticle.metakey,
-                content: fullArticle.content,
+                content: fullArticle.content, // Combined content for backward compatibility
+                introtext: fullArticle.introtext || '', // Store separate introtext
+                fulltext: fullArticle.fulltext || '', // Store separate fulltext
                 category: fullArticle.category,
                 language: fullArticle.language,
                 hits: fullArticle.hits,
                 issues: article.issues // Keep original issues from analysis
             };
-            
             // Store image issues globally for persistent display
             window.currentImageIssues = article.issues.filter(function(issue) {
                 return issue.type === 'missing_alt_tags' && issue.details;
