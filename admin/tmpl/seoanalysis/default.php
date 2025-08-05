@@ -580,6 +580,60 @@ function waitForConfirmForceAiFix() {
                 currentAnalysisResults = data.data;
                 articlesList = []; // Not needed anymore since we have complete results
                 
+                // Log detailed image analysis to browser console for debugging (bulk analysis)
+                if (currentAnalysisResults.issues && currentAnalysisResults.issues.length > 0) {
+                    var imageIssuesCount = 0;
+                    console.group('🖼️ SEO Bulk Analysis - Image Alt Attribute Issues Summary');
+                    
+                    currentAnalysisResults.issues.forEach(function(article) {
+                        if (article.issues && article.issues.length > 0) {
+                            article.issues.forEach(function(issue) {
+                                if (issue.type === 'missing_alt_tags' && issue.details) {
+                                    imageIssuesCount++;
+                                    console.group('📄 Article: ' + article.title + ' (ID: ' + article.id + ')');
+                                    console.log('📊 Summary:', issue.message);
+                                    
+                                    var details = issue.details;
+                                    if (details.introtext_analysis && details.introtext_analysis.image_count > 0) {
+                                        console.group('📝 Introtext Analysis');
+                                        console.log('Total images:', details.introtext_analysis.image_count);
+                                        console.log('Missing alt:', details.introtext_analysis.missing_alt);
+                                        console.log('Empty alt:', details.introtext_analysis.empty_alt);
+                                        console.log('Proper alt:', details.introtext_analysis.proper_alt);
+                                        if (details.introtext_analysis.problematic_images.length > 0) {
+                                            console.table(details.introtext_analysis.problematic_images);
+                                        }
+                                        console.groupEnd();
+                                    }
+                                    
+                                    if (details.fulltext_analysis && details.fulltext_analysis.image_count > 0) {
+                                        console.group('📄 Fulltext Analysis');
+                                        console.log('Total images:', details.fulltext_analysis.image_count);
+                                        console.log('Missing alt:', details.fulltext_analysis.missing_alt);
+                                        console.log('Empty alt:', details.fulltext_analysis.empty_alt);
+                                        console.log('Proper alt:', details.fulltext_analysis.proper_alt);
+                                        if (details.fulltext_analysis.problematic_images.length > 0) {
+                                            console.table(details.fulltext_analysis.problematic_images);
+                                        }
+                                        console.groupEnd();
+                                    }
+                                    
+                                    if (details.problematic_images && details.problematic_images.length > 0) {
+                                        console.group('⚠️ All Problematic Images');
+                                        console.table(details.problematic_images);
+                                        console.groupEnd();
+                                    }
+                                    
+                                    console.groupEnd();
+                                }
+                            });
+                        }
+                    });
+                    
+                    console.log('📊 Total articles with image alt issues:', imageIssuesCount);
+                    console.groupEnd();
+                }
+                
                 document.getElementById('current-analysis-status').textContent = 
                     'Analysis completed - ' + currentAnalysisResults.issues.length + ' articles with issues out of ' + currentAnalysisResults.total_articles;
                 
@@ -822,6 +876,51 @@ function waitForConfirmForceAiFix() {
         })
         .then(data => {
             if (data.success) {
+                // Log detailed image analysis to browser console for debugging
+                if (data.data && data.data.issues && data.data.issues.length > 0) {
+                    data.data.issues.forEach(function(issue) {
+                        if (issue.type === 'missing_alt_tags' && issue.details) {
+                            console.group('🖼️ SEO Analysis Update - Image Alt Attribute Issues');
+                            console.log('Article ID:', data.data.id);
+                            console.log('Article Title:', data.data.title);
+                            console.log('📊 Summary:', issue.message);
+                            
+                            var details = issue.details;
+                            if (details.introtext_analysis && details.introtext_analysis.image_count > 0) {
+                                console.group('📝 Introtext Analysis');
+                                console.log('Total images:', details.introtext_analysis.image_count);
+                                console.log('Missing alt:', details.introtext_analysis.missing_alt);
+                                console.log('Empty alt:', details.introtext_analysis.empty_alt);
+                                console.log('Proper alt:', details.introtext_analysis.proper_alt);
+                                if (details.introtext_analysis.problematic_images.length > 0) {
+                                    console.table(details.introtext_analysis.problematic_images);
+                                }
+                                console.groupEnd();
+                            }
+                            
+                            if (details.fulltext_analysis && details.fulltext_analysis.image_count > 0) {
+                                console.group('📄 Fulltext Analysis');
+                                console.log('Total images:', details.fulltext_analysis.image_count);
+                                console.log('Missing alt:', details.fulltext_analysis.missing_alt);
+                                console.log('Empty alt:', details.fulltext_analysis.empty_alt);
+                                console.log('Proper alt:', details.fulltext_analysis.proper_alt);
+                                if (details.fulltext_analysis.problematic_images.length > 0) {
+                                    console.table(details.fulltext_analysis.problematic_images);
+                                }
+                                console.groupEnd();
+                            }
+                            
+                            if (details.problematic_images && details.problematic_images.length > 0) {
+                                console.group('⚠️ All Problematic Images');
+                                console.table(details.problematic_images);
+                                console.groupEnd();
+                            }
+                            
+                            console.groupEnd();
+                        }
+                    });
+                }
+                
                 // Update article in results
                 for (var i = 0; i < filteredResults.length; i++) {
                     if (filteredResults[i].id == articleId) {
@@ -1213,6 +1312,17 @@ function updateIssuesList() {
         hasIssues = true;
     }
     
+    // Add persistent image issues if they exist
+    if (window.currentImageIssues && window.currentImageIssues.length > 0) {
+        for (var i = 0; i < window.currentImageIssues.length; i++) {
+            var issue = window.currentImageIssues[i];
+            var li = document.createElement('li');
+            li.innerHTML = createImageAltIssueDisplay(issue);
+            issuesList.appendChild(li);
+            hasIssues = true;
+        }
+    }
+    
     if (!hasIssues) {
         var li = document.createElement('li');
         li.className = 'text-success';
@@ -1333,6 +1443,51 @@ function openBulkSeoModal() {
     .then(data => {
         if (data.success && data.data) {
             var fullArticle = data.data;
+            
+            // Log detailed image analysis to browser console for debugging
+            if (fullArticle.issues && fullArticle.issues.length > 0) {
+                fullArticle.issues.forEach(function(issue) {
+                    if (issue.type === 'missing_alt_tags' && issue.details) {
+                        console.group('🖼️ SEO Analysis - Image Alt Attribute Issues');
+                        console.log('Article ID:', fullArticle.id);
+                        console.log('Article Title:', fullArticle.title);
+                        console.log('📊 Summary:', issue.message);
+                        
+                        var details = issue.details;
+                        if (details.introtext_analysis && details.introtext_analysis.image_count > 0) {
+                            console.group('📝 Introtext Analysis');
+                            console.log('Total images:', details.introtext_analysis.image_count);
+                            console.log('Missing alt:', details.introtext_analysis.missing_alt);
+                            console.log('Empty alt:', details.introtext_analysis.empty_alt);
+                            console.log('Proper alt:', details.introtext_analysis.proper_alt);
+                            if (details.introtext_analysis.problematic_images.length > 0) {
+                                console.table(details.introtext_analysis.problematic_images);
+                            }
+                            console.groupEnd();
+                        }
+                        
+                        if (details.fulltext_analysis && details.fulltext_analysis.image_count > 0) {
+                            console.group('📄 Fulltext Analysis');
+                            console.log('Total images:', details.fulltext_analysis.image_count);
+                            console.log('Missing alt:', details.fulltext_analysis.missing_alt);
+                            console.log('Empty alt:', details.fulltext_analysis.empty_alt);
+                            console.log('Proper alt:', details.fulltext_analysis.proper_alt);
+                            if (details.fulltext_analysis.problematic_images.length > 0) {
+                                console.table(details.fulltext_analysis.problematic_images);
+                            }
+                            console.groupEnd();
+                        }
+                        
+                        if (details.problematic_images && details.problematic_images.length > 0) {
+                            console.group('⚠️ All Problematic Images');
+                            console.table(details.problematic_images);
+                            console.groupEnd();
+                        }
+                        
+                        console.groupEnd();
+                    }
+                });
+            }
             
             // Update currentArticleData with complete data
             currentArticleData = {
@@ -1459,8 +1614,17 @@ function openBulkSeoModal() {
         var issuesList = document.getElementById('issues-details');
         issuesList.innerHTML = '';
         for (var j = 0; j < article.issues.length; j++) {
+            var issue = article.issues[j];
             var li = document.createElement('li');
-            li.textContent = article.issues[j].message;
+            
+            // Check if this is an image alt attribute issue and has detailed information
+            if (issue.type === 'missing_alt_tags' && issue.details) {
+                li.innerHTML = createImageAltIssueDisplay(issue);
+            } else {
+                // Regular issue display
+                li.textContent = issue.message;
+            }
+            
             issuesList.appendChild(li);
         }
         

@@ -331,6 +331,133 @@ try {
 }
 
 /**
+ * Analyze images in content for alt attribute issues with detailed logging
+ */
+function analyzeImagesWithLogging($introtext, $fulltext, $articleId, $articleTitle)
+{
+    $results = [
+        'article_id' => $articleId,
+        'article_title' => $articleTitle,
+        'total_images' => 0,
+        'missing_alt' => 0,
+        'empty_alt' => 0,
+        'proper_alt' => 0,
+        'introtext_analysis' => [],
+        'fulltext_analysis' => [],
+        'problematic_images' => []
+    ];
+    
+    // Analyze introtext
+    if (!empty($introtext)) {
+        $introtextAnalysis = analyzeContentImages($introtext, 'introtext');
+        $results['introtext_analysis'] = $introtextAnalysis;
+        $results['total_images'] += $introtextAnalysis['image_count'];
+        $results['missing_alt'] += $introtextAnalysis['missing_alt'];
+        $results['empty_alt'] += $introtextAnalysis['empty_alt'];
+        $results['proper_alt'] += $introtextAnalysis['proper_alt'];
+        $results['problematic_images'] = array_merge($results['problematic_images'], $introtextAnalysis['problematic_images']);
+    }
+    
+    // Analyze fulltext
+    if (!empty($fulltext)) {
+        $fulltextAnalysis = analyzeContentImages($fulltext, 'fulltext');
+        $results['fulltext_analysis'] = $fulltextAnalysis;
+        $results['total_images'] += $fulltextAnalysis['image_count'];
+        $results['missing_alt'] += $fulltextAnalysis['missing_alt'];
+        $results['empty_alt'] += $fulltextAnalysis['empty_alt'];
+        $results['proper_alt'] += $fulltextAnalysis['proper_alt'];
+        $results['problematic_images'] = array_merge($results['problematic_images'], $fulltextAnalysis['problematic_images']);
+    }
+    
+    // Log the results to PHP error log for debugging
+    if ($results['missing_alt'] > 0 || $results['empty_alt'] > 0) {
+        $logMessage = "SEO Analysis - Images without proper alt attributes found:\n";
+        $logMessage .= "Article ID: {$articleId}\n";
+        $logMessage .= "Article Title: {$articleTitle}\n";
+        $logMessage .= "Total Images: {$results['total_images']}\n";
+        $logMessage .= "Missing Alt: {$results['missing_alt']}\n";
+        $logMessage .= "Empty Alt: {$results['empty_alt']}\n";
+        $logMessage .= "Proper Alt: {$results['proper_alt']}\n";
+        
+        if (!empty($results['problematic_images'])) {
+            $logMessage .= "Problematic Images:\n";
+            foreach ($results['problematic_images'] as $index => $imageInfo) {
+                $logMessage .= "  " . ($index + 1) . ". Location: {$imageInfo['content_type']}\n";
+                $logMessage .= "     Issue: {$imageInfo['issue']}\n";
+                $logMessage .= "     Src: " . (isset($imageInfo['src']) ? $imageInfo['src'] : 'N/A') . "\n";
+                $logMessage .= "     HTML: " . substr($imageInfo['html'], 0, 100) . (strlen($imageInfo['html']) > 100 ? '...' : '') . "\n";
+            }
+        }
+        
+        error_log($logMessage);
+    }
+    
+    return $results;
+}
+
+/**
+ * Analyze images in a specific content section (introtext or fulltext)
+ */
+function analyzeContentImages($content, $contentType)
+{
+    $results = [
+        'content_type' => $contentType,
+        'image_count' => 0,
+        'missing_alt' => 0,
+        'empty_alt' => 0,
+        'proper_alt' => 0,
+        'problematic_images' => []
+    ];
+    
+    // Use DOMDocument to properly parse HTML and find img tags
+    libxml_use_internal_errors(true); // Suppress HTML parsing warnings
+    $dom = new DOMDocument();
+    $dom->loadHTML('<?xml encoding="UTF-8">' . $content, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    
+    $images = $dom->getElementsByTagName('img');
+    $results['image_count'] = $images->length;
+    
+    foreach ($images as $img) {
+        $imageHtml = $dom->saveHTML($img);
+        $src = $img->getAttribute('src');
+        $alt = $img->getAttribute('alt');
+        $hasAltAttribute = $img->hasAttribute('alt');
+        
+        if (!$hasAltAttribute) {
+            // Image has no alt attribute at all
+            $results['missing_alt']++;
+            $results['problematic_images'][] = [
+                'content_type' => $contentType,
+                'issue' => 'Missing alt attribute',
+                'src' => $src,
+                'html' => $imageHtml,
+                'has_alt_attribute' => false,
+                'alt_value' => null
+            ];
+        } elseif ($hasAltAttribute && empty(trim($alt))) {
+            // Image has alt attribute but it's empty
+            $results['empty_alt']++;
+            $results['problematic_images'][] = [
+                'content_type' => $contentType,
+                'issue' => 'Empty alt attribute',
+                'src' => $src,
+                'html' => $imageHtml,
+                'has_alt_attribute' => true,
+                'alt_value' => $alt
+            ];
+        } else {
+            // Image has proper alt attribute with content
+            $results['proper_alt']++;
+        }
+    }
+    
+    // Clear libxml errors
+    libxml_clear_errors();
+    
+    return $results;
+}
+
+/**
  * Analyze articles for SEO issues
  */
 function analyzeArticles($articles, $selectedIssues, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minContentLength, $minUrlLength, $maxUrlLength)
@@ -482,18 +609,18 @@ function analyzeArticle($article, $selectedIssues = null, $minTitleLength = 30, 
         if ($maxSeverity !== 'critical') $maxSeverity = 'warning';
     }
 
-    // 4. Image Analysis
+    // 4. Enhanced Image Analysis with Detailed Logging
     if (in_array('missing_alt_tags', $selectedIssues)) {
-        $imageCount = substr_count(strtolower($content), '<img');
-        $altCount = substr_count(strtolower($content), 'alt=');
+        $imageAnalysis = analyzeImagesWithLogging($article->introtext, $article->fulltext, $article->id, $article->title);
         
-        if ($imageCount > 0 && $altCount < $imageCount) {
-            $missingAlt = $imageCount - $altCount;
+        if ($imageAnalysis['total_images'] > 0 && ($imageAnalysis['missing_alt'] > 0 || $imageAnalysis['empty_alt'] > 0)) {
+            $totalProblematic = $imageAnalysis['missing_alt'] + $imageAnalysis['empty_alt'];
             $issues[] = [
                 'type' => 'missing_alt_tags',
-                'message' => "{$missingAlt} image(s) without alt attribute out of {$imageCount} total",
+                'message' => "{$totalProblematic} image(s) without proper alt attribute out of {$imageAnalysis['total_images']} total (Missing: {$imageAnalysis['missing_alt']}, Empty: {$imageAnalysis['empty_alt']})",
                 'severity' => 'warning',
-                'icon' => 'image'
+                'icon' => 'image',
+                'details' => $imageAnalysis // Include detailed analysis in the response
             ];
             $categories[] = 'image';
             if ($maxSeverity !== 'critical') $maxSeverity = 'warning';

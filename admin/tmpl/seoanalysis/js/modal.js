@@ -29,6 +29,11 @@ function openSeoModal(articleId) {
     document.getElementById('ai-preview-section').style.display = 'none';
     safeUpdateSaveButtonState();
     
+    // Store image issues immediately for persistent display during form updates
+    window.currentImageIssues = article.issues.filter(function(issue) {
+        return issue.type === 'missing_alt_tags' && issue.details;
+    });
+    
     // Show loading state in modal
     document.getElementById('seo-article-id').value = articleId;
     document.getElementById('seo-title').value = 'Loading...';
@@ -40,8 +45,17 @@ function openSeoModal(articleId) {
     var issuesList = document.getElementById('issues-details');
     issuesList.innerHTML = '';
     for (var j = 0; j < article.issues.length; j++) {
+        var issue = article.issues[j];
         var li = document.createElement('li');
-        li.textContent = article.issues[j].message;
+        
+        // Check if this is an image alt attribute issue and has detailed information
+        if (issue.type === 'missing_alt_tags' && issue.details) {
+            li.innerHTML = createImageAltIssueDisplay(issue);
+        } else {
+            // Regular issue display
+            li.textContent = issue.message;
+        }
+        
         issuesList.appendChild(li);
     }
     
@@ -85,6 +99,11 @@ function openSeoModal(articleId) {
                 hits: fullArticle.hits,
                 issues: article.issues // Keep original issues from analysis
             };
+            
+            // Store image issues globally for persistent display
+            window.currentImageIssues = article.issues.filter(function(issue) {
+                return issue.type === 'missing_alt_tags' && issue.details;
+            });
             
             // Fill form with real data
             document.getElementById('seo-title').value = fullArticle.title || '';
@@ -130,6 +149,155 @@ function addIssue(list, message, severity) {
     li.className = className;
     li.innerHTML = '<i class="icon-' + icon + '"></i> ' + message;
     list.appendChild(li);
+}
+
+/**
+ * Create detailed display for image alt attribute issues
+ */
+function createImageAltIssueDisplay(issue) {
+    var details = issue.details;
+    var totalProblematic = details.missing_alt + details.empty_alt;
+    var uniqueId = 'image-details-' + Math.random().toString(36).substr(2, 9);
+    
+    var html = '<div class="text-warning">';
+    html += '<i class="icon-image text-primary me-2"></i>';
+    html += '<strong>' + issue.message + '</strong>';
+    
+    // Add expandable details section
+    html += '<div class="mt-2">';
+    html += '<button type="button" class="btn btn-sm btn-outline-info" onclick="toggleImageDetails(\'' + uniqueId + '\')">';
+    html += '<i class="icon-eye me-1"></i>View Details';
+    html += '</button>';
+    html += '</div>';
+    
+    // Details section (initially hidden)
+    html += '<div id="' + uniqueId + '" class="mt-3 p-3 border rounded bg-light" style="display: none;">';
+    html += '<h6 class="text-primary"><i class="icon-info me-2"></i>Image Analysis Details</h6>';
+    
+    // Summary statistics
+    html += '<div class="row mb-3">';
+    html += '<div class="col-md-6">';
+    html += '<div class="card border-warning">';
+    html += '<div class="card-body p-2">';
+    html += '<h6 class="card-title text-warning mb-1"><i class="icon-warning me-1"></i>Problems Found</h6>';
+    html += '<ul class="list-unstyled mb-0 small">';
+    html += '<li><strong>Missing alt attribute:</strong> ' + details.missing_alt + ' image(s)</li>';
+    html += '<li><strong>Empty alt attribute:</strong> ' + details.empty_alt + ' image(s)</li>';
+    html += '<li class="text-danger"><strong>Total problematic:</strong> ' + totalProblematic + ' image(s)</li>';
+    html += '</ul>';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    
+    html += '<div class="col-md-6">';
+    html += '<div class="card border-success">';
+    html += '<div class="card-body p-2">';
+    html += '<h6 class="card-title text-success mb-1"><i class="icon-checkmark me-1"></i>Good Images</h6>';
+    html += '<ul class="list-unstyled mb-0 small">';
+    html += '<li><strong>Proper alt attribute:</strong> ' + details.proper_alt + ' image(s)</li>';
+    html += '<li><strong>Total images:</strong> ' + details.total_images + ' image(s)</li>';
+    html += '</ul>';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    
+    // Section breakdown
+    if (details.introtext_analysis && details.introtext_analysis.image_count > 0) {
+        html += '<div class="mb-3">';
+        html += '<h6 class="text-info"><i class="icon-file-text me-2"></i>Intro Text Analysis</h6>';
+        html += '<div class="small">';
+        html += '<span class="badge bg-secondary me-2">Total: ' + details.introtext_analysis.image_count + '</span>';
+        if (details.introtext_analysis.missing_alt > 0) {
+            html += '<span class="badge bg-danger me-2">Missing alt: ' + details.introtext_analysis.missing_alt + '</span>';
+        }
+        if (details.introtext_analysis.empty_alt > 0) {
+            html += '<span class="badge bg-warning me-2">Empty alt: ' + details.introtext_analysis.empty_alt + '</span>';
+        }
+        if (details.introtext_analysis.proper_alt > 0) {
+            html += '<span class="badge bg-success me-2">Proper alt: ' + details.introtext_analysis.proper_alt + '</span>';
+        }
+        html += '</div>';
+        html += '</div>';
+    }
+    
+    if (details.fulltext_analysis && details.fulltext_analysis.image_count > 0) {
+        html += '<div class="mb-3">';
+        html += '<h6 class="text-info"><i class="icon-file-text me-2"></i>Full Text Analysis</h6>';
+        html += '<div class="small">';
+        html += '<span class="badge bg-secondary me-2">Total: ' + details.fulltext_analysis.image_count + '</span>';
+        if (details.fulltext_analysis.missing_alt > 0) {
+            html += '<span class="badge bg-danger me-2">Missing alt: ' + details.fulltext_analysis.missing_alt + '</span>';
+        }
+        if (details.fulltext_analysis.empty_alt > 0) {
+            html += '<span class="badge bg-warning me-2">Empty alt: ' + details.fulltext_analysis.empty_alt + '</span>';
+        }
+        if (details.fulltext_analysis.proper_alt > 0) {
+            html += '<span class="badge bg-success me-2">Proper alt: ' + details.fulltext_analysis.proper_alt + '</span>';
+        }
+        html += '</div>';
+        html += '</div>';
+    }
+    
+    // Problematic images list
+    if (details.problematic_images && details.problematic_images.length > 0) {
+        html += '<div class="mb-3">';
+        html += '<h6 class="text-danger"><i class="icon-warning me-2"></i>Problematic Images</h6>';
+        html += '<div class="table-responsive">';
+        html += '<table class="table table-sm table-striped">';
+        html += '<thead><tr><th>Location</th><th>Issue</th><th>Source</th></tr></thead>';
+        html += '<tbody>';
+        
+        for (var i = 0; i < Math.min(details.problematic_images.length, 10); i++) {
+            var img = details.problematic_images[i];
+            html += '<tr>';
+            html += '<td><span class="badge bg-info">' + img.content_type + '</span></td>';
+            html += '<td><span class="badge bg-' + (img.issue.includes('Missing') ? 'danger' : 'warning') + '">' + img.issue + '</span></td>';
+            html += '<td class="text-truncate" style="max-width: 200px;" title="' + (img.src || 'No source') + '">';
+            html += '<small>' + (img.src ? img.src.substring(0, 50) + (img.src.length > 50 ? '...' : '') : 'No source') + '</small>';
+            html += '</td>';
+            html += '</tr>';
+        }
+        
+        if (details.problematic_images.length > 10) {
+            html += '<tr><td colspan="3" class="text-center text-muted"><small>... and ' + (details.problematic_images.length - 10) + ' more images</small></td></tr>';
+        }
+        
+        html += '</tbody>';
+        html += '</table>';
+        html += '</div>';
+        html += '</div>';
+    }
+    
+    html += '<div class="text-muted small">';
+    html += '<i class="icon-info me-1"></i>';
+    html += '<strong>Recommendation:</strong> Add descriptive alt attributes to all images for better SEO and accessibility.';
+    html += '</div>';
+    
+    html += '</div>'; // Close details section
+    html += '</div>'; // Close main div
+    
+    return html;
+}
+
+/**
+ * Toggle image details display
+ */
+function toggleImageDetails(detailsId) {
+    var detailsElement = document.getElementById(detailsId);
+    var button = document.querySelector('button[onclick*="' + detailsId + '"]');
+    
+    if (detailsElement.style.display === 'none') {
+        detailsElement.style.display = 'block';
+        if (button) {
+            button.innerHTML = '<i class="icon-eye-blocked me-1"></i>Hide Details';
+        }
+    } else {
+        detailsElement.style.display = 'none';
+        if (button) {
+            button.innerHTML = '<i class="icon-eye me-1"></i>View Details';
+        }
+    }
 }
 
 /**
