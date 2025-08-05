@@ -41,7 +41,7 @@ if (!$articleId) {
     exit;
 }
 
-if (!$fieldType || !in_array($fieldType, ['title', 'metadesc', 'metakey'])) {
+if (!$fieldType || !in_array($fieldType, ['title', 'metadesc', 'metakey', 'content'])) {
     echo json_encode(['success' => false, 'message' => 'Invalid field type']);
     exit;
 }
@@ -197,24 +197,40 @@ try {
     
     // Remove potential code block markers
     $generatedContent = preg_replace('/^```json\s*/', '', $generatedContent);
+    $generatedContent = preg_replace('/^```html\s*/', '', $generatedContent);
+    $generatedContent = preg_replace('/^```\s*/', '', $generatedContent);
     $generatedContent = preg_replace('/\s*```$/', '', $generatedContent);
     
-    // Handle all fields normally (content field disabled)
-    $generatedValue = trim($generatedContent);
-    // Remove quotes if present
-    $generatedValue = trim($generatedValue, '"\'');
-    
-    // Clean the generated value based on field type
-    $cleanedValue = cleanFieldValue($fieldType, $generatedValue, $maxTitleLength, $maxMetaLength, $maxUrlLength);
-    
-    echo json_encode([
-        'success' => true,
-        'message' => ucfirst($fieldType) . ' optimisé avec succès par ' . $aiProvider->getProvider(),
-        'article_id' => $articleId,
-        'field_type' => $fieldType,
-        'field_value' => $cleanedValue,
-        'ai_provider' => $aiProvider->getProvider()
-    ], JSON_UNESCAPED_UNICODE);
+    // Handle content field differently from other fields
+    if ($fieldType === 'content') {
+        $cleanedValue = trim($generatedContent);
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'Contenu modifié avec succès par ' . $aiProvider->getProvider(),
+            'article_id' => $articleId,
+            'field_type' => $fieldType,
+            'modified_content' => $cleanedValue,
+            'ai_provider' => $aiProvider->getProvider()
+        ], JSON_UNESCAPED_UNICODE);
+    } else {
+        // Handle other fields normally (title, metadesc, metakey)
+        $generatedValue = trim($generatedContent);
+        // Remove quotes if present
+        $generatedValue = trim($generatedValue, '"\'');
+        
+        // Clean the generated value based on field type
+        $cleanedValue = cleanFieldValue($fieldType, $generatedValue, $maxTitleLength, $maxMetaLength, $maxUrlLength);
+        
+        echo json_encode([
+            'success' => true,
+            'message' => ucfirst($fieldType) . ' optimisé avec succès par ' . $aiProvider->getProvider(),
+            'article_id' => $articleId,
+            'field_type' => $fieldType,
+            'field_value' => $cleanedValue,
+            'ai_provider' => $aiProvider->getProvider()
+        ], JSON_UNESCAPED_UNICODE);
+    }
     
 } catch (Exception $e) {
     // Handle general exceptions
@@ -252,7 +268,9 @@ function generateFieldPrompt($fieldType, $title, $content, $article, $minTitleLe
                      "Réponds UNIQUEMENT avec la liste de mots-clés, sans guillemets ni explication.\n\n" .
                      "Titre : {title}\n" .
                      "Contenu : {content}\n" .
-                     "Langue : {language}"
+                     "Langue : {language}",
+                     
+        'content' => "recopie ce texte à l'identique en ajoutant l'attribut alt à la / aux balises img que tu trouve et en la remplissant si la balise est déjà présente remplie la simplement Et au début du texte ajoute une balise H1 avec un titre en te basant sur le contenu uniquement si tu ne trouve pas d'autre H1 dans le texte Je veux uniquement que tu réponde par le texte corrigé ajoute aucun message de ta part dans la réponse et ajoute aussi cette balise entre l'intro text (qui le premier paragraphe / balise avec une ligne vide) et le full texte <hr id='system-readmore'>"
     ];
     
     // Get the prompt template (use default if not configured)
@@ -269,7 +287,9 @@ function generateFieldPrompt($fieldType, $title, $content, $article, $minTitleLe
         '{maxMetaLength}' => $maxMetaLength,
         '{minUrlLength}' => $minUrlLength,
         '{maxUrlLength}' => $maxUrlLength,
-        '{minContentLength}' => $minContentLength
+        '{minContentLength}' => $minContentLength,
+        '{metadesc}' => trim(html_entity_decode($article->metadesc, ENT_QUOTES, 'UTF-8')),
+        '{fullContent}' => $article->introtext . ' ' . $article->fulltext
     ];
     
     $prompt = str_replace(array_keys($replacements), array_values($replacements), $promptTemplate);

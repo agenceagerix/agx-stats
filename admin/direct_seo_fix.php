@@ -81,7 +81,25 @@ try {
         $fields[] = '`metakey` = :metakey';
     }
     
-    // Note: Content fields (introtext/fulltext) are not modified to preserve original structure
+    // Content field with introtext/fulltext splitting
+    if (isset($_POST['content'])) {
+        $content = $_POST['content'];
+        $readmorePattern = '/<hr\s+id\s*=\s*["\']system-readmore["\'][^>]*>/i';
+        
+        if (preg_match($readmorePattern, $content)) {
+            // Content has a readmore separator - split into introtext and fulltext
+            $parts = preg_split($readmorePattern, $content, 2);
+            $introtext = trim($parts[0]);
+            $fulltext = isset($parts[1]) ? trim($parts[1]) : '';
+            
+            $fields[] = '`introtext` = :introtext';
+            $fields[] = '`fulltext` = :fulltext';
+        } else {
+            // No readmore separator - put all content in introtext, clear fulltext
+            $fields[] = '`introtext` = :introtext';
+            $fields[] = '`fulltext` = :fulltext';
+        }
+    }
     
     // Update article if there are fields to update
     if (!empty($fields)) {
@@ -103,7 +121,26 @@ try {
             $stmt->bindParam(':metakey', $_POST['metakey'], PDO::PARAM_STR);
         }
         
-        // Note: Content binding removed to preserve introtext/fulltext separation
+        // Content field binding
+        if (isset($_POST['content'])) {
+            $content = $_POST['content'];
+            $readmorePattern = '/<hr\s+id\s*=\s*["\']system-readmore["\'][^>]*>/i';
+            
+            if (preg_match($readmorePattern, $content)) {
+                // Split content for readmore
+                $parts = preg_split($readmorePattern, $content, 2);
+                $introtext = trim($parts[0]);
+                $fulltext = isset($parts[1]) ? trim($parts[1]) : '';
+                
+                $stmt->bindParam(':introtext', $introtext, PDO::PARAM_STR);
+                $stmt->bindParam(':fulltext', $fulltext, PDO::PARAM_STR);
+            } else {
+                // No readmore - all content goes to introtext
+                $stmt->bindParam(':introtext', $content, PDO::PARAM_STR);
+                $fulltext = '';
+                $stmt->bindParam(':fulltext', $fulltext, PDO::PARAM_STR);
+            }
+        }
         
         $result = $stmt->execute();
         

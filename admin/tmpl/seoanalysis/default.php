@@ -346,7 +346,9 @@ $listDirn = 'ASC';
                     <!-- Content Section -->
                     <div class="card mb-3">
                         <div class="card-body">
-                            <label for="seo-content" class="form-label"><i class="icon-file-text text-primary me-2"></i><?php echo Text::_('COM_JOOMLAHITS_SEO_CONTENT'); ?></label>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label for="seo-content" class="form-label mb-0"><i class="icon-file-text text-primary me-2"></i><?php echo Text::_('COM_JOOMLAHITS_SEO_CONTENT'); ?></label>
+                            </div>
                             <textarea class="form-control" id="seo-content" name="content" rows="10" oninput="updateFieldCounters()" style="resize: vertical;"></textarea>
                             <div class="d-flex justify-content-between align-items-center mt-2">
                                 <div class="form-text mb-0">
@@ -580,59 +582,6 @@ function waitForConfirmForceAiFix() {
                 currentAnalysisResults = data.data;
                 articlesList = []; // Not needed anymore since we have complete results
                 
-                // Log detailed image analysis to browser console for debugging (bulk analysis)
-                if (currentAnalysisResults.issues && currentAnalysisResults.issues.length > 0) {
-                    var imageIssuesCount = 0;
-                    console.group('🖼️ SEO Bulk Analysis - Image Alt Attribute Issues Summary');
-                    
-                    currentAnalysisResults.issues.forEach(function(article) {
-                        if (article.issues && article.issues.length > 0) {
-                            article.issues.forEach(function(issue) {
-                                if (issue.type === 'missing_alt_tags' && issue.details) {
-                                    imageIssuesCount++;
-                                    console.group('📄 Article: ' + article.title + ' (ID: ' + article.id + ')');
-                                    console.log('📊 Summary:', issue.message);
-                                    
-                                    var details = issue.details;
-                                    if (details.introtext_analysis && details.introtext_analysis.image_count > 0) {
-                                        console.group('📝 Introtext Analysis');
-                                        console.log('Total images:', details.introtext_analysis.image_count);
-                                        console.log('Missing alt:', details.introtext_analysis.missing_alt);
-                                        console.log('Empty alt:', details.introtext_analysis.empty_alt);
-                                        console.log('Proper alt:', details.introtext_analysis.proper_alt);
-                                        if (details.introtext_analysis.problematic_images.length > 0) {
-                                            console.table(details.introtext_analysis.problematic_images);
-                                        }
-                                        console.groupEnd();
-                                    }
-                                    
-                                    if (details.fulltext_analysis && details.fulltext_analysis.image_count > 0) {
-                                        console.group('📄 Fulltext Analysis');
-                                        console.log('Total images:', details.fulltext_analysis.image_count);
-                                        console.log('Missing alt:', details.fulltext_analysis.missing_alt);
-                                        console.log('Empty alt:', details.fulltext_analysis.empty_alt);
-                                        console.log('Proper alt:', details.fulltext_analysis.proper_alt);
-                                        if (details.fulltext_analysis.problematic_images.length > 0) {
-                                            console.table(details.fulltext_analysis.problematic_images);
-                                        }
-                                        console.groupEnd();
-                                    }
-                                    
-                                    if (details.problematic_images && details.problematic_images.length > 0) {
-                                        console.group('⚠️ All Problematic Images');
-                                        console.table(details.problematic_images);
-                                        console.groupEnd();
-                                    }
-                                    
-                                    console.groupEnd();
-                                }
-                            });
-                        }
-                    });
-                    
-                    console.log('📊 Total articles with image alt issues:', imageIssuesCount);
-                    console.groupEnd();
-                }
                 
                 document.getElementById('current-analysis-status').textContent = 
                     'Analysis completed - ' + currentAnalysisResults.issues.length + ' articles with issues out of ' + currentAnalysisResults.total_articles;
@@ -645,7 +594,6 @@ function waitForConfirmForceAiFix() {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             showNotification('Error during analysis: ' + error.message, 'error');
             resetAnalysisUI();
         });
@@ -728,7 +676,6 @@ function waitForConfirmForceAiFix() {
                     successCount++;
                 } else {
                     errorCount++;
-                    console.error('Erreur pour "' + articleToSave.title + '": ' + data.message);
                 }
                 
                 currentSaveIndex++;
@@ -736,7 +683,6 @@ function waitForConfirmForceAiFix() {
             })
             .catch(error => {
                 errorCount++;
-                console.error('Save error for "' + articleToSave.title + '": ' + error.message);
                 
                 currentSaveIndex++;
                 setTimeout(saveNextArticle, 500);
@@ -801,7 +747,6 @@ function waitForConfirmForceAiFix() {
                     successCount++;
                 } else {
                     errorCount++;
-                    console.error('Error saving "' + articleToSave.title + '": ' + data.message);
                 }
                 
                 currentSaveIndex++;
@@ -809,7 +754,6 @@ function waitForConfirmForceAiFix() {
             })
             .catch(error => {
                 errorCount++;
-                console.error('Save error for "' + articleToSave.title + '": ' + error.message);
                 
                 currentSaveIndex++;
                 setTimeout(saveNextArticle, 300);
@@ -852,7 +796,6 @@ function waitForConfirmForceAiFix() {
             }
         })
         .catch(error => {
-            console.error('Erreur:', error);
             showNotification('Save error: ' + error.message, 'error');
         });
     }
@@ -876,50 +819,6 @@ function waitForConfirmForceAiFix() {
         })
         .then(data => {
             if (data.success) {
-                // Log detailed image analysis to browser console for debugging
-                if (data.data && data.data.issues && data.data.issues.length > 0) {
-                    data.data.issues.forEach(function(issue) {
-                        if (issue.type === 'missing_alt_tags' && issue.details) {
-                            console.group('🖼️ SEO Analysis Update - Image Alt Attribute Issues');
-                            console.log('Article ID:', data.data.id);
-                            console.log('Article Title:', data.data.title);
-                            console.log('📊 Summary:', issue.message);
-                            
-                            var details = issue.details;
-                            if (details.introtext_analysis && details.introtext_analysis.image_count > 0) {
-                                console.group('📝 Introtext Analysis');
-                                console.log('Total images:', details.introtext_analysis.image_count);
-                                console.log('Missing alt:', details.introtext_analysis.missing_alt);
-                                console.log('Empty alt:', details.introtext_analysis.empty_alt);
-                                console.log('Proper alt:', details.introtext_analysis.proper_alt);
-                                if (details.introtext_analysis.problematic_images.length > 0) {
-                                    console.table(details.introtext_analysis.problematic_images);
-                                }
-                                console.groupEnd();
-                            }
-                            
-                            if (details.fulltext_analysis && details.fulltext_analysis.image_count > 0) {
-                                console.group('📄 Fulltext Analysis');
-                                console.log('Total images:', details.fulltext_analysis.image_count);
-                                console.log('Missing alt:', details.fulltext_analysis.missing_alt);
-                                console.log('Empty alt:', details.fulltext_analysis.empty_alt);
-                                console.log('Proper alt:', details.fulltext_analysis.proper_alt);
-                                if (details.fulltext_analysis.problematic_images.length > 0) {
-                                    console.table(details.fulltext_analysis.problematic_images);
-                                }
-                                console.groupEnd();
-                            }
-                            
-                            if (details.problematic_images && details.problematic_images.length > 0) {
-                                console.group('⚠️ All Problematic Images');
-                                console.table(details.problematic_images);
-                                console.groupEnd();
-                            }
-                            
-                            console.groupEnd();
-                        }
-                    });
-                }
                 
                 // Update article in results
                 for (var i = 0; i < filteredResults.length; i++) {
@@ -951,7 +850,6 @@ function waitForConfirmForceAiFix() {
             }
         })
         .catch(error => {
-            console.error('Erreur:', error);
         });
     }
     
@@ -976,7 +874,8 @@ function waitForConfirmForceAiFix() {
         window.originalValues = {
             title: document.getElementById('seo-title').value,
             metadesc: document.getElementById('seo-metadesc').value,
-            metakey: document.getElementById('seo-metakey').value
+            metakey: document.getElementById('seo-metakey').value,
+            content: document.getElementById('seo-content').value
         };
         
         // Store in bulk changes if in bulk mode
@@ -993,8 +892,8 @@ function waitForConfirmForceAiFix() {
         aiBtn.disabled = true;
         aiBtn.innerHTML = '<i class="icon-refresh icon-spin me-2"></i>IA en cours...';
         
-        // List of fields to process (content disabled as AI too unpredictable, alias removed)
-        var fields = ['title', 'metadesc', 'metakey'];
+        // List of fields to process (now including content field)
+        var fields = ['title', 'metadesc', 'metakey', 'content'];
         var currentFieldIndex = 0;
         
         function processNextField() {
@@ -1050,9 +949,25 @@ function waitForConfirmForceAiFix() {
                 if (data.success) {
                     if (data.skipped) {
                         // Field was skipped (metakey already sufficient)
-                        console.log('Field ' + fieldType + ' skipped: ' + data.message);
+                    } else if (fieldType === 'content' && data.modified_content) {
+                        // Handle content field response differently
+                        window.aiOptimizedValues[fieldType] = data.modified_content;
+                        
+                        // Store in bulk changes if in bulk mode
+                        if (isBulkAiProcessing && currentArticleData) {
+                            var articleId = currentArticleData.id;
+                            if (bulkAiChanges[articleId]) {
+                                bulkAiChanges[articleId].aiValues[fieldType] = data.modified_content;
+                            }
+                        }
+                        
+                        // Update the content field
+                        var fieldElement = document.getElementById('seo-content');
+                        if (fieldElement) {
+                            fieldElement.value = data.modified_content;
+                        }
                     } else if (data.field_value) {
-                        // Store optimized value for preview
+                        // Handle other fields (title, metadesc, metakey)
                         window.aiOptimizedValues[fieldType] = data.field_value;
                         
                         // Store in bulk changes if in bulk mode
@@ -1063,14 +978,13 @@ function waitForConfirmForceAiFix() {
                             }
                         }
                         
-                        // Remplir le champ correspondant (temporairement)
+                        // Fill the corresponding field (temporarily)
                         var fieldElement = document.getElementById('seo-' + fieldType);
                         if (fieldElement) {
                             fieldElement.value = data.field_value;
                         }
                     }
                 } else {
-                    console.error('Error for ' + fieldType + ':', data.message);
                 }
                 
                 // Passer au champ suivant
@@ -1078,8 +992,6 @@ function waitForConfirmForceAiFix() {
                 setTimeout(processNextField, 500); // Delay between calls
             })
             .catch(error => {
-                console.error('Error for ' + fieldType + ':', error.message);
-                
                 // Move to next field even on error
                 currentFieldIndex++;
                 setTimeout(processNextField, 500);
@@ -1090,8 +1002,9 @@ function waitForConfirmForceAiFix() {
         processNextField();
     }
 
+
     function processAllFieldsForArticle(article) {
-        var fields = ['title', 'metadesc', 'metakey'];
+        var fields = ['title', 'metadesc', 'metakey', 'content'];
         var currentFieldIndex = 0;
         var articleData = forceAiChanges[article.id];
         
@@ -1145,7 +1058,14 @@ function waitForConfirmForceAiFix() {
                         resultsLog.innerHTML += '<div class="text-info">' +
                             '<i class="icon-info"></i> ' + article.title + ' - ' + fieldType + ' skipped: ' + (data.message || 'Already optimal') +
                         '</div>';
+                    } else if (fieldType === 'content' && data.modified_content) {
+                        // Handle content field response differently
+                        articleData.aiValues[fieldType] = data.modified_content;
+                        resultsLog.innerHTML += '<div class="text-success">' +
+                            '<i class="icon-checkmark"></i> ' + article.title + ' - ' + fieldType + ' processed' +
+                        '</div>';
                     } else if (data.field_value) {
+                        // Handle other fields (title, metadesc, metakey)
                         articleData.aiValues[fieldType] = data.field_value;
                         resultsLog.innerHTML += '<div class="text-success">' +
                             '<i class="icon-checkmark"></i> ' + article.title + ' - ' + fieldType + ' processed' +
@@ -1164,7 +1084,6 @@ function waitForConfirmForceAiFix() {
                 setTimeout(processNextField, 200); // Short delay between field processing
             })
             .catch(error => {
-                console.error('Error processing field:', error);
                 resultsLog.innerHTML += '<div class="text-danger">' +
                     '<i class="icon-warning"></i> ' + article.title + ' - ' + fieldType + ' error: ' + error.message +
                 '</div>';
@@ -1444,50 +1363,6 @@ function openBulkSeoModal() {
         if (data.success && data.data) {
             var fullArticle = data.data;
             
-            // Log detailed image analysis to browser console for debugging
-            if (fullArticle.issues && fullArticle.issues.length > 0) {
-                fullArticle.issues.forEach(function(issue) {
-                    if (issue.type === 'missing_alt_tags' && issue.details) {
-                        console.group('🖼️ SEO Analysis - Image Alt Attribute Issues');
-                        console.log('Article ID:', fullArticle.id);
-                        console.log('Article Title:', fullArticle.title);
-                        console.log('📊 Summary:', issue.message);
-                        
-                        var details = issue.details;
-                        if (details.introtext_analysis && details.introtext_analysis.image_count > 0) {
-                            console.group('📝 Introtext Analysis');
-                            console.log('Total images:', details.introtext_analysis.image_count);
-                            console.log('Missing alt:', details.introtext_analysis.missing_alt);
-                            console.log('Empty alt:', details.introtext_analysis.empty_alt);
-                            console.log('Proper alt:', details.introtext_analysis.proper_alt);
-                            if (details.introtext_analysis.problematic_images.length > 0) {
-                                console.table(details.introtext_analysis.problematic_images);
-                            }
-                            console.groupEnd();
-                        }
-                        
-                        if (details.fulltext_analysis && details.fulltext_analysis.image_count > 0) {
-                            console.group('📄 Fulltext Analysis');
-                            console.log('Total images:', details.fulltext_analysis.image_count);
-                            console.log('Missing alt:', details.fulltext_analysis.missing_alt);
-                            console.log('Empty alt:', details.fulltext_analysis.empty_alt);
-                            console.log('Proper alt:', details.fulltext_analysis.proper_alt);
-                            if (details.fulltext_analysis.problematic_images.length > 0) {
-                                console.table(details.fulltext_analysis.problematic_images);
-                            }
-                            console.groupEnd();
-                        }
-                        
-                        if (details.problematic_images && details.problematic_images.length > 0) {
-                            console.group('⚠️ All Problematic Images');
-                            console.table(details.problematic_images);
-                            console.groupEnd();
-                        }
-                        
-                        console.groupEnd();
-                    }
-                });
-            }
             
             // Update currentArticleData with complete data
             currentArticleData = {
@@ -1573,7 +1448,6 @@ function openBulkSeoModal() {
         }
     })
     .catch(error => {
-        console.error('Error loading article:', error);
         showNotification('Error loading article details: ' + error.message, 'error');
         // Fallback to basic data
         document.getElementById('seo-title').value = article.title || '';

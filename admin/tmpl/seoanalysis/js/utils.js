@@ -263,7 +263,8 @@ function getFieldLabel(fieldType) {
     var labels = {
         'title': 'Title',
         'metadesc': 'Meta desc',
-        'metakey': 'Keywords'
+        'metakey': 'Keywords',
+        'content': 'Content'
     };
     return labels[fieldType] || fieldType;
 }
@@ -277,7 +278,8 @@ function fieldHasIssues(fieldType, article) {
     var issueTypes = {
         'title': ['title_missing', 'title_too_short', 'title_too_long'],
         'metadesc': ['meta_desc_missing', 'meta_desc_too_short', 'meta_desc_too_long'],
-        'metakey': ['meta_keywords_missing', 'meta_keywords_too_few']
+        'metakey': ['meta_keywords_missing', 'meta_keywords_too_few'],
+        'content': ['content_too_short', 'missing_h1', 'image_alt_missing']
     };
     
     var fieldIssues = issueTypes[fieldType] || [];

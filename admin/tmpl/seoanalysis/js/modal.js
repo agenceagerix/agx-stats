@@ -118,7 +118,6 @@ function openSeoModal(articleId) {
         }
     })
     .catch(error => {
-        console.error('Error loading article:', error);
         showNotification('Error loading article details: ' + error.message, 'error');
     });
 }
@@ -171,7 +170,7 @@ function createImageAltIssueDisplay(issue) {
     html += '</div>';
     
     // Details section (initially hidden)
-    html += '<div id="' + uniqueId + '" class="mt-3 p-3 border rounded bg-light" style="display: none;">';
+    html += '<div id="' + uniqueId + '" class="mt-3 p-3 border rounded" style="display: none;">';
     html += '<h6 class="text-primary"><i class="icon-info me-2"></i>Image Analysis Details</h6>';
     
     // Summary statistics
@@ -352,7 +351,7 @@ function showAIPreview() {
             html += '<small class="text-success fw-bold"><i class="icon-checkmark me-1"></i>AFTER</small>';
             html += '</div>';
             html += '<div class="card-body py-2">';
-            html += '<small class="text-dark fw-bold">' + optimized + '</small>';
+            html += '<small class="fw-bold">' + optimized + '</small>';
             html += '</div>';
             html += '</div>';
             html += '</div>';
