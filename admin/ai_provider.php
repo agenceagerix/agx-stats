@@ -96,7 +96,14 @@ class AIProvider
         ]);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HEADER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        // Disable SSL verification for local development
+        if (stripos($_SERVER['SERVER_NAME'] ?? '', 'localhost') !== false || 
+            stripos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false) {
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        } else {
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        }
         curl_setopt($ch, CURLOPT_TIMEOUT, 45);
         curl_setopt($ch, CURLOPT_ENCODING, '');
         
@@ -175,7 +182,14 @@ class AIProvider
         ]);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HEADER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        // Disable SSL verification for local development
+        if (stripos($_SERVER['SERVER_NAME'] ?? '', 'localhost') !== false || 
+            stripos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false) {
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        } else {
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        }
         curl_setopt($ch, CURLOPT_TIMEOUT, 45);
         curl_setopt($ch, CURLOPT_ENCODING, '');
         
