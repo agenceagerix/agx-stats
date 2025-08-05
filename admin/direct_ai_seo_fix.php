@@ -41,7 +41,7 @@ if (!$articleId) {
     exit;
 }
 
-if (!$fieldType || !in_array($fieldType, ['title', 'metadesc', 'metakey', 'content'])) {
+if (!$fieldType || !in_array($fieldType, ['title', 'metadesc', 'metakey'])) {
     echo json_encode(['success' => false, 'message' => 'Invalid field type']);
     exit;
 }
@@ -67,7 +67,6 @@ $minMetaLength = 120;
 $maxMetaLength = 160;
 $minUrlLength = 5;
 $maxUrlLength = 50;
-$minContentLength = 300;
 
 try {
     // Establish direct PDO database connection
@@ -123,7 +122,6 @@ try {
         $maxMetaLength = isset($params['seo_max_meta_length']) ? intval($params['seo_max_meta_length']) : 160;
         $minUrlLength = isset($params['seo_min_url_length']) ? intval($params['seo_min_url_length']) : 5;
         $maxUrlLength = isset($params['seo_max_url_length']) ? intval($params['seo_max_url_length']) : 50;
-        $minContentLength = isset($params['seo_min_content_length']) ? intval($params['seo_min_content_length']) : 300;
         
         // Load custom AI prompts
         $promptTemplates['title'] = $params['ai_prompt_title'] ?? '';
@@ -182,7 +180,7 @@ try {
     }
     
     // Create field-specific prompt with SEO parameters
-    $prompt = generateFieldPrompt($fieldType, $cleanTitle, $cleanContent, $article, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minUrlLength, $maxUrlLength, $minContentLength, $promptTemplates);
+    $prompt = generateFieldPrompt($fieldType, $cleanTitle, $cleanContent, $article, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minUrlLength, $maxUrlLength, $promptTemplates);
     
     // Generate content using AI provider
     try {
@@ -201,20 +199,7 @@ try {
     $generatedContent = preg_replace('/^```\s*/', '', $generatedContent);
     $generatedContent = preg_replace('/\s*```$/', '', $generatedContent);
     
-    // Handle content field differently from other fields
-    if ($fieldType === 'content') {
-        $cleanedValue = trim($generatedContent);
-        
-        echo json_encode([
-            'success' => true,
-            'message' => 'Contenu modifié avec succès par ' . $aiProvider->getProvider(),
-            'article_id' => $articleId,
-            'field_type' => $fieldType,
-            'modified_content' => $cleanedValue,
-            'ai_provider' => $aiProvider->getProvider()
-        ], JSON_UNESCAPED_UNICODE);
-    } else {
-        // Handle other fields normally (title, metadesc, metakey)
+    // Handle fields (title, metadesc, metakey)
         $generatedValue = trim($generatedContent);
         // Remove quotes if present
         $generatedValue = trim($generatedValue, '"\'');
@@ -230,7 +215,6 @@ try {
             'field_value' => $cleanedValue,
             'ai_provider' => $aiProvider->getProvider()
         ], JSON_UNESCAPED_UNICODE);
-    }
     
 } catch (Exception $e) {
     // Handle general exceptions
@@ -243,7 +227,7 @@ try {
 /**
  * Generate field-specific prompts for AI
  */
-function generateFieldPrompt($fieldType, $title, $content, $article, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minUrlLength, $maxUrlLength, $minContentLength, $promptTemplates) {
+function generateFieldPrompt($fieldType, $title, $content, $article, $minTitleLength, $maxTitleLength, $minMetaLength, $maxMetaLength, $minUrlLength, $maxUrlLength, $promptTemplates) {
     $language = $article->language ?: 'fr-FR';
     $contentSnippet = mb_substr($content, 0, 400, 'UTF-8');
     
@@ -269,8 +253,6 @@ function generateFieldPrompt($fieldType, $title, $content, $article, $minTitleLe
                      "Titre : {title}\n" .
                      "Contenu : {content}\n" .
                      "Langue : {language}",
-                     
-        'content' => "recopie ce texte à l'identique en ajoutant l'attribut alt à la / aux balises img que tu trouve et en la remplissant si la balise est déjà présente remplie la simplement Et au début du texte ajoute une balise H1 avec un titre en te basant sur le contenu uniquement si tu ne trouve pas d'autre H1 dans le texte Je veux uniquement que tu réponde par le texte corrigé ajoute aucun message de ta part dans la réponse et ajoute aussi cette balise entre l'intro text (qui le premier paragraphe / balise avec une ligne vide) et le full texte <hr id='system-readmore'>"
     ];
     
     // Get the prompt template (use default if not configured)
@@ -287,7 +269,6 @@ function generateFieldPrompt($fieldType, $title, $content, $article, $minTitleLe
         '{maxMetaLength}' => $maxMetaLength,
         '{minUrlLength}' => $minUrlLength,
         '{maxUrlLength}' => $maxUrlLength,
-        '{minContentLength}' => $minContentLength,
         '{metadesc}' => trim(html_entity_decode($article->metadesc, ENT_QUOTES, 'UTF-8')),
         '{fullContent}' => $article->introtext . ' ' . $article->fulltext
     ];

@@ -1195,7 +1195,7 @@ function waitForConfirmForceAiFix() {
         }
         
         // FULL AI APPROACH: For other content issues or mixed issues
-        var fields = ['title', 'metadesc', 'metakey', 'content'];
+        var fields = ['title', 'metadesc', 'metakey'];
         var currentFieldIndex = 0;
         
         function processNextField() {
@@ -1246,12 +1246,6 @@ function waitForConfirmForceAiFix() {
                         // Field was skipped (metakey already sufficient)
                         resultsLog.innerHTML += '<div class="text-info">' +
                             '<i class="icon-info"></i> ' + article.title + ' - ' + fieldType + ' skipped: ' + (data.message || 'Already optimal') +
-                        '</div>';
-                    } else if (fieldType === 'content' && data.modified_content) {
-                        // Handle content field response differently
-                        articleData.aiValues[fieldType] = data.modified_content;
-                        resultsLog.innerHTML += '<div class="text-success">' +
-                            '<i class="icon-checkmark"></i> ' + article.title + ' - ' + fieldType + ' processed (full AI)' +
                         '</div>';
                     } else if (data.field_value) {
                         // Handle other fields (title, metadesc, metakey)
