@@ -129,6 +129,26 @@ try {
         $promptTemplates['metakey'] = $params['ai_prompt_metakey'] ?? '';
     }
     
+    // Check if AI is enabled for the requested field type
+    $aiToggleMap = [
+        'title' => 'ai_enable_title',
+        'metadesc' => 'ai_enable_metadesc',
+        'metakey' => 'ai_enable_metakey'
+    ];
+    
+    if (isset($aiToggleMap[$fieldType])) {
+        $aiEnabled = isset($params[$aiToggleMap[$fieldType]]) ? (bool)$params[$aiToggleMap[$fieldType]] : true;
+        
+        if (!$aiEnabled) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'AI is disabled for ' . $fieldType . ' field type in component configuration',
+                'disabled' => true
+            ]);
+            exit;
+        }
+    }
+    
     // Initialize AI provider
     try {
         $aiProvider = new AIProvider($params);

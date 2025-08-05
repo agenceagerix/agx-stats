@@ -121,6 +121,18 @@ try {
         $params = json_decode($extension->params, true);
     }
     
+    // Check if AI is enabled for content/images processing
+    $aiEnabled = isset($params['ai_enable_content_images']) ? (bool)$params['ai_enable_content_images'] : true;
+    
+    if (!$aiEnabled) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'AI is disabled for content/images processing in component configuration',
+            'disabled' => true
+        ]);
+        exit;
+    }
+    
     // Initialize AI provider
     try {
         $aiProvider = new AIProvider($params);
@@ -133,7 +145,7 @@ try {
     }
     
     // Create targeted prompt for image alt fixes only
-    $prompt = createTargetedImagePrompt($problematicImages, $article);
+    $prompt = createTargetedImagePrompt($problematicImages, $article, $params);
     
     // Generate corrected img tags using AI provider
     try {
@@ -213,11 +225,31 @@ function extractProblematicImages($content) {
 /**
  * Create targeted prompt for fixing only image alt attributes
  */
-function createTargetedImagePrompt($problematicImages, $article) {
+function createTargetedImagePrompt($problematicImages, $article, $params = []) {
     $title = trim(html_entity_decode($article->title, ENT_QUOTES, 'UTF-8'));
     $metadesc = trim(html_entity_decode($article->metadesc, ENT_QUOTES, 'UTF-8'));
     $language = $article->language ?: 'fr-FR';
     
+    // Use configurable prompt template if available
+    if (!empty($params['ai_prompt_image'])) {
+        $prompt = $params['ai_prompt_image'];
+        
+        // Prepare images list for the prompt
+        $imagesList = '';
+        foreach ($problematicImages as $index => $imgData) {
+            $imagesList .= ($index + 1) . ". " . $imgData['tag'] . "\n";
+        }
+        
+        // Replace placeholders in the configurable prompt
+        $prompt = str_replace('{title}', $title, $prompt);
+        $prompt = str_replace('{metadesc}', $metadesc, $prompt);
+        $prompt = str_replace('{language}', $language, $prompt);
+        $prompt = str_replace('{images}', $imagesList, $prompt);
+        
+        return $prompt;
+    }
+    
+    // Fallback to default prompt if no custom prompt is configured
     $prompt = "SYSTÈME : Tu es un expert en accessibilité web et SEO. Ta mission est de corriger UNIQUEMENT les attributs alt manquants ou vides dans les balises img.\n\n";
     
     $prompt .= "INSTRUCTIONS STRICTES :\n";

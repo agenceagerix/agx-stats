@@ -187,6 +187,85 @@
             filter="raw"
             default="You are an SEO expert. Generate ONLY meta keywords for this article. Strict rules: 5-8 relevant keywords, separated by commas. Reply ONLY with the keyword list, without quotes or explanation. Title: {title}; Content: {content} Language: {language}"/>
         
+        <field
+            name="ai_prompt_image"
+            type="textarea"
+            label="COM_JOOMLAHITS_CONFIG_AI_PROMPT_IMAGE_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_AI_PROMPT_IMAGE_DESC"
+            rows="8"
+            cols="80"
+            filter="raw"
+            default="SYSTÈME : Tu es un expert en accessibilité web et SEO. Ta mission est de corriger UNIQUEMENT les attributs alt manquants ou vides dans les balises img.
+
+INSTRUCTIONS STRICTES :
+1. Tu recevras une liste de balises &lt;img&gt; qui ont des attributs alt manquants ou vides
+2. Pour chaque balise, génère un attribut alt descriptif et pertinent
+3. Base-toi sur le titre de l'article et la description meta pour le contexte
+4. Retourne UNIQUEMENT les balises &lt;img&gt; corrigées, une par ligne
+5. Préserve tous les autres attributs existants (src, class, style, etc.)
+6. L'attribut alt doit être descriptif mais concis (50-125 caractères)
+
+CONTEXTE DE L'ARTICLE :
+Titre : {title}
+Description : {metadesc}
+Langue : {language}
+
+BALISES IMG À CORRIGER :
+{images}
+
+Réponds avec les balises corrigées dans le même ordre, une par ligne :"/>
+        
+    </fieldset>
+
+    <fieldset 
+        name="ai_toggles" 
+        label="COM_JOOMLAHITS_CONFIG_AI_TOGGLES_LABEL" 
+        description="COM_JOOMLAHITS_CONFIG_AI_TOGGLES_DESC">
+        
+        <field
+            name="ai_enable_title"
+            type="radio"
+            layout="joomla.form.field.radio.switcher"
+            label="COM_JOOMLAHITS_CONFIG_AI_ENABLE_TITLE_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_AI_ENABLE_TITLE_DESC"
+            default="1">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        
+        <field
+            name="ai_enable_metadesc"
+            type="radio"
+            layout="joomla.form.field.radio.switcher"
+            label="COM_JOOMLAHITS_CONFIG_AI_ENABLE_METADESC_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_AI_ENABLE_METADESC_DESC"
+            default="1">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        
+        <field
+            name="ai_enable_metakey"
+            type="radio"
+            layout="joomla.form.field.radio.switcher"
+            label="COM_JOOMLAHITS_CONFIG_AI_ENABLE_METAKEY_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_AI_ENABLE_METAKEY_DESC"
+            default="1">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        
+        <field
+            name="ai_enable_content_images"
+            type="radio"
+            layout="joomla.form.field.radio.switcher"
+            label="COM_JOOMLAHITS_CONFIG_AI_ENABLE_CONTENT_IMAGES_LABEL"
+            description="COM_JOOMLAHITS_CONFIG_AI_ENABLE_CONTENT_IMAGES_DESC"
+            default="1">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        
     </fieldset>
 
     <fieldset 
