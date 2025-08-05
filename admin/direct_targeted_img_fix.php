@@ -83,7 +83,12 @@ try {
     }
     
     // Extract images with missing or empty alt attributes
-    $fullContent = $article->introtext . ' ' . $article->fulltext;
+    // Use custom content if provided, otherwise use article content from database
+    if (isset($_POST['content']) && !empty($_POST['content'])) {
+        $fullContent = $_POST['content'];
+    } else {
+        $fullContent = $article->introtext . ' ' . $article->fulltext;
+    }
     $problematicImages = extractProblematicImages($fullContent);
     
     // If no problematic images found, return success with no changes

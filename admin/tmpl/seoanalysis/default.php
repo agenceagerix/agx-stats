@@ -930,60 +930,127 @@ function waitForConfirmForceAiFix() {
             
             // Handle content field with targeted approach
             if (fieldType === 'content') {
-                // Check if content has ONLY image alt issues
-                if (hasOnlyImageAltIssues(currentArticleData)) {
-                    aiBtn.innerHTML = '<i class="icon-refresh icon-spin me-2"></i>IA: Fixing image alt attributes...';
-                    
-                    fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_targeted_img_fix.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        body: 'article_id=' + encodeURIComponent(currentArticleData.id)
-                    })
-                    .then(response => {
-                        return response.text().then(text => {
-                            try {
-                                return JSON.parse(text);
-                            } catch (e) {
-                                throw new Error('Server returned invalid JSON: ' + text);
-                            }
-                        });
-                    })
-                    .then(data => {
-                        if (data.success && data.modified_content) {
-                            // Store the AI optimized content
-                            window.aiOptimizedValues.content = data.modified_content;
+                var contentIssues = currentArticleData.issues.filter(function(issue) {
+                    return ['content_too_short', 'missing_h1', 'missing_alt_tags'].includes(issue.type);
+                });
+                
+                var hasH1Issues = contentIssues.some(function(issue) { return issue.type === 'missing_h1'; });
+                var hasImageAltIssues = contentIssues.some(function(issue) { return issue.type === 'missing_alt_tags'; });
+                var hasContentLengthIssues = contentIssues.some(function(issue) { return issue.type === 'content_too_short'; });
+                
+                var contentModified = false;
+                var currentContent = document.getElementById('seo-content').value;
+                
+                // Process H1 issues first
+                function processH1Issues(callback) {
+                    if (hasH1Issues) {
+                        aiBtn.innerHTML = '<i class="icon-refresh icon-spin me-2"></i>IA: Adding H1 tag...';
+                        
+                        // Simple H1 fix: add H1 tag at the beginning of content if missing
+                        var h1Pattern = /<h1[^>]*>/i;
+                        if (!h1Pattern.test(currentContent)) {
+                            // Extract a meaningful H1 from the article title or first paragraph
+                            var articleTitle = currentArticleData.title || 'Article Title';
+                            var h1Tag = '<h1>' + articleTitle + '</h1>\n\n';
+                            
+                            // Add H1 at the beginning of content
+                            currentContent = h1Tag + currentContent;
+                            contentModified = true;
+                            
+                            // Store the modified content
+                            window.aiOptimizedValues.content = currentContent;
                             
                             // Store in bulk changes if in bulk mode
                             if (isBulkAiProcessing && currentArticleData) {
                                 var articleId = currentArticleData.id;
                                 if (bulkAiChanges[articleId]) {
-                                    bulkAiChanges[articleId].aiValues.content = data.modified_content;
+                                    bulkAiChanges[articleId].aiValues.content = currentContent;
                                 }
                             }
                             
                             // Update the content field
                             var contentField = document.getElementById('seo-content');
                             if (contentField) {
-                                contentField.value = data.modified_content;
+                                contentField.value = currentContent;
                             }
+                        }
+                    }
+                    
+                    setTimeout(callback, 200);
+                }
+                
+                // Process image alt issues after H1 issues
+                function processImageAltIssues(callback) {
+                    if (hasImageAltIssues) {
+                        aiBtn.innerHTML = '<i class="icon-refresh icon-spin me-2"></i>IA: Fixing image alt attributes...';
+                        
+                        fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_targeted_img_fix.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: 'article_id=' + encodeURIComponent(currentArticleData.id) + '&content=' + encodeURIComponent(currentContent)
+                        })
+                        .then(response => {
+                            return response.text().then(text => {
+                                try {
+                                    return JSON.parse(text);
+                                } catch (e) {
+                                    throw new Error('Server returned invalid JSON: ' + text);
+                                }
+                            });
+                        })
+                        .then(data => {
+                            if (data.success && data.modified_content) {
+                                // Store the AI optimized content
+                                window.aiOptimizedValues.content = data.modified_content;
+                                contentModified = true;
+                                
+                                // Store in bulk changes if in bulk mode
+                                if (isBulkAiProcessing && currentArticleData) {
+                                    var articleId = currentArticleData.id;
+                                    if (bulkAiChanges[articleId]) {
+                                        bulkAiChanges[articleId].aiValues.content = data.modified_content;
+                                    }
+                                }
+                                
+                                // Update the content field
+                                var contentField = document.getElementById('seo-content');
+                                if (contentField) {
+                                    contentField.value = data.modified_content;
+                                }
+                                
+                                // Clear image issues since they've been fixed
+                                if (data.images_fixed && data.images_fixed > 0) {
+                                    window.currentImageIssues = [];
+                                    // Update field counters to reflect the fix
+                                    updateFieldCounters();
+                                }
+                            }
+                            
+                            callback();
+                        })
+                        .catch(error => {
+                            callback();
+                        });
+                    } else {
+                        setTimeout(callback, 100);
+                    }
+                }
+                
+                // Process issues sequentially: H1 first, then images
+                processH1Issues(function() {
+                    processImageAltIssues(function() {
+                        // Skip content length issues for now as they require more complex AI processing
+                        if (hasContentLengthIssues && !hasH1Issues && !hasImageAltIssues) {
+                            // Only content length issues - skip for now
                         }
                         
                         // Move to next field
                         currentFieldIndex++;
                         setTimeout(processNextField, 500);
-                    })
-                    .catch(error => {
-                        // Move to next field even on error
-                        currentFieldIndex++;
-                        setTimeout(processNextField, 500);
                     });
-                } else {
-                    // Content has other issues that we can't handle with AI yet, skip it
-                    currentFieldIndex++;
-                    processNextField();
-                }
+                });
                 return;
             }
             
@@ -1082,29 +1149,90 @@ function waitForConfirmForceAiFix() {
             
             // Handle content field with targeted approach
             if (fieldType === 'content') {
-                // Check if content has ONLY image alt issues
-                if (hasOnlyImageAltIssues(article)) {
-                    resultsLog.innerHTML += '<div class="text-info">' +
-                        '<i class="icon-image"></i> ' + article.title + ' - content: Using targeted image fix approach' +
-                    '</div>';
-                    
-                    fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_targeted_img_fix.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        body: 'article_id=' + encodeURIComponent(article.id)
-                    })
-                    .then(response => response.text().then(text => JSON.parse(text)))
-                    .then(data => {
-                        if (data.success && data.modified_content) {
-                            articleData.aiValues.content = data.modified_content;
+                var contentIssues = article.issues.filter(function(issue) {
+                    return ['content_too_short', 'missing_h1', 'missing_alt_tags'].includes(issue.type);
+                });
+                
+                var hasH1Issues = contentIssues.some(function(issue) { return issue.type === 'missing_h1'; });
+                var hasImageAltIssues = contentIssues.some(function(issue) { return issue.type === 'missing_alt_tags'; });
+                var hasContentLengthIssues = contentIssues.some(function(issue) { return issue.type === 'content_too_short'; });
+                
+                var currentContent = article.content || '';
+                
+                // Process H1 issues first
+                function processH1ForceIssues(callback) {
+                    if (hasH1Issues) {
+                        resultsLog.innerHTML += '<div class="text-info">' +
+                            '<i class="icon-header"></i> ' + article.title + ' - content: Adding H1 tag' +
+                        '</div>';
+                        
+                        // Simple H1 fix: add H1 tag at the beginning of content if missing
+                        var h1Pattern = /<h1[^>]*>/i;
+                        if (!h1Pattern.test(currentContent)) {
+                            // Extract a meaningful H1 from the article title
+                            var articleTitle = article.title || 'Article Title';
+                            var h1Tag = '<h1>' + articleTitle + '</h1>\n\n';
+                            
+                            // Add H1 at the beginning of content
+                            currentContent = h1Tag + currentContent;
+                            articleData.aiValues.content = currentContent;
+                            
                             resultsLog.innerHTML += '<div class="text-success">' +
-                                '<i class="icon-checkmark"></i> ' + article.title + ' - content (targeted image fix): ' + data.images_fixed + ' images fixed' +
+                                '<i class="icon-checkmark"></i> ' + article.title + ' - content (H1 fix): H1 tag added' +
                             '</div>';
-                        } else {
+                        }
+                    }
+                    
+                    setTimeout(callback, 100);
+                }
+                
+                // Process image alt issues after H1 issues
+                function processImageForceIssues(callback) {
+                    if (hasImageAltIssues) {
+                        resultsLog.innerHTML += '<div class="text-info">' +
+                            '<i class="icon-image"></i> ' + article.title + ' - content: Fixing image alt attributes' +
+                        '</div>';
+                        
+                        fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_targeted_img_fix.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: 'article_id=' + encodeURIComponent(article.id) + '&content=' + encodeURIComponent(currentContent)
+                        })
+                        .then(response => response.text().then(text => JSON.parse(text)))
+                        .then(data => {
+                            if (data.success && data.modified_content) {
+                                articleData.aiValues.content = data.modified_content;
+                                resultsLog.innerHTML += '<div class="text-success">' +
+                                    '<i class="icon-checkmark"></i> ' + article.title + ' - content (image fix): ' + data.images_fixed + ' images fixed' +
+                                '</div>';
+                            } else {
+                                resultsLog.innerHTML += '<div class="text-info">' +
+                                    '<i class="icon-info"></i> ' + article.title + ' - content: ' + (data.message || 'No image fixes needed') +
+                                '</div>';
+                            }
+                            
+                            callback();
+                        })
+                        .catch(error => {
+                            resultsLog.innerHTML += '<div class="text-warning">' +
+                                '<i class="icon-warning"></i> ' + article.title + ' - content (image fix) error: ' + error.message +
+                            '</div>';
+                            callback();
+                        });
+                    } else {
+                        setTimeout(callback, 50);
+                    }
+                }
+                
+                // Process issues sequentially: H1 first, then images
+                processH1ForceIssues(function() {
+                    processImageForceIssues(function() {
+                        // Skip content length issues for now as they require more complex AI processing
+                        if (hasContentLengthIssues && !hasH1Issues && !hasImageAltIssues) {
                             resultsLog.innerHTML += '<div class="text-info">' +
-                                '<i class="icon-info"></i> ' + article.title + ' - content: ' + (data.message || 'No image fixes needed') +
+                                '<i class="icon-info"></i> ' + article.title + ' - content: Skipping content length issues (requires complex AI)' +
                             '</div>';
                         }
                         
@@ -1112,24 +1240,8 @@ function waitForConfirmForceAiFix() {
                         resultsLog.scrollTop = resultsLog.scrollHeight;
                         currentFieldIndex++;
                         setTimeout(processNextField, 200);
-                    })
-                    .catch(error => {
-                        resultsLog.innerHTML += '<div class="text-warning">' +
-                            '<i class="icon-warning"></i> ' + article.title + ' - content (targeted) error: ' + error.message +
-                        '</div>';
-                        articleData.fieldsProcessed++;
-                        currentFieldIndex++;
-                        setTimeout(processNextField, 200);
                     });
-                } else {
-                    // Content has other issues that we can't handle with AI yet, skip it
-                    resultsLog.innerHTML += '<div class="text-info">' +
-                        '<i class="icon-info"></i> ' + article.title + ' - content: Skipping non-image content issues' +
-                    '</div>';
-                    articleData.fieldsProcessed++;
-                    currentFieldIndex++;
-                    setTimeout(processNextField, 100);
-                }
+                });
                 return;
             }
             
@@ -1257,10 +1369,15 @@ function waitForConfirmForceAiFix() {
     
     var hasH1 = /<h1[^>]*>/i.test(contentText);
     
+    // Check for image alt attribute issues
+    var hasImageAltIssues = window.currentImageIssues && window.currentImageIssues.length > 0;
+    
     if (wordsCount < 300) {
         contentStatus.innerHTML = '<span class="text-warning"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_CONTENT_TOO_SHORT'); ?></span>';
     } else if (!hasH1) {
         contentStatus.innerHTML = '<span class="text-warning"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_MISSING_H1'); ?></span>';
+    } else if (hasImageAltIssues) {
+        contentStatus.innerHTML = '<span class="text-warning"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_MISSING_ALT_TAGS'); ?></span>';
     } else {
         contentStatus.innerHTML = '<span class="text-success"><i class="icon-checkmark"></i> <?php echo Text::_('COM_JOOMLAHITS_SEO_OPTIMAL'); ?></span>';
     }

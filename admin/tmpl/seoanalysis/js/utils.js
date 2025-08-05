@@ -419,6 +419,13 @@ function fixImageAltTargeted(articleId) {
                 // Update the content field
                 contentField.value = data.modified_content;
                 
+                // Clear image issues since they've been fixed
+                if (data.images_fixed && data.images_fixed > 0) {
+                    window.currentImageIssues = [];
+                    // Update field counters to reflect the fix
+                    updateFieldCounters();
+                }
+                
                 // Show success message
                 var message = data.images_fixed > 0 
                     ? data.images_fixed + ' image(s) alt attributes fixed successfully'

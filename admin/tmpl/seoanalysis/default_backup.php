@@ -1084,10 +1084,15 @@ function updateFieldCounters() {
     
     var hasH1 = /<h1[^>]*>/i.test(contentText);
     
+    // Check for image alt attribute issues
+    var hasImageAltIssues = window.currentImageIssues && window.currentImageIssues.length > 0;
+    
     if (wordsCount < 300) {
         contentStatus.innerHTML = '<span class="text-warning"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_CONTENT_TOO_SHORT'); ?></span>';
     } else if (!hasH1) {
         contentStatus.innerHTML = '<span class="text-warning"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_MISSING_H1'); ?></span>';
+    } else if (hasImageAltIssues) {
+        contentStatus.innerHTML = '<span class="text-warning"><i class="icon-warning"></i> <?php echo Text::_('COM_JOOMLAHITS_SEOANALYSIS_MISSING_ALT_TAGS'); ?></span>';
     } else {
         contentStatus.innerHTML = '<span class="text-success"><i class="icon-checkmark"></i> <?php echo Text::_('COM_JOOMLAHITS_SEO_OPTIMAL'); ?></span>';
     }
