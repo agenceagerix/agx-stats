@@ -1030,11 +1030,26 @@ function waitForConfirmForceAiFix() {
                                     contentField.value = data.modified_content;
                                 }
                                 
+                                // Show detailed processing information
+                                if (data.processing_details && data.processing_details.iterative_processing) {
+                                    aiBtn.innerHTML = '<i class="icon-refresh icon-spin me-2"></i>IA: Pass ' + data.passes_completed + ' completed...';
+                                }
+                                
                                 // Clear image issues since they've been fixed
                                 if (data.images_fixed && data.images_fixed > 0) {
                                     window.currentImageIssues = [];
                                     // Update field counters to reflect the fix
                                     updateFieldCounters();
+                                    
+                                    // Show success message with processing details
+                                    var successMessage = data.images_fixed + ' image(s) alt attributes fixed';
+                                    if (data.processing_details && data.processing_details.iterative_processing) {
+                                        successMessage += ' (required ' + data.passes_completed + ' passes)';
+                                    }
+                                    if (!data.complete_success && data.remaining_problematic_count > 0) {
+                                        successMessage += ' - ' + data.remaining_problematic_count + ' images still need attention';
+                                    }
+                                    console.log(successMessage);
                                 }
                             }
                             
@@ -1214,9 +1229,21 @@ function waitForConfirmForceAiFix() {
                         .then(data => {
                             if (data.success && data.modified_content) {
                                 articleData.aiValues.content = data.modified_content;
-                                resultsLog.innerHTML += '<div class="text-success">' +
-                                    '<i class="icon-checkmark"></i> ' + article.title + ' - content (image fix): ' + data.images_fixed + ' images fixed' +
-                                '</div>';
+                                
+                                var successMessage = '<i class="icon-checkmark"></i> ' + article.title + ' - content (image fix): ' + data.images_fixed + ' images fixed';
+                                
+                                // Add processing details if iterative processing was used
+                                if (data.processing_details && data.processing_details.iterative_processing) {
+                                    successMessage += ' (required ' + data.passes_completed + ' passes)';
+                                }
+                                
+                                // Add warning if not all images were fixed
+                                if (!data.complete_success && data.remaining_problematic_count > 0) {
+                                    successMessage += ' - ' + data.remaining_problematic_count + ' images still need attention';
+                                    resultsLog.innerHTML += '<div class="text-warning">' + successMessage + '</div>';
+                                } else {
+                                    resultsLog.innerHTML += '<div class="text-success">' + successMessage + '</div>';
+                                }
                             } else {
                                 resultsLog.innerHTML += '<div class="text-info">' +
                                     '<i class="icon-info"></i> ' + article.title + ' - content: ' + (data.message || 'No image fixes needed') +

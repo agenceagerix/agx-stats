@@ -161,17 +161,211 @@ try {
     // Parse AI response to get corrected img tags
     $correctedImages = parseAIImageResponse($aiResponse, $problematicImages);
     
-    // Replace the problematic img tags with corrected ones in the content
+    // Replace the problematic img tags with corrected ones using enhanced replacement logic
     $modifiedContent = $fullContent;
     $imagesFixed = 0;
+    $replacementLog = [];
     
+    // Use indexed replacement to ensure 1:1 correspondence with enhanced fallback methods
     foreach ($correctedImages as $index => $correctedImg) {
         if (isset($problematicImages[$index])) {
             $originalImg = $problematicImages[$index]['tag'];
-            $modifiedContent = str_replace($originalImg, $correctedImg, $modifiedContent);
-            $imagesFixed++;
+            $originalSrc = $problematicImages[$index]['src'];
+            
+            $replacementSuccess = false;
+            $replacementMethod = '';
+            
+            // Method 1: Direct string replacement (most reliable)
+            if (!$replacementSuccess) {
+                $beforeReplace = $modifiedContent;
+                $modifiedContent = str_replace($originalImg, $correctedImg, $modifiedContent);
+                
+                if ($beforeReplace !== $modifiedContent) {
+                    $replacementSuccess = true;
+                    $replacementMethod = 'direct_string';
+                }
+            }
+            
+            // Method 2: Regex replacement with escaped characters
+            if (!$replacementSuccess) {
+                $escapedOriginal = preg_quote($originalImg, '/');
+                $beforeReplace = $modifiedContent;
+                $modifiedContent = preg_replace('/' . $escapedOriginal . '/', $correctedImg, $modifiedContent, 1);
+                
+                if ($beforeReplace !== $modifiedContent) {
+                    $replacementSuccess = true;
+                    $replacementMethod = 'regex_escaped';
+                }
+            }
+            
+            // Method 3: Source-based replacement (find by src attribute and replace entire tag)
+            if (!$replacementSuccess && !empty($originalSrc)) {
+                $srcPattern = preg_quote($originalSrc, '/');
+                $beforeReplace = $modifiedContent;
+                
+                // Find img tag with this src and replace it
+                $pattern = '/<img[^>]*src\s*=\s*["\']' . $srcPattern . '["\'][^>]*>/i';
+                $modifiedContent = preg_replace($pattern, $correctedImg, $modifiedContent, 1);
+                
+                if ($beforeReplace !== $modifiedContent) {
+                    $replacementSuccess = true;
+                    $replacementMethod = 'src_based';
+                }
+            }
+            
+            // Method 4: Flexible src matching (handle relative/absolute path variations)
+            if (!$replacementSuccess && !empty($originalSrc)) {
+                $srcBasename = basename($originalSrc);
+                if (!empty($srcBasename)) {
+                    $beforeReplace = $modifiedContent;
+                    
+                    // Find img tag with src ending with this basename
+                    $pattern = '/<img[^>]*src\s*=\s*["\'][^"\']*' . preg_quote($srcBasename, '/') . '["\'][^>]*>/i';
+                    $modifiedContent = preg_replace($pattern, $correctedImg, $modifiedContent, 1);
+                    
+                    if ($beforeReplace !== $modifiedContent) {
+                        $replacementSuccess = true;
+                        $replacementMethod = 'basename_match';
+                    }
+                }
+            }
+            
+            // Log the replacement result
+            if ($replacementSuccess) {
+                $imagesFixed++;
+                $replacementLog[] = [
+                    'index' => $index,
+                    'original_src' => $originalSrc,
+                    'replaced' => true,
+                    'method' => $replacementMethod
+                ];
+            } else {
+                $replacementLog[] = [
+                    'index' => $index,
+                    'original_src' => $originalSrc,
+                    'replaced' => false,
+                    'reason' => 'All replacement methods failed',
+                    'original_tag_length' => strlen($originalImg),
+                    'corrected_tag_length' => strlen($correctedImg)
+                ];
+                
+                // Log detailed info for debugging
+                error_log('JoomlaHits Alt Fix: Failed to replace image - Original: ' . substr($originalImg, 0, 100) . '...');
+                error_log('JoomlaHits Alt Fix: Failed to replace image - Corrected: ' . substr($correctedImg, 0, 100) . '...');
+            }
         }
     }
+    
+    // ENHANCED ITERATIVE PROCESSING: Continue processing until all images are fixed or max attempts reached
+    $maxPasses = 3;
+    $currentPass = 1;
+    $remainingProblematicImages = extractProblematicImages($modifiedContent);
+    
+    while (!empty($remainingProblematicImages) && 
+           count($remainingProblematicImages) < count($problematicImages) && 
+           $currentPass < $maxPasses) {
+        
+        $currentPass++;
+        error_log('JoomlaHits Alt Fix: Pass ' . $currentPass . ' needed for article ' . $articleId . '. Remaining: ' . count($remainingProblematicImages));
+        
+        $passPrompt = createTargetedImagePrompt($remainingProblematicImages, $article, $params);
+        
+        try {
+            $passAiResponse = $aiProvider->generateContent($passPrompt);
+            $passCorrectedImages = parseAIImageResponse($passAiResponse, $remainingProblematicImages);
+            
+            $passImagesFixed = 0;
+            
+            // Use the same enhanced replacement logic for additional passes
+            foreach ($passCorrectedImages as $index => $correctedImg) {
+                if (isset($remainingProblematicImages[$index])) {
+                    $originalImg = $remainingProblematicImages[$index]['tag'];
+                    $originalSrc = $remainingProblematicImages[$index]['src'];
+                    
+                    $replacementSuccess = false;
+                    $replacementMethod = '';
+                    
+                    // Method 1: Direct string replacement
+                    if (!$replacementSuccess) {
+                        $beforeReplace = $modifiedContent;
+                        $modifiedContent = str_replace($originalImg, $correctedImg, $modifiedContent);
+                        
+                        if ($beforeReplace !== $modifiedContent) {
+                            $replacementSuccess = true;
+                            $replacementMethod = 'direct_string';
+                        }
+                    }
+                    
+                    // Method 2: Regex replacement
+                    if (!$replacementSuccess) {
+                        $escapedOriginal = preg_quote($originalImg, '/');
+                        $beforeReplace = $modifiedContent;
+                        $modifiedContent = preg_replace('/' . $escapedOriginal . '/', $correctedImg, $modifiedContent, 1);
+                        
+                        if ($beforeReplace !== $modifiedContent) {
+                            $replacementSuccess = true;
+                            $replacementMethod = 'regex_escaped';
+                        }
+                    }
+                    
+                    // Method 3: Source-based replacement
+                    if (!$replacementSuccess && !empty($originalSrc)) {
+                        $srcPattern = preg_quote($originalSrc, '/');
+                        $beforeReplace = $modifiedContent;
+                        $pattern = '/<img[^>]*src\s*=\s*["\']' . $srcPattern . '["\'][^>]*>/i';
+                        $modifiedContent = preg_replace($pattern, $correctedImg, $modifiedContent, 1);
+                        
+                        if ($beforeReplace !== $modifiedContent) {
+                            $replacementSuccess = true;
+                            $replacementMethod = 'src_based';
+                        }
+                    }
+                    
+                    if ($replacementSuccess) {
+                        $imagesFixed++;
+                        $passImagesFixed++;
+                        $replacementLog[] = [
+                            'index' => 'pass_' . $currentPass . '_' . $index,
+                            'original_src' => $originalSrc,
+                            'replaced' => true,
+                            'pass' => $currentPass,
+                            'method' => $replacementMethod
+                        ];
+                    }
+                }
+            }
+            
+            // If no images were fixed in this pass, break to avoid infinite loop
+            if ($passImagesFixed === 0) {
+                error_log('JoomlaHits Alt Fix: Pass ' . $currentPass . ' fixed 0 images, stopping iteration');
+                break;
+            }
+            
+            // Update remaining problematic images for next iteration
+            $previousCount = count($remainingProblematicImages);
+            $remainingProblematicImages = extractProblematicImages($modifiedContent);
+            
+            // If count didn't decrease, break to avoid infinite loop
+            if (count($remainingProblematicImages) >= $previousCount) {
+                error_log('JoomlaHits Alt Fix: Pass ' . $currentPass . ' did not reduce problematic images count, stopping iteration');
+                break;
+            }
+            
+        } catch (Exception $e) {
+            error_log('JoomlaHits Alt Fix: Pass ' . $currentPass . ' failed for article ' . $articleId . ': ' . $e->getMessage());
+            break;
+        }
+    }
+    
+    // Log final iteration results
+    if ($currentPass > 1) {
+        error_log('JoomlaHits Alt Fix: Completed ' . $currentPass . ' passes for article ' . $articleId . '. Final remaining: ' . count($remainingProblematicImages));
+    }
+    
+    // Final verification
+    $finalProblematicImages = extractProblematicImages($modifiedContent);
+    $finalImageCount = count($finalProblematicImages);
+    $originalImageCount = count($problematicImages);
     
     echo json_encode([
         'success' => true,
@@ -179,7 +373,17 @@ try {
         'article_id' => $articleId,
         'images_fixed' => $imagesFixed,
         'modified_content' => $modifiedContent,
-        'ai_provider' => $aiProvider->getProvider()
+        'ai_provider' => $aiProvider->getProvider(),
+        'original_problematic_count' => $originalImageCount,
+        'remaining_problematic_count' => $finalImageCount,
+        'complete_success' => ($finalImageCount === 0),
+        'replacement_log' => $replacementLog,
+        'passes_completed' => $currentPass,
+        'processing_details' => [
+            'max_passes_allowed' => $maxPasses,
+            'iterative_processing' => $currentPass > 1,
+            'all_images_fixed' => ($finalImageCount === 0)
+        ]
     ], JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {
@@ -279,39 +483,91 @@ function createTargetedImagePrompt($problematicImages, $article, $params = []) {
 }
 
 /**
- * Parse AI response to extract corrected img tags
+ * Parse AI response to extract corrected img tags with enhanced reliability
  */
 function parseAIImageResponse($aiResponse, $originalImages) {
     $correctedImages = [];
     
-    // Remove potential code block markers
-    $aiResponse = preg_replace('/^```html\s*/', '', $aiResponse);
-    $aiResponse = preg_replace('/^```\s*/', '', $aiResponse);
-    $aiResponse = preg_replace('/\s*```$/', '', $aiResponse);
+    // Remove potential code block markers more thoroughly
+    $aiResponse = preg_replace('/^```[a-zA-Z]*\s*/m', '', $aiResponse);
+    $aiResponse = preg_replace('/\s*```$/m', '', $aiResponse);
     $aiResponse = trim($aiResponse);
     
-    // Split response into lines and extract img tags
+    // Enhanced Method 1: Try line-by-line parsing first with better numbering detection
     $lines = explode("\n", $aiResponse);
     
     foreach ($lines as $line) {
         $line = trim($line);
         
-        // Skip empty lines and numbered prefixes
+        // Skip empty lines
         if (empty($line)) continue;
         
-        // Remove numbering (1. 2. etc.)
-        $line = preg_replace('/^\d+\.\s*/', '', $line);
+        // Remove various numbering patterns more comprehensively
+        $line = preg_replace('/^(\d+[\.\)\-\s]+|[•\-\*\+\>]+\s*|[a-zA-Z][\.\)]\s*)/i', '', $line);
+        $line = trim($line);
         
-        // Check if line contains an img tag
+        // Check if line contains an img tag with more flexible matching
         if (preg_match('/<img[^>]*>/i', $line, $matches)) {
-            $correctedImages[] = $matches[0];
+            $imgTag = $matches[0];
+            // Validate that this is actually a complete img tag
+            if (substr_count($imgTag, '<') === 1 && substr_count($imgTag, '>') === 1) {
+                $correctedImages[] = $imgTag;
+            }
         }
     }
     
-    // If we don't have enough corrected images, try to extract from the whole response
+    // Method 2: If line-by-line didn't get enough images, try global extraction with validation
     if (count($correctedImages) < count($originalImages)) {
         preg_match_all('/<img[^>]*>/i', $aiResponse, $allMatches);
-        $correctedImages = $allMatches[0];
+        foreach ($allMatches[0] as $imgTag) {
+            // Validate that this is a complete img tag
+            if (substr_count($imgTag, '<') === 1 && substr_count($imgTag, '>') === 1) {
+                if (!in_array($imgTag, $correctedImages)) {
+                    $correctedImages[] = $imgTag;
+                }
+            }
+        }
+    }
+    
+    // Method 3: Enhanced flexible parsing with better normalization
+    if (count($correctedImages) < count($originalImages)) {
+        // Normalize spacing and try to find img tags that might be split across lines
+        $normalizedResponse = preg_replace('/\s+/', ' ', $aiResponse);
+        $normalizedResponse = str_replace(array("\n", "\r"), ' ', $normalizedResponse);
+        
+        preg_match_all('/<img[^>]*>/i', $normalizedResponse, $flexibleMatches);
+        
+        foreach ($flexibleMatches[0] as $imgTag) {
+            if (substr_count($imgTag, '<') === 1 && substr_count($imgTag, '>') === 1) {
+                if (!in_array($imgTag, $correctedImages)) {
+                    $correctedImages[] = $imgTag;
+                }
+            }
+        }
+    }
+    
+    // Method 4: Try to reconstruct img tags from partial matches
+    if (count($correctedImages) < count($originalImages)) {
+        // Look for src attributes that might indicate partial img tags
+        preg_match_all('/src\s*=\s*["\'][^"\']*["\'][^>]*alt\s*=\s*["\'][^"\']*["\']|alt\s*=\s*["\'][^"\']*["\'][^>]*src\s*=\s*["\'][^"\']*["\']/', $aiResponse, $partialMatches);
+        
+        foreach ($partialMatches[0] as $partial) {
+            // Try to construct a complete img tag from partial matches
+            if (strpos($partial, '<img') === false) {
+                $reconstructed = '<img ' . $partial . ' />';
+                if (!in_array($reconstructed, $correctedImages)) {
+                    $correctedImages[] = $reconstructed;
+                }
+            }
+        }
+    }
+    
+    // Log parsing results for debugging with more detail
+    error_log('JoomlaHits Alt Fix: AI response parsing - Expected: ' . count($originalImages) . ', Found: ' . count($correctedImages) . ', Response length: ' . strlen($aiResponse));
+    
+    // Ensure we don't have more corrected images than original problematic ones
+    if (count($correctedImages) > count($originalImages)) {
+        $correctedImages = array_slice($correctedImages, 0, count($originalImages));
     }
     
     return $correctedImages;

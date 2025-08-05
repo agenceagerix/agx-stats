@@ -426,11 +426,24 @@ function fixImageAltTargeted(articleId) {
                     updateFieldCounters();
                 }
                 
-                // Show success message
+                // Show enhanced success message with processing details
                 var message = data.images_fixed > 0 
                     ? data.images_fixed + ' image(s) alt attributes fixed successfully'
                     : 'No images needed alt attribute fixes';
-                showNotification(message, 'success');
+                
+                // Add processing details if iterative processing was used
+                if (data.processing_details && data.processing_details.iterative_processing) {
+                    message += ' (required ' + data.passes_completed + ' passes)';
+                }
+                
+                // Add warning if not all images were fixed
+                var notificationType = 'success';
+                if (!data.complete_success && data.remaining_problematic_count > 0) {
+                    message += ' - ' + data.remaining_problematic_count + ' images still need attention';
+                    notificationType = 'warning';
+                }
+                
+                showNotification(message, notificationType);
                 
                 // Show AI preview if changes were made
                 if (data.images_fixed > 0) {
