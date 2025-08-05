@@ -221,11 +221,12 @@ function processNextForceAiArticle() {
         originalValues: {
             title: window.JOOMLA_LANG_FORCE_AI ? window.JOOMLA_LANG_FORCE_AI.loading : 'Loading...',
             metadesc: window.JOOMLA_LANG_FORCE_AI ? window.JOOMLA_LANG_FORCE_AI.loading : 'Loading...',
-            metakey: window.JOOMLA_LANG_FORCE_AI ? window.JOOMLA_LANG_FORCE_AI.loading : 'Loading...'
+            metakey: window.JOOMLA_LANG_FORCE_AI ? window.JOOMLA_LANG_FORCE_AI.loading : 'Loading...',
+            content: window.JOOMLA_LANG_FORCE_AI ? window.JOOMLA_LANG_FORCE_AI.loading : 'Loading...'
         },
         aiValues: {},
         fieldsProcessed: 0,
-        totalFields: 3
+        totalFields: 4
     };
     
     // First, fetch complete article data to get accurate original values
@@ -253,7 +254,8 @@ function processNextForceAiArticle() {
             forceAiChanges[article.id].originalValues = {
                 title: fullArticle.title || '',
                 metadesc: fullArticle.metadesc || '',
-                metakey: fullArticle.metakey || ''
+                metakey: fullArticle.metakey || '',
+                content: (fullArticle.introtext || '') + ' ' + (fullArticle.fulltext || '')
             };
             
             // Now process all fields for this article with complete data
@@ -263,7 +265,8 @@ function processNextForceAiArticle() {
             forceAiChanges[article.id].originalValues = {
                 title: article.title || '',
                 metadesc: article.metadesc || '',
-                metakey: article.metakey || ''
+                metakey: article.metakey || '',
+                content: '' // We don't have content data in the fallback
             };
             
             processAllFieldsForArticle(article);
@@ -275,7 +278,8 @@ function processNextForceAiArticle() {
         forceAiChanges[article.id].originalValues = {
             title: article.title || '',
             metadesc: article.metadesc || '',
-            metakey: article.metakey || ''
+            metakey: article.metakey || '',
+            content: '' // We don't have content data in the error fallback
         };
         
         processAllFieldsForArticle(article);
@@ -392,7 +396,8 @@ function saveForceAiChanges() {
                 changes: {
                     title: articleData.aiValues.title || articleData.originalValues.title,
                     metadesc: articleData.aiValues.metadesc || articleData.originalValues.metadesc,
-                    metakey: articleData.aiValues.metakey || articleData.originalValues.metakey
+                    metakey: articleData.aiValues.metakey || articleData.originalValues.metakey,
+                    content: articleData.aiValues.content || articleData.originalValues.content
                 }
             });
         }
