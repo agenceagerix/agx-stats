@@ -892,6 +892,80 @@ function waitForConfirmForceAiFix() {
         aiBtn.disabled = true;
         aiBtn.innerHTML = '<i class="icon-refresh icon-spin me-2"></i>IA en cours...';
         
+        // SMART ROUTING: Check if content field has ONLY image alt issues
+        if (hasOnlyImageAltIssues(currentArticleData)) {
+            // Use targeted image fix approach
+            aiBtn.innerHTML = '<i class="icon-refresh icon-spin me-2"></i>IA: Fixing image alt attributes...';
+            
+            fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_targeted_img_fix.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: 'article_id=' + encodeURIComponent(currentArticleData.id)
+            })
+            .then(response => {
+                return response.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        throw new Error('Server returned invalid JSON: ' + text);
+                    }
+                });
+            })
+            .then(data => {
+                aiBtn.disabled = false;
+                aiBtn.innerHTML = originalText;
+                
+                if (data.success && data.modified_content) {
+                    // Store the AI optimized content
+                    window.aiOptimizedValues.content = data.modified_content;
+                    
+                    // Store in bulk changes if in bulk mode
+                    if (isBulkAiProcessing && currentArticleData) {
+                        var articleId = currentArticleData.id;
+                        if (bulkAiChanges[articleId]) {
+                            bulkAiChanges[articleId].aiValues.content = data.modified_content;
+                        }
+                    }
+                    
+                    // Update the content field
+                    var contentField = document.getElementById('seo-content');
+                    if (contentField) {
+                        contentField.value = data.modified_content;
+                    }
+                    
+                    updateFieldCounters();
+                    
+                    // Show success message and preview
+                    var message = data.images_fixed > 0 
+                        ? data.images_fixed + ' image(s) alt attributes fixed successfully'
+                        : 'No images needed alt attribute fixes';
+                    showNotification(message, 'success');
+                    
+                    if (data.images_fixed > 0) {
+                        showAIPreview();
+                        aiPreviewState = 'pending';
+                        if (isBulkAiProcessing) {
+                            updateBulkSaveButtonState();
+                        } else {
+                            safeUpdateSaveButtonState();
+                        }
+                    }
+                } else {
+                    showNotification(data.message || 'Image alt attributes processed', 'info');
+                }
+            })
+            .catch(error => {
+                aiBtn.disabled = false;
+                aiBtn.innerHTML = originalText;
+                showNotification('Error fixing image alt attributes: ' + error.message, 'error');
+            });
+            
+            return; // Exit early - we used targeted approach
+        }
+        
+        // FULL AI APPROACH: For other content issues or mixed issues
         // List of fields to process (now including content field)
         var fields = ['title', 'metadesc', 'metakey', 'content'];
         var currentFieldIndex = 0;
@@ -1004,9 +1078,125 @@ function waitForConfirmForceAiFix() {
 
 
     function processAllFieldsForArticle(article) {
+        var articleData = forceAiChanges[article.id];
+        var resultsLog = document.getElementById('force-results-log');
+        
+        // SMART ROUTING: Check if content field has ONLY image alt issues
+        if (hasOnlyImageAltIssues(article)) {
+            // Use targeted image fix approach for content field
+            resultsLog.innerHTML += '<div class="text-info">' +
+                '<i class="icon-image"></i> ' + article.title + ' - Using targeted image fix approach' +
+            '</div>';
+            
+            // Process non-content fields first
+            var nonContentFields = ['title', 'metadesc', 'metakey'];
+            var currentFieldIndex = 0;
+            
+            function processNonContentField() {
+                if (forceAiCancelled) return;
+                
+                if (currentFieldIndex >= nonContentFields.length) {
+                    // Now process content with targeted approach
+                    processContentWithTargetedFix();
+                    return;
+                }
+                
+                var fieldType = nonContentFields[currentFieldIndex];
+                
+                if (!fieldHasIssues(fieldType, article)) {
+                    resultsLog.innerHTML += '<div class="text-info">' +
+                        '<i class="icon-info"></i> ' + article.title + ' - ' + fieldType + ' already optimal' +
+                    '</div>';
+                    articleData.fieldsProcessed++;
+                    currentFieldIndex++;
+                    setTimeout(processNonContentField, 100);
+                    return;
+                }
+                
+                fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_ai_seo_fix.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: 'article_id=' + encodeURIComponent(article.id) + '&field_type=' + encodeURIComponent(fieldType)
+                })
+                .then(response => response.text().then(text => JSON.parse(text)))
+                .then(data => {
+                    if (data.success && data.field_value) {
+                        articleData.aiValues[fieldType] = data.field_value;
+                        resultsLog.innerHTML += '<div class="text-success">' +
+                            '<i class="icon-checkmark"></i> ' + article.title + ' - ' + fieldType + ' processed' +
+                        '</div>';
+                    } else {
+                        resultsLog.innerHTML += '<div class="text-info">' +
+                            '<i class="icon-info"></i> ' + article.title + ' - ' + fieldType + ' skipped: ' + (data.message || 'Already optimal') +
+                        '</div>';
+                    }
+                    
+                    articleData.fieldsProcessed++;
+                    resultsLog.scrollTop = resultsLog.scrollHeight;
+                    currentFieldIndex++;
+                    setTimeout(processNonContentField, 200);
+                })
+                .catch(error => {
+                    resultsLog.innerHTML += '<div class="text-warning">' +
+                        '<i class="icon-warning"></i> ' + article.title + ' - ' + fieldType + ' error: ' + error.message +
+                    '</div>';
+                    articleData.fieldsProcessed++;
+                    currentFieldIndex++;
+                    setTimeout(processNonContentField, 200);
+                });
+            }
+            
+            function processContentWithTargetedFix() {
+                if (forceAiCancelled) return;
+                
+                fetch('<?php echo Uri::root(); ?>administrator/components/com_joomlahits/direct_targeted_img_fix.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: 'article_id=' + encodeURIComponent(article.id)
+                })
+                .then(response => response.text().then(text => JSON.parse(text)))
+                .then(data => {
+                    if (data.success && data.modified_content) {
+                        articleData.aiValues.content = data.modified_content;
+                        resultsLog.innerHTML += '<div class="text-success">' +
+                            '<i class="icon-checkmark"></i> ' + article.title + ' - content (targeted image fix): ' + data.images_fixed + ' images fixed' +
+                        '</div>';
+                    } else {
+                        resultsLog.innerHTML += '<div class="text-info">' +
+                            '<i class="icon-info"></i> ' + article.title + ' - content: ' + (data.message || 'No image fixes needed') +
+                        '</div>';
+                    }
+                    
+                    articleData.fieldsProcessed++;
+                    resultsLog.scrollTop = resultsLog.scrollHeight;
+                    
+                    // Move to next article
+                    currentForceAiIndex++;
+                    setTimeout(processNextForceAiArticle, 300);
+                })
+                .catch(error => {
+                    resultsLog.innerHTML += '<div class="text-warning">' +
+                        '<i class="icon-warning"></i> ' + article.title + ' - content (targeted) error: ' + error.message +
+                    '</div>';
+                    articleData.fieldsProcessed++;
+                    
+                    // Move to next article
+                    currentForceAiIndex++;
+                    setTimeout(processNextForceAiArticle, 300);
+                });
+            }
+            
+            processNonContentField();
+            return;
+        }
+        
+        // FULL AI APPROACH: For other content issues or mixed issues
         var fields = ['title', 'metadesc', 'metakey', 'content'];
         var currentFieldIndex = 0;
-        var articleData = forceAiChanges[article.id];
         
         function processNextField() {
             if (forceAiCancelled) {
@@ -1021,7 +1211,6 @@ function waitForConfirmForceAiFix() {
             }
             
             var fieldType = fields[currentFieldIndex];
-            var resultsLog = document.getElementById('force-results-log');
             
             // Check if this field has issues
             if (!fieldHasIssues(fieldType, article)) {
@@ -1062,7 +1251,7 @@ function waitForConfirmForceAiFix() {
                         // Handle content field response differently
                         articleData.aiValues[fieldType] = data.modified_content;
                         resultsLog.innerHTML += '<div class="text-success">' +
-                            '<i class="icon-checkmark"></i> ' + article.title + ' - ' + fieldType + ' processed' +
+                            '<i class="icon-checkmark"></i> ' + article.title + ' - ' + fieldType + ' processed (full AI)' +
                         '</div>';
                     } else if (data.field_value) {
                         // Handle other fields (title, metadesc, metakey)

@@ -279,7 +279,7 @@ function fieldHasIssues(fieldType, article) {
         'title': ['title_missing', 'title_too_short', 'title_too_long'],
         'metadesc': ['meta_desc_missing', 'meta_desc_too_short', 'meta_desc_too_long'],
         'metakey': ['meta_keywords_missing', 'meta_keywords_too_few'],
-        'content': ['content_too_short', 'missing_h1', 'image_alt_missing']
+        'content': ['content_too_short', 'missing_h1', 'missing_alt_tags']
     };
     
     var fieldIssues = issueTypes[fieldType] || [];
@@ -292,6 +292,56 @@ function fieldHasIssues(fieldType, article) {
     }
     
     return false;
+}
+
+/**
+ * Check if content field has ONLY image alt issues (no other content issues)
+ */
+function hasOnlyImageAltIssues(article) {
+    if (!article || !article.issues) return false;
+    
+    var contentIssues = article.issues.filter(function(issue) {
+        return ['content_too_short', 'missing_h1', 'missing_alt_tags'].includes(issue.type);
+    });
+    
+    // Return true only if there are content issues and ALL of them are image alt issues
+    return contentIssues.length > 0 && contentIssues.every(function(issue) {
+        return issue.type === 'missing_alt_tags';
+    });
+}
+
+/**
+ * Check if content field has mixed issues (image alt + other content issues)
+ */
+function hasContentMixedIssues(article) {
+    if (!article || !article.issues) return false;
+    
+    var contentIssues = article.issues.filter(function(issue) {
+        return ['content_too_short', 'missing_h1', 'missing_alt_tags'].includes(issue.type);
+    });
+    
+    var hasImageIssues = contentIssues.some(function(issue) {
+        return issue.type === 'missing_alt_tags';
+    });
+    
+    var hasOtherContentIssues = contentIssues.some(function(issue) {
+        return issue.type !== 'missing_alt_tags';
+    });
+    
+    return hasImageIssues && hasOtherContentIssues;
+}
+
+/**
+ * Check if content field has non-image issues only
+ */
+function hasNonImageContentIssues(article) {
+    if (!article || !article.issues) return false;
+    
+    var contentIssues = article.issues.filter(function(issue) {
+        return ['content_too_short', 'missing_h1'].includes(issue.type);
+    });
+    
+    return contentIssues.length > 0;
 }
 
 /**
@@ -313,4 +363,80 @@ function safeUpdateSaveButtonState() {
     } else {
         updateSaveButtonState();
     }
+}
+
+/**
+ * Fix image alt attributes using targeted AI approach
+ * Only processes images with missing or empty alt attributes
+ * NOTE: This function is now integrated into fixWithAI() with smart routing
+ * but kept here for potential direct usage if needed
+ */
+function fixImageAltTargeted(articleId) {
+    if (!articleId) {
+        showNotification('Invalid article ID for image fix', 'error');
+        return;
+    }
+    
+    // Show loading notification
+    showNotification('Analyzing images and fixing alt attributes...', 'info');
+    
+    // Call the targeted image fix endpoint
+    fetch(window.JOOMLA_ADMIN_URL + '/components/com_joomlahits/direct_targeted_img_fix.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'article_id=' + encodeURIComponent(articleId)
+    })
+    .then(response => {
+        return response.text().then(text => {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                throw new Error('Server returned invalid JSON: ' + text);
+            }
+        });
+    })
+    .then(data => {
+        if (data.success) {
+            // Update the content field with the modified content
+            var contentField = document.getElementById('seo-content');
+            if (contentField && data.modified_content) {
+                // Store original content for preview
+                if (!window.originalValues) {
+                    window.originalValues = {};
+                }
+                if (!window.originalValues.content) {
+                    window.originalValues.content = contentField.value;
+                }
+                
+                // Store optimized content
+                if (!window.aiOptimizedValues) {
+                    window.aiOptimizedValues = {};
+                }
+                window.aiOptimizedValues.content = data.modified_content;
+                
+                // Update the content field
+                contentField.value = data.modified_content;
+                
+                // Show success message
+                var message = data.images_fixed > 0 
+                    ? data.images_fixed + ' image(s) alt attributes fixed successfully'
+                    : 'No images needed alt attribute fixes';
+                showNotification(message, 'success');
+                
+                // Show AI preview if changes were made
+                if (data.images_fixed > 0) {
+                    showAIPreview();
+                }
+            } else {
+                showNotification(data.message || 'Image alt attributes processed', 'info');
+            }
+        } else {
+            showNotification('Error fixing image alt attributes: ' + (data.message || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error fixing image alt attributes: ' + error.message, 'error');
+    });
 }

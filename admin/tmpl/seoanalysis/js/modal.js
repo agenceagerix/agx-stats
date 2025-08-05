@@ -34,6 +34,7 @@ function openSeoModal(articleId) {
         return issue.type === 'missing_alt_tags' && issue.details;
     });
     
+    
     // Show loading state in modal
     document.getElementById('seo-article-id').value = articleId;
     document.getElementById('seo-title').value = 'Loading...';
@@ -322,8 +323,27 @@ function showAIPreview() {
     var fieldLabels = {
         'title': 'Title',
         'metadesc': 'Meta Description',
-        'metakey': 'Keywords'
+        'metakey': 'Keywords',
+        'content': 'Content'
     };
+    
+    /**
+     * Escape HTML tags for display purposes
+     */
+    function escapeHtml(text) {
+        if (!text) return text;
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    /**
+     * Truncate long content for preview
+     */
+    function truncateForPreview(text, maxLength = 200) {
+        if (!text || text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
+    }
     
     Object.keys(window.aiOptimizedValues).forEach(function(fieldType) {
         var original = window.originalValues[fieldType];
@@ -341,7 +361,20 @@ function showAIPreview() {
             html += '<small class="text-danger fw-bold"><i class="icon-times me-1"></i>BEFORE</small>';
             html += '</div>';
             html += '<div class="card-body py-2">';
-            html += '<small class="text-muted">' + (original || '<em>Empty</em>') + '</small>';
+            
+            // Handle content field differently - show raw HTML with escaped tags
+            if (fieldType === 'content') {
+                var originalContent = escapeHtml(original || '');
+                var truncatedOriginal = truncateForPreview(originalContent, 300);
+                var showFullOriginal = originalContent.length > 300;
+                html += '<pre class="text-muted small" style="white-space: pre-wrap; word-wrap: break-word; max-height: 150px; overflow-y: auto;">' + (truncatedOriginal || '<em>Empty</em>') + '</pre>';
+                if (showFullOriginal) {
+                    html += '<small class="text-info">Content truncated for preview. Full content will be saved.</small>';
+                }
+            } else {
+                html += '<small class="text-muted">' + (original || '<em>Empty</em>') + '</small>';
+            }
+            
             html += '</div>';
             html += '</div>';
             html += '</div>';
@@ -351,7 +384,20 @@ function showAIPreview() {
             html += '<small class="text-success fw-bold"><i class="icon-checkmark me-1"></i>AFTER</small>';
             html += '</div>';
             html += '<div class="card-body py-2">';
-            html += '<small class="fw-bold">' + optimized + '</small>';
+            
+            // Handle content field differently - show raw HTML with escaped tags
+            if (fieldType === 'content') {
+                var optimizedContent = escapeHtml(optimized);
+                var truncatedOptimized = truncateForPreview(optimizedContent, 300);
+                var showFullOptimized = optimizedContent.length > 300;
+                html += '<pre class="fw-bold small" style="white-space: pre-wrap; word-wrap: break-word; max-height: 150px; overflow-y: auto;">' + truncatedOptimized + '</pre>';
+                if (showFullOptimized) {
+                    html += '<small class="text-success">Content truncated for preview. Full content will be saved.</small>';
+                }
+            } else {
+                html += '<small class="fw-bold">' + optimized + '</small>';
+            }
+            
             html += '</div>';
             html += '</div>';
             html += '</div>';
