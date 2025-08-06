@@ -153,15 +153,15 @@ class AIProvider
         $currentTime = microtime(true);
         $timeDiff = $currentTime - $lastCallTime;
         
-        // Ensure minimum 1.5 seconds between calls for OpenAI
-        if ($timeDiff < 1.5) {
-            usleep((1.5 - $timeDiff) * 1000000);
+        // Ensure minimum 0.5 seconds between calls for OpenAI (reduced from 1.5s)
+        if ($timeDiff < 0.5) {
+            usleep((0.5 - $timeDiff) * 1000000);
         }
         $lastCallTime = microtime(true);
         
         $url = 'https://api.openai.com/v1/chat/completions';
         
-        $model = $this->config['openai_model'] ?? 'gpt-3.5-turbo';
+        $model = $this->config['openai_model'] ?? 'gpt-4o-mini';
         
         $payload = json_encode([
             'model' => $model,
@@ -177,7 +177,7 @@ class AIProvider
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
+            'Content-Type: application/json; charset=utf-8',
             'Authorization: Bearer ' . $this->apiKey
         ]);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -200,6 +200,7 @@ class AIProvider
         curl_close($ch);
         
         if ($curlError) {
+            error_log('OpenAI API cURL error: ' . $curlError);
             throw new Exception('OpenAI API connection error: ' . $curlError);
         }
         
@@ -207,24 +208,30 @@ class AIProvider
         
         if ($httpCode !== 200) {
             $errorDetails = $this->getOpenAIErrorMessage($httpCode);
+            error_log("OpenAI API HTTP error: {$httpCode}. Response: " . substr($response, 0, 500));
             throw new Exception("OpenAI API error: HTTP {$httpCode}{$errorDetails}");
         }
         
         $result = json_decode($response, true);
         
         if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log('OpenAI API JSON decode error: ' . json_last_error_msg() . '. Response: ' . substr($response, 0, 500));
             throw new Exception('Invalid OpenAI API response');
         }
         
         if (isset($result['error'])) {
+            error_log('OpenAI API returned error: ' . $result['error']['message']);
             throw new Exception('OpenAI error: ' . $result['error']['message']);
         }
         
         if (!isset($result['choices'][0]['message']['content'])) {
+            error_log('OpenAI API unexpected response structure: ' . json_encode($result));
             throw new Exception('Unexpected OpenAI response structure');
         }
         
-        return trim($result['choices'][0]['message']['content']);
+        $content = trim($result['choices'][0]['message']['content']);
+        error_log('OpenAI API successful response received, content length: ' . strlen($content));
+        return $content;
     }
     
     /**
