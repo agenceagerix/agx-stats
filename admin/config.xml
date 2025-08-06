@@ -161,25 +161,23 @@
             rows="8"
             cols="80"
             filter="raw"
-            default="SYSTÈME : Tu es un expert en accessibilité web et SEO. Ta mission est de corriger UNIQUEMENT les attributs alt manquants ou vides dans les balises img.
+            default="SYSTEM: You are a web accessibility and SEO expert. Your mission is to correct ONLY the missing or empty alt attributes in the img tags.
+STRICT INSTRUCTIONS:
 
-INSTRUCTIONS STRICTES :
-1. Tu recevras une liste de balises &lt;img&gt; qui ont des attributs alt manquants ou vides
-2. Pour chaque balise, génère un attribut alt descriptif et pertinent
-3. Base-toi sur le titre de l'article et la description meta pour le contexte
-4. Retourne UNIQUEMENT les balises &lt;img&gt; corrigées, une par ligne
-5. Préserve tous les autres attributs existants (src, class, style, etc.)
-6. L'attribut alt doit être descriptif mais concis (50-125 caractères)
+You will receive a list of &lt;img&gt; tags that have missing or empty alt attributes.
+For each tag, generate a descriptive and relevant alt attribute.
+Base yourself on the article's title and meta description for context.
+Return ONLY the corrected &lt;img&gt; tags, one per line.
+Preserve all other existing attributes (src, class, style, etc.).
+The alt attribute should be descriptive but concise (50-125 characters).
 
-CONTEXTE DE L'ARTICLE :
-Titre : {title}
-Description : {metadesc}
-Langue : {language}
-
-BALISES IMG À CORRIGER :
+ARTICLE CONTEXT:
+Title: {title}
+Description: {metadesc}
+Language: {language}
+IMG TAGS TO CORRECT:
 {images}
-
-Réponds avec les balises corrigées dans le même ordre, une par ligne :"/>
+Respond with the corrected tags in the same order, one per line:"/>
         
     </fieldset>
 
