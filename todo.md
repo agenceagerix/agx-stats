@@ -9,7 +9,3 @@ Revoir la réponse de l'IA pour le résultat des attributs alt des images.
 Revoir les notifications lors de l'utilisation du mode bulk AI, car cela spam et devient difficile à lire pour l'utilisateur.
 
 Revoir la valeur ajoutée au H1, car actuellement c'est le titre principal de l'article qui est utilisé, ce qui crée un doublon sur la page.
-
-Ajouter la gestion erreur en cas de problème avec l'api IA (si pas asser de token, si aucune clé de config etc)
-
-Revoir la selection de l'IA et fix le bug sur open AI
