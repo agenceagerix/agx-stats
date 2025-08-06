@@ -102,15 +102,11 @@
         
         <field
             name="openai_api_key"
-            type="textarea"
+            type="text"
             label="COM_JOOMLAHITS_CONFIG_OPENAI_API_KEY_LABEL"
             description="COM_JOOMLAHITS_CONFIG_OPENAI_API_KEY_DESC"
-            rows="3"
-            cols="80"
             filter="raw"
             autocomplete="off"
-            class="monospace-field"
-            style="font-family: monospace; letter-spacing: 1px;"
             showon="ai_provider:openai"/>
         
         <field

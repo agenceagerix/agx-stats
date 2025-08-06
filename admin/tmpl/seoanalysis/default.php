@@ -440,7 +440,14 @@ window.JOOMLA_LANG = {
     processingCancelled: <?php echo json_encode(Text::_('COM_JOOMLAHITS_PROCESSING_CANCELLED')); ?>,
     processingCompleted: <?php echo json_encode(Text::_('COM_JOOMLAHITS_PROCESSING_COMPLETED')); ?>,
     finish: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FINISH')); ?>,
-    aiProcessing: <?php echo json_encode(Text::_('COM_JOOMLAHITS_AI_PROCESSING')); ?>
+    aiProcessing: <?php echo json_encode(Text::_('COM_JOOMLAHITS_AI_PROCESSING')); ?>,
+    // AI Error Messages for Notifications
+    aiErrorQuotaExceeded: <?php echo json_encode(Text::_('COM_JOOMLAHITS_AI_ERROR_QUOTA_EXCEEDED')); ?>,
+    aiErrorInvalidApiKey: <?php echo json_encode(Text::_('COM_JOOMLAHITS_AI_ERROR_INVALID_API_KEY')); ?>,
+    aiErrorRateLimitExceeded: <?php echo json_encode(Text::_('COM_JOOMLAHITS_AI_ERROR_RATE_LIMIT_EXCEEDED')); ?>,
+    aiErrorServiceUnavailable: <?php echo json_encode(Text::_('COM_JOOMLAHITS_AI_ERROR_SERVICE_UNAVAILABLE')); ?>,
+    aiErrorApiKeyMissing: <?php echo json_encode(Text::_('COM_JOOMLAHITS_AI_ERROR_API_KEY_MISSING')); ?>,
+    aiErrorDefault: <?php echo json_encode(Text::_('COM_JOOMLAHITS_AI_ERROR_DEFAULT')); ?>
 };
 
 // Set Force AI warning language variables
@@ -465,6 +472,53 @@ window.JOOMLA_LANG_FORCE_AI = {
     savingArticles: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_SAVING_ARTICLES')); ?>,
     noChanges: <?php echo json_encode(Text::_('COM_JOOMLAHITS_FORCE_AI_NO_CHANGES')); ?>
 };
+
+/**
+ * Advanced AI error handling and logging utility
+ * Provides detailed console logging for OpenAI/Mistral quota and other errors
+ */
+function handleAIError(error, context = {}) {
+    const timestamp = new Date().toISOString();
+    const contextInfo = {
+        article_id: context.articleId || 'unknown',
+        field_type: context.fieldType || 'unknown',
+        provider: context.provider || 'unknown',
+        timestamp: timestamp
+    };
+    
+    // Check if it's a structured error response from our backend
+    if (error.data && error.data.error_type) {
+        const errorData = error.data;
+        
+        switch (errorData.error_type) {
+            case 'quota_exceeded':
+                // Also log to user notification
+                showNotification(window.JOOMLA_LANG.aiErrorQuotaExceeded, 'error');
+                break;
+                
+            case 'invalid_api_key':
+                showNotification(window.JOOMLA_LANG.aiErrorInvalidApiKey, 'error');
+                break;
+                
+            case 'rate_limit_exceeded':
+                showNotification(window.JOOMLA_LANG.aiErrorRateLimitExceeded, 'warning');
+                break;
+                
+            case 'service_unavailable':
+                showNotification(window.JOOMLA_LANG.aiErrorServiceUnavailable, 'warning');
+                break;
+                
+            case 'api_key_missing': 
+                showNotification(window.JOOMLA_LANG.aiErrorApiKeyMissing, 'error');
+                break;
+                
+            default:
+                showNotification(window.JOOMLA_LANG.aiErrorDefault.replace('%s', errorData.message), 'error');
+        }
+    } else {
+        showNotification('❌ Erreur de communication: ' + (error.message || error), 'error');
+    }
+}
 
 /**
  * Wait for all scripts to load and then show confirmation dialog
@@ -604,7 +658,7 @@ function waitForConfirmForceAiFix() {
     function resetAnalysisUI() {
         var btn = document.getElementById('startAnalysisBtn');
         btn.disabled = false;
-        btn.innerHTML = '<?php echo Text::_('COM_JOOMLAHITS_START_FULL_ANALYSIS'); ?>';
+        btn.innerHTML = "<?php echo Text::_('COM_JOOMLAHITS_START_FULL_ANALYSIS'); ?>";
     }
 
 
@@ -1005,7 +1059,7 @@ function waitForConfirmForceAiFix() {
                         safeUpdateSaveButtonState();
                     }
                 } else {
-                    showNotification('Tous les champs sont déjà optimaux !', 'success');
+                    showNotification('All field already Optimal', 'success');
                 }
                 return;
             }
@@ -1200,6 +1254,13 @@ function waitForConfirmForceAiFix() {
                             fieldElement.value = data.field_value;
                         }
                     }
+                } else {
+                    // Handle AI generation errors with structured error handling
+                    handleAIError({data: data}, {
+                        articleId: currentArticleData.id,
+                        fieldType: fieldType,
+                        provider: data.provider
+                    });
                 }
                 
                 // Move to next field
@@ -1207,6 +1268,12 @@ function waitForConfirmForceAiFix() {
                 setTimeout(processNextField, 500);
             })
             .catch(error => {
+                // Enhanced error handling for network/parsing errors
+                handleAIError(error, {
+                    articleId: currentArticleData.id,
+                    fieldType: fieldType
+                });
+                
                 // Move to next field even on error
                 currentFieldIndex++;
                 setTimeout(processNextField, 500);
@@ -1394,6 +1461,13 @@ function waitForConfirmForceAiFix() {
                         '</div>';
                     }
                 } else {
+                    // Enhanced error handling for Force AI processing
+                    handleAIError({data: data}, {
+                        articleId: article.id,
+                        fieldType: fieldType,
+                        provider: data.provider
+                    });
+                    
                     resultsLog.innerHTML += '<div class="text-warning">' +
                         '<i class="icon-warning"></i> ' + article.title + ' - ' + fieldType + ' failed: ' + (data.message || 'Unknown error') +
                     '</div>';
@@ -1405,6 +1479,12 @@ function waitForConfirmForceAiFix() {
                 setTimeout(processNextField, 200);
             })
             .catch(error => {
+                // Enhanced error handling for network/parsing errors in Force AI
+                handleAIError(error, {
+                    articleId: article.id,
+                    fieldType: fieldType
+                });
+                
                 resultsLog.innerHTML += '<div class="text-danger">' +
                     '<i class="icon-warning"></i> ' + article.title + ' - ' + fieldType + ' error: ' + error.message +
                 '</div>';

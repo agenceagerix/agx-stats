@@ -153,9 +153,22 @@ try {
     try {
         $aiProvider = new AIProvider($params);
     } catch (Exception $e) {
+        // Analyze error type for better frontend handling
+        $errorType = 'general_error';
+        $errorMessage = $e->getMessage();
+        
+        if (strpos($errorMessage, 'API key not configured') !== false) {
+            $errorType = 'api_key_missing';
+        } elseif (strpos($errorMessage, 'invalid.*api.*key') !== false) {
+            $errorType = 'invalid_api_key';
+        }
+        
         echo json_encode([
             'success' => false,
-            'message' => 'AI provider error: ' . $e->getMessage()
+            'message' => 'AI provider error: ' . $errorMessage,
+            'error_type' => $errorType,
+            'provider' => $params['ai_provider'] ?? 'unknown',
+            'timestamp' => date('Y-m-d H:i:s')
         ]);
         exit;
     }
@@ -206,9 +219,33 @@ try {
     try {
         $generatedContent = $aiProvider->generateContent($prompt);
     } catch (Exception $e) {
+        // Analyze error type for better frontend handling
+        $errorType = 'general_error';
+        $errorMessage = $e->getMessage();
+        
+        // Detect specific OpenAI/Mistral error types
+        if (strpos($errorMessage, 'insufficient_quota') !== false || 
+            strpos($errorMessage, 'quota') !== false ||
+            strpos($errorMessage, 'credits') !== false ||
+            strpos($errorMessage, 'billing') !== false) {
+            $errorType = 'quota_exceeded';
+        } elseif (strpos($errorMessage, 'invalid.*api.*key') !== false ||
+                  strpos($errorMessage, 'unauthorized') !== false) {
+            $errorType = 'invalid_api_key';
+        } elseif (strpos($errorMessage, 'rate.*limit') !== false ||
+                  strpos($errorMessage, '429') !== false) {
+            $errorType = 'rate_limit_exceeded';
+        } elseif (strpos($errorMessage, '503') !== false ||
+                  strpos($errorMessage, 'service.*unavailable') !== false) {
+            $errorType = 'service_unavailable';
+        }
+        
         echo json_encode([
             'success' => false,
-            'message' => 'AI generation error: ' . $e->getMessage()
+            'message' => 'AI generation error: ' . $errorMessage,
+            'error_type' => $errorType,
+            'provider' => $aiProvider->getProvider(),
+            'timestamp' => date('Y-m-d H:i:s')
         ]);
         exit;
     }

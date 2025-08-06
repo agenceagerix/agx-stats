@@ -153,9 +153,9 @@ class AIProvider
         $currentTime = microtime(true);
         $timeDiff = $currentTime - $lastCallTime;
         
-        // Ensure minimum 0.5 seconds between calls for OpenAI (reduced from 1.5s)
-        if ($timeDiff < 0.5) {
-            usleep((0.5 - $timeDiff) * 1000000);
+        // Ensure minimum 1.5 seconds between calls for OpenAI
+        if ($timeDiff < 1.5) {
+            usleep((1.5 - $timeDiff) * 1000000);
         }
         $lastCallTime = microtime(true);
         
@@ -200,7 +200,6 @@ class AIProvider
         curl_close($ch);
         
         if ($curlError) {
-            error_log('OpenAI API cURL error: ' . $curlError);
             throw new Exception('OpenAI API connection error: ' . $curlError);
         }
         
@@ -208,30 +207,40 @@ class AIProvider
         
         if ($httpCode !== 200) {
             $errorDetails = $this->getOpenAIErrorMessage($httpCode);
-            error_log("OpenAI API HTTP error: {$httpCode}. Response: " . substr($response, 0, 500));
-            throw new Exception("OpenAI API error: HTTP {$httpCode}{$errorDetails}");
+            
+            // Try to parse the error response for more specific information
+            $errorInfo = '';
+            try {
+                $errorResult = json_decode($response, true);
+                if (isset($errorResult['error']['code'])) {
+                    $errorInfo = ' (Code: ' . $errorResult['error']['code'] . ')';
+                }
+                if (isset($errorResult['error']['type'])) {
+                    $errorInfo .= ' (Type: ' . $errorResult['error']['type'] . ')';
+                }
+            } catch (Exception $e) {
+                // Ignore JSON parsing errors
+            }
+            
+            throw new Exception("OpenAI API error: HTTP {$httpCode}{$errorDetails}{$errorInfo}");
         }
         
         $result = json_decode($response, true);
         
         if (json_last_error() !== JSON_ERROR_NONE) {
-            error_log('OpenAI API JSON decode error: ' . json_last_error_msg() . '. Response: ' . substr($response, 0, 500));
             throw new Exception('Invalid OpenAI API response');
         }
         
         if (isset($result['error'])) {
-            error_log('OpenAI API returned error: ' . $result['error']['message']);
             throw new Exception('OpenAI error: ' . $result['error']['message']);
         }
         
         if (!isset($result['choices'][0]['message']['content'])) {
-            error_log('OpenAI API unexpected response structure: ' . json_encode($result));
+            error_log('OpenAI API returned error: ' . $result['error']['message']);
             throw new Exception('Unexpected OpenAI response structure');
         }
         
-        $content = trim($result['choices'][0]['message']['content']);
-        error_log('OpenAI API successful response received, content length: ' . strlen($content));
-        return $content;
+        return trim($result['choices'][0]['message']['content']);
     }
     
     /**
